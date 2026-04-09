@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub enum Environment {
+    #[default]
     Sandbox,
     Production,
 }
@@ -15,11 +16,6 @@ impl Environment {
     }
 }
 
-impl Default for Environment {
-    fn default() -> Self {
-        Self::Sandbox
-    }
-}
 
 /// Resolve the config directory
 pub fn config_dir() -> PathBuf {

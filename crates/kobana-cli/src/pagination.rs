@@ -7,6 +7,7 @@ use crate::formatter::{filter_fields, format_output};
 /// Handle paginated requests with --page-all
 ///
 /// Emits NDJSON (one JSON line per page) for streaming consumption.
+#[allow(clippy::too_many_arguments)]
 pub async fn paginate_all(
     client: &KobanaClient,
     endpoint: &ResolvedEndpoint,

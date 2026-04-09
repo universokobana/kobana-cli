@@ -183,9 +183,7 @@ fn wait_for_callback(listener: TcpListener) -> Result<String, KobanaError> {
                 .nth(1)
                 .and_then(|query| {
                     query.split('&').find_map(|param| {
-                        let mut parts = param.splitn(2, '=');
-                        let key = parts.next()?;
-                        let value = parts.next()?;
+                        let (key, value) = param.split_once('=')?;
                         if key == "code" {
                             Some(value.to_string())
                         } else {
