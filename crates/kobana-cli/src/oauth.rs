@@ -1,11 +1,15 @@
 use kobana::error::KobanaError;
 use serde::Deserialize;
+use sha2::Digest;
 use std::io::{BufRead, Write};
 use std::net::TcpListener;
 
 const OAUTH_AUTHORIZE_URL: &str = "https://app.kobana.com.br/oauth/authorize";
 const OAUTH_TOKEN_URL_SANDBOX: &str = "https://api-sandbox.kobana.com.br/oauth/token";
 const OAUTH_TOKEN_URL_PRODUCTION: &str = "https://api.kobana.com.br/oauth/token";
+
+/// Default public client ID for the Kobana CLI (PKCE, no secret needed)
+pub const DEFAULT_CLIENT_ID: &str = "kobana-cli";
 
 #[derive(Debug, Deserialize)]
 pub struct TokenResponse {
@@ -15,43 +19,65 @@ pub struct TokenResponse {
     pub expires_in: Option<i64>,
 }
 
-/// Authorization Code flow: open browser, listen for callback
+/// Generate a PKCE code verifier (43-128 chars, URL-safe)
+fn generate_code_verifier() -> String {
+    use base64::Engine;
+    let random_bytes: [u8; 32] = rand::random();
+    base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(random_bytes)
+}
+
+/// Generate a PKCE code challenge from the verifier (S256)
+fn generate_code_challenge(verifier: &str) -> String {
+    use base64::Engine;
+    let digest = sha2::Sha256::digest(verifier.as_bytes());
+    base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(digest)
+}
+
+/// Authorization Code flow with PKCE: open browser, listen for callback
 pub async fn authorization_code_flow(
     client_id: &str,
-    client_secret: &str,
+    client_secret: Option<&str>,
     production: bool,
 ) -> Result<TokenResponse, KobanaError> {
-    // Bind to a random port for the callback
     let listener = TcpListener::bind("127.0.0.1:0")
         .map_err(|e| KobanaError::Internal(format!("failed to bind callback server: {e}")))?;
     let port = listener.local_addr().unwrap().port();
     let redirect_uri = format!("http://localhost:{port}");
 
+    // Generate PKCE pair
+    let code_verifier = generate_code_verifier();
+    let code_challenge = generate_code_challenge(&code_verifier);
+
     let authorize_url = format!(
-        "{OAUTH_AUTHORIZE_URL}?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code"
+        "{OAUTH_AUTHORIZE_URL}?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&code_challenge={code_challenge}&code_challenge_method=S256"
     );
 
     eprintln!("Opening browser for authorization...");
     eprintln!("If the browser doesn't open, visit: {authorize_url}");
 
-    // Try to open browser
     let _ = open_browser(&authorize_url);
 
-    // Wait for the callback
     eprintln!("Waiting for authorization callback on port {port}...");
     let code = wait_for_callback(listener)?;
 
-    // Exchange code for token
     let token_url = if production {
         OAUTH_TOKEN_URL_PRODUCTION
     } else {
         OAUTH_TOKEN_URL_SANDBOX
     };
 
-    exchange_code(token_url, client_id, client_secret, &code, &redirect_uri).await
+    exchange_code(
+        token_url,
+        client_id,
+        client_secret,
+        &code,
+        &redirect_uri,
+        &code_verifier,
+    )
+    .await
 }
 
-/// Client Credentials flow
+/// Client Credentials flow (requires secret)
 pub async fn client_credentials_flow(
     client_id: &str,
     client_secret: &str,
@@ -127,20 +153,31 @@ pub async fn refresh_token(
 async fn exchange_code(
     token_url: &str,
     client_id: &str,
-    client_secret: &str,
+    client_secret: Option<&str>,
     code: &str,
     redirect_uri: &str,
+    code_verifier: &str,
 ) -> Result<TokenResponse, KobanaError> {
     let client = reqwest::Client::new();
+
+    let mut params = vec![
+        ("grant_type", "authorization_code"),
+        ("client_id", client_id),
+        ("code", code),
+        ("redirect_uri", redirect_uri),
+        ("code_verifier", code_verifier),
+    ];
+
+    // Only include client_secret if provided (not needed for PKCE public clients)
+    let secret_string;
+    if let Some(secret) = client_secret {
+        secret_string = secret.to_string();
+        params.push(("client_secret", &secret_string));
+    }
+
     let response = client
         .post(token_url)
-        .form(&[
-            ("grant_type", "authorization_code"),
-            ("client_id", client_id),
-            ("client_secret", client_secret),
-            ("code", code),
-            ("redirect_uri", redirect_uri),
-        ])
+        .form(&params)
         .send()
         .await
         .map_err(|e| KobanaError::Auth(format!("token exchange failed: {e}")))?;
@@ -159,7 +196,6 @@ async fn exchange_code(
 }
 
 fn wait_for_callback(listener: TcpListener) -> Result<String, KobanaError> {
-    // Set a timeout for waiting
     listener
         .set_nonblocking(false)
         .map_err(|e| KobanaError::Internal(format!("failed to set blocking: {e}")))?;
@@ -194,7 +230,6 @@ fn wait_for_callback(listener: TcpListener) -> Result<String, KobanaError> {
         })
         .ok_or_else(|| KobanaError::Auth("no authorization code in callback".into()))?;
 
-    // Send a success response
     let response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><body><h2>Autorizado!</h2><p>Pode fechar esta aba e voltar ao terminal.</p></body></html>";
     let mut writer = std::io::BufWriter::new(&stream);
     let _ = writer.write_all(response.as_bytes());
