@@ -11,6 +11,74 @@ const OAUTH_TOKEN_URL_PRODUCTION: &str = "https://api.kobana.com.br/oauth/token"
 /// Default public client ID for the Kobana CLI (PKCE, no secret needed)
 pub const DEFAULT_CLIENT_ID: &str = "kobana-cli";
 
+/// All available OAuth scopes
+pub const ALL_SCOPES: &[&str] = &[
+    "login",
+    "admin.subaccounts",
+    "admin.users",
+    "automation.email_accounts",
+    "automation.email_deliveries",
+    "automation.sms_accounts",
+    "automation.sms_deliveries",
+    "automation.webhook_deliveries",
+    "automation.webhooks",
+    "billing.transactions",
+    "charge.automatic_pix.accounts",
+    "charge.automatic_pix.locations",
+    "charge.automatic_pix.pix",
+    "charge.automatic_pix.recurrences",
+    "charge.automatic_pix.requests",
+    "charge.bank_billet_accounts",
+    "charge.bank_billet_payments",
+    "charge.bank_billet_registrations",
+    "charge.bank_billets",
+    "charge.customer_subscriptions",
+    "charge.installments",
+    "charge.payments",
+    "charge.pix",
+    "charge.pix_accounts",
+    "core.providers",
+    "crm.customers",
+    "crm.people",
+    "data.bank_billet_queries",
+    "financial.accounts",
+    "financial.balances",
+    "financial.providers",
+    "financial.statement_transactions",
+    "integration.certificates",
+    "integration.connections",
+    "integration.discharges",
+    "integration.edi_boxes",
+    "integration.remittances",
+    "mailbox.entries",
+    "mailbox.files",
+    "partner.bank_contracts",
+    "payment.bank_billets",
+    "payment.batches",
+    "payment.darfs",
+    "payment.dda",
+    "payment.dda.bank_billets",
+    "payment.dda_accounts",
+    "payment.payments",
+    "payment.pix",
+    "payment.taxes",
+    "payment.utilities",
+    "security.access_tokens",
+    "system.events",
+    "system.imports",
+    "system.reports",
+    "transfer.batches",
+    "transfer.internal",
+    "transfer.pix",
+    "transfer.ted",
+    "transfer.transfera",
+];
+
+/// Default scopes requested by the CLI (all scopes)
+pub fn default_scopes() -> String {
+    ALL_SCOPES.join("+")
+}
+
 #[derive(Debug, Deserialize)]
 pub struct TokenResponse {
     pub access_token: String,
@@ -37,6 +105,7 @@ fn generate_code_challenge(verifier: &str) -> String {
 pub async fn authorization_code_flow(
     client_id: &str,
     client_secret: Option<&str>,
+    scopes: &str,
     production: bool,
 ) -> Result<TokenResponse, KobanaError> {
     let listener = TcpListener::bind("127.0.0.1:0")
@@ -49,7 +118,7 @@ pub async fn authorization_code_flow(
     let code_challenge = generate_code_challenge(&code_verifier);
 
     let authorize_url = format!(
-        "{OAUTH_AUTHORIZE_URL}?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&code_challenge={code_challenge}&code_challenge_method=S256"
+        "{OAUTH_AUTHORIZE_URL}?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&code_challenge={code_challenge}&code_challenge_method=S256&scope={scopes}"
     );
 
     eprintln!("Opening browser for authorization...");

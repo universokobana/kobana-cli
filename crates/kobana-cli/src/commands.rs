@@ -195,18 +195,24 @@ pub fn build_root_command(v1_tree: &CommandNode, v2_tree: &CommandNode) -> Comma
             .arg_required_else_help(true)
             .subcommand(
                 Command::new("login")
-                    .about("Login to Kobana (OAuth)")
+                    .about("Login to Kobana (OAuth + PKCE)")
                     .arg(
                         Arg::new("client-id")
                             .long("client-id")
-                            .help("OAuth client ID")
+                            .help("OAuth client ID (default: kobana-cli)")
                             .value_name("ID"),
                     )
                     .arg(
                         Arg::new("client-secret")
                             .long("client-secret")
-                            .help("OAuth client secret")
+                            .help("OAuth client secret (only for Client Credentials flow)")
                             .value_name("SECRET"),
+                    )
+                    .arg(
+                        Arg::new("scopes")
+                            .long("scopes")
+                            .help("OAuth scopes (comma-separated, default: all)")
+                            .value_name("SCOPES"),
                     )
                     .arg(
                         Arg::new("production")

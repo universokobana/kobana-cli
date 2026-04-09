@@ -26,6 +26,12 @@ async fn handle_login(matches: &clap::ArgMatches) -> Result<(), KobanaError> {
     };
     let is_production = env == config::Environment::Production;
 
+    // Resolve scopes: --scopes flag or all scopes by default
+    let scopes = matches
+        .get_one::<String>("scopes")
+        .map(|s| s.replace(',', "+"))
+        .unwrap_or_else(oauth::default_scopes);
+
     let token_response = if let (Some(id), Some(secret)) = (&client_id, &client_secret) {
         // Client credentials flow (requires both id + secret)
         eprintln!("Authenticating with client credentials...");
@@ -42,7 +48,7 @@ async fn handle_login(matches: &clap::ArgMatches) -> Result<(), KobanaError> {
             .or_else(|| std::env::var("KOBANA_CLIENT_SECRET").ok());
 
         eprintln!("Authenticating with PKCE (client: {id})...");
-        oauth::authorization_code_flow(&id, secret.as_deref(), is_production).await?
+        oauth::authorization_code_flow(&id, secret.as_deref(), &scopes, is_production).await?
     };
 
     let expires_at = token_response
