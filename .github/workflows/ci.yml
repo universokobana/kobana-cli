@@ -105,3 +105,64 @@ jobs:
           name: Kobana CLI ${{ steps.version.outputs.version }}
           generate_release_notes: true
           files: artifacts/**/*
+
+      - name: Update Homebrew tap
+        env:
+          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # Compute SHA256 for each binary
+          SHA_DARWIN_ARM64=$(shasum -a 256 artifacts/kobana-darwin-arm64/kobana-darwin-arm64 | cut -d' ' -f1)
+          SHA_DARWIN_AMD64=$(shasum -a 256 artifacts/kobana-darwin-amd64/kobana-darwin-amd64 | cut -d' ' -f1)
+          SHA_LINUX_ARM64=$(shasum -a 256 artifacts/kobana-linux-arm64/kobana-linux-arm64 | cut -d' ' -f1)
+          SHA_LINUX_AMD64=$(shasum -a 256 artifacts/kobana-linux-amd64/kobana-linux-amd64 | cut -d' ' -f1)
+
+          # Generate formula
+          cat > /tmp/kobana.rb << FORMULA
+          class Kobana < Formula
+            desc "CLI for the Kobana financial API (v1 and v2)"
+            homepage "https://github.com/universokobana/kobana-cli"
+            version "${VERSION#v}"
+            license "MIT"
+
+            on_macos do
+              on_arm do
+                url "https://github.com/universokobana/kobana-cli/releases/download/${VERSION}/kobana-darwin-arm64"
+                sha256 "${SHA_DARWIN_ARM64}"
+              end
+              on_intel do
+                url "https://github.com/universokobana/kobana-cli/releases/download/${VERSION}/kobana-darwin-amd64"
+                sha256 "${SHA_DARWIN_AMD64}"
+              end
+            end
+
+            on_linux do
+              on_arm do
+                url "https://github.com/universokobana/kobana-cli/releases/download/${VERSION}/kobana-linux-arm64"
+                sha256 "${SHA_LINUX_ARM64}"
+              end
+              on_intel do
+                url "https://github.com/universokobana/kobana-cli/releases/download/${VERSION}/kobana-linux-amd64"
+                sha256 "${SHA_LINUX_AMD64}"
+              end
+            end
+
+            def install
+              bin.install stable.url.split("/").last => "kobana"
+            end
+
+            test do
+              assert_match "kobana", shell_output("#{bin}/kobana --version")
+            end
+          end
+          FORMULA
+
+          # Push to homebrew-tap repo
+          git clone https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/universokobana/homebrew-tap.git /tmp/homebrew-tap
+          cp /tmp/kobana.rb /tmp/homebrew-tap/Formula/kobana.rb
+          cd /tmp/homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/kobana.rb
+          git commit -m "update kobana to ${VERSION}" || echo "No changes"
+          git push
