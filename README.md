@@ -29,6 +29,16 @@ brew update && brew upgrade kobana
 
 Baixe o binário para sua plataforma na [página de Releases](https://github.com/universokobana/kobana-cli/releases/latest) e coloque no seu `PATH`.
 
+### Nix
+
+```bash
+# Rodar direto do GitHub
+nix run github:universokobana/kobana-cli
+
+# Instalar no perfil
+nix profile install github:universokobana/kobana-cli
+```
+
 ### Build a partir do source
 
 ```bash
