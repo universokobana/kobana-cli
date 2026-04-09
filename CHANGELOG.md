@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-04-09
+
+### Added
+
+- **PKCE authentication** — `kobana auth login` works zero-config with embedded public client_id `kobana-cli`
+- **OAuth scopes** — All 57 Kobana scopes supported, customizable via `--scopes`
+- **Agent skills** — SKILL.md files for all API modules (charge, payment, transfer, financial, admin, mailbox, data, security, v1)
+- **Homebrew distribution** — `brew tap universokobana/tap && brew install kobana`
+- **Project documentation** — README, AGENTS.md, CONTEXT.md, SECURITY.md, CHANGELOG, LICENSE, CLAUDE.md
+- **Demo video** — VHS-generated GIF showcasing CLI features
+- **CI/CD** — GitHub Actions with cross-platform builds (Linux/macOS/Windows) and automated releases
+
+### Fixed
+
+- **OAuth authorize URL** — Separate URLs per environment (sandbox: `app-sandbox.kobana.com.br`, production: `app.kobana.com.br`)
+- **Clippy warnings** — Resolved `derivable_impls`, `manual_split_once`, `too_many_arguments`
+- **GitHub Actions** — Upgraded to v5 to fix Node.js 20 deprecation warnings
+
 ## [0.1.0] - 2026-04-08
 
 ### Added
