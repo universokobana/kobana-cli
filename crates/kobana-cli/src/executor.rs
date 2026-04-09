@@ -4,6 +4,8 @@ use kobana::spec::{HttpMethod, ResolvedEndpoint};
 use kobana::validate::validate_identifier;
 
 use crate::formatter::{filter_fields, format_output};
+use crate::pagination;
+use crate::validate;
 
 /// Execute an API request based on the resolved endpoint and CLI args
 pub async fn execute(
@@ -24,6 +26,14 @@ pub async fn execute(
         .transpose()
         .map_err(|e| KobanaError::Validation(format!("invalid --json JSON: {e}")))?;
 
+    // Validate inputs
+    if let Some(ref params) = params_json {
+        validate::validate_params(params)?;
+    }
+    if let Some(ref body) = body_json {
+        validate::validate_body(body)?;
+    }
+
     let fields = root_matches.get_one::<String>("fields").cloned();
     let dry_run = root_matches.get_flag("dry-run");
     let verbose = root_matches.get_flag("verbose");
@@ -33,8 +43,44 @@ pub async fn execute(
         .map(|s| s.as_str())
         .unwrap_or("json");
 
+    let page_all = root_matches.get_flag("page-all");
+    let page_limit: usize = root_matches
+        .get_one::<String>("page-limit")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(10);
+    let page_delay: u64 = root_matches
+        .get_one::<String>("page-delay")
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(100);
+
     // Resolve path parameters from --params
     let path = resolve_path_template(&endpoint.path_template, &params_json)?;
+
+    // Handle auto-pagination (skip if dry-run)
+    if page_all && !dry_run && endpoint.http_method == HttpMethod::Get {
+        // Strip path params from query params
+        let query_params = params_json.map(|mut params| {
+            if let Some(obj) = params.as_object_mut() {
+                for param_name in &endpoint.path_params {
+                    obj.remove(param_name);
+                }
+            }
+            params
+        });
+
+        return pagination::paginate_all(
+            client,
+            endpoint,
+            &path,
+            &query_params,
+            page_limit,
+            page_delay,
+            &fields,
+            output_format,
+            verbose,
+        )
+        .await;
+    }
 
     // Generate idempotency key for mutations
     let idempotency_key = if matches!(
@@ -151,9 +197,8 @@ fn resolve_path_template(
                 .as_ref()
                 .and_then(|p| p.get(param_name))
                 .or_else(|| {
-                    // Try with underscored variant (e.g., pix_uid -> pix_uid)
+                    // Also try common aliases: uid, id
                     params.as_ref().and_then(|p| {
-                        // Also try common aliases: uid, id
                         if param_name.ends_with("_uid") || param_name.ends_with("_id") {
                             p.get("uid").or_else(|| p.get("id"))
                         } else {

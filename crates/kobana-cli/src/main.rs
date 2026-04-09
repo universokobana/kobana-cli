@@ -5,8 +5,11 @@ mod config;
 mod credential_store;
 mod executor;
 mod formatter;
+mod logging;
 mod oauth;
+mod pagination;
 mod schema;
+mod validate;
 
 use kobana::error::KobanaError;
 use kobana::spec::ApiSpec;
@@ -20,12 +23,10 @@ async fn main() {
     // Load .env files
     config::load_dotenv();
 
-    // Initialize logging
-    let env_filter = std::env::var("KOBANA_LOG").unwrap_or_else(|_| "warn".to_string());
-    tracing_subscriber::fmt()
-        .with_env_filter(env_filter)
-        .with_writer(std::io::stderr)
-        .init();
+    // Initialize structured logging
+    if let Err(e) = logging::init_logging() {
+        eprintln!("Warning: failed to initialize logging: {e}");
+    }
 
     if let Err(e) = run().await {
         e.exit();

@@ -116,6 +116,29 @@ pub fn build_root_command(v1_tree: &CommandNode, v2_tree: &CommandNode) -> Comma
                 .global(true)
                 .help("Custom idempotency key for mutations")
                 .value_name("KEY"),
+        )
+        .arg(
+            Arg::new("page-all")
+                .long("page-all")
+                .global(true)
+                .action(clap::ArgAction::SetTrue)
+                .help("Auto-paginate and output NDJSON"),
+        )
+        .arg(
+            Arg::new("page-limit")
+                .long("page-limit")
+                .global(true)
+                .help("Maximum pages to fetch (default: 10)")
+                .value_name("N")
+                .default_value("10"),
+        )
+        .arg(
+            Arg::new("page-delay")
+                .long("page-delay")
+                .global(true)
+                .help("Delay between pages in ms (default: 100)")
+                .value_name("MS")
+                .default_value("100"),
         );
 
     // Add v1 as a top-level subcommand
