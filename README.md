@@ -8,6 +8,8 @@ Projetado para humanos e agentes de IA, com saída JSON estruturada, introspecç
 kobana <servico> <recurso> <metodo> [flags]
 ```
 
+![Kobana CLI Demo](docs/demo.gif)
+
 ## Instalação
 
 ### Build a partir do source
