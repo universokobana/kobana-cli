@@ -1,8 +1,11 @@
 mod auth;
+mod auth_commands;
 mod commands;
 mod config;
+mod credential_store;
 mod executor;
 mod formatter;
+mod oauth;
 mod schema;
 
 use kobana::error::KobanaError;
@@ -47,7 +50,7 @@ async fn run() -> Result<(), KobanaError> {
     }
 
     if let Some(("auth", auth_matches)) = matches.subcommand() {
-        return handle_auth_stub(auth_matches);
+        return auth_commands::handle_auth(auth_matches).await;
     }
 
     // Resolve endpoint
@@ -74,47 +77,4 @@ async fn run() -> Result<(), KobanaError> {
 
     // Execute
     executor::execute(&client, endpoint, &method_matches, &matches).await
-}
-
-/// Stub for auth commands (implemented fully in Phase 2)
-fn handle_auth_stub(matches: &clap::ArgMatches) -> Result<(), KobanaError> {
-    match matches.subcommand() {
-        Some(("status", _)) => {
-            match auth::resolve_token() {
-                Ok(_) => {
-                    let env = config::resolve_environment(false, false);
-                    println!(
-                        "{}",
-                        serde_json::json!({
-                            "authenticated": true,
-                            "method": "KOBANA_TOKEN",
-                            "environment": format!("{:?}", env),
-                        })
-                    );
-                }
-                Err(_) => {
-                    println!(
-                        "{}",
-                        serde_json::json!({
-                            "authenticated": false,
-                            "message": "No authentication configured. Set KOBANA_TOKEN or run 'kobana auth login'.",
-                        })
-                    );
-                }
-            }
-            Ok(())
-        }
-        Some(("login", _)) => Err(KobanaError::Internal(
-            "OAuth login not yet implemented. Use KOBANA_TOKEN env var.".into(),
-        )),
-        Some(("logout", _)) => Err(KobanaError::Internal(
-            "OAuth logout not yet implemented.".into(),
-        )),
-        Some(("export", _)) => Err(KobanaError::Internal(
-            "Credential export not yet implemented.".into(),
-        )),
-        _ => Err(KobanaError::Validation(
-            "Unknown auth subcommand".into(),
-        )),
-    }
 }

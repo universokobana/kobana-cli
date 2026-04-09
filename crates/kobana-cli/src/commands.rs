@@ -151,7 +151,28 @@ pub fn build_root_command(v1_tree: &CommandNode, v2_tree: &CommandNode) -> Comma
             .about("Authentication management")
             .subcommand_required(true)
             .arg_required_else_help(true)
-            .subcommand(Command::new("login").about("Login to Kobana"))
+            .subcommand(
+                Command::new("login")
+                    .about("Login to Kobana (OAuth)")
+                    .arg(
+                        Arg::new("client-id")
+                            .long("client-id")
+                            .help("OAuth client ID")
+                            .value_name("ID"),
+                    )
+                    .arg(
+                        Arg::new("client-secret")
+                            .long("client-secret")
+                            .help("OAuth client secret")
+                            .value_name("SECRET"),
+                    )
+                    .arg(
+                        Arg::new("production")
+                            .long("production")
+                            .action(clap::ArgAction::SetTrue)
+                            .help("Use production environment"),
+                    ),
+            )
             .subcommand(Command::new("logout").about("Remove saved credentials"))
             .subcommand(Command::new("status").about("Show authentication status"))
             .subcommand(Command::new("export").about("Export credentials as JSON")),

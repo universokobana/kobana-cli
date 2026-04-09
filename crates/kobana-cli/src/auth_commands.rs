@@ -1,0 +1,171 @@
+use kobana::error::KobanaError;
+
+use crate::config;
+use crate::credential_store::{self, StoredCredentials};
+use crate::oauth;
+
+/// Handle `kobana auth <subcommand>`
+pub async fn handle_auth(matches: &clap::ArgMatches) -> Result<(), KobanaError> {
+    match matches.subcommand() {
+        Some(("login", login_matches)) => handle_login(login_matches).await,
+        Some(("logout", _)) => handle_logout(),
+        Some(("status", _)) => handle_status(),
+        Some(("export", _)) => handle_export(),
+        _ => Err(KobanaError::Validation("Unknown auth subcommand".into())),
+    }
+}
+
+async fn handle_login(matches: &clap::ArgMatches) -> Result<(), KobanaError> {
+    let client_id = matches.get_one::<String>("client-id").cloned();
+    let client_secret = matches.get_one::<String>("client-secret").cloned();
+    let production = matches.get_flag("production");
+    let env = if production {
+        config::Environment::Production
+    } else {
+        config::resolve_environment(false, false)
+    };
+    let is_production = env == config::Environment::Production;
+
+    let token_response = if let (Some(id), Some(secret)) = (client_id, client_secret) {
+        // Client credentials flow
+        eprintln!("Authenticating with client credentials...");
+        oauth::client_credentials_flow(&id, &secret, is_production).await?
+    } else {
+        // Authorization code flow — need client_id from env or prompt
+        let id = std::env::var("KOBANA_CLIENT_ID").map_err(|_| {
+            KobanaError::Auth(
+                "Client ID required. Use --client-id or set KOBANA_CLIENT_ID".into(),
+            )
+        })?;
+        let secret = std::env::var("KOBANA_CLIENT_SECRET").map_err(|_| {
+            KobanaError::Auth(
+                "Client secret required. Use --client-secret or set KOBANA_CLIENT_SECRET".into(),
+            )
+        })?;
+        oauth::authorization_code_flow(&id, &secret, is_production).await?
+    };
+
+    let expires_at = token_response.expires_in.map(|secs| {
+        chrono::Utc::now().timestamp() + secs
+    });
+
+    let creds = StoredCredentials {
+        access_token: token_response.access_token,
+        refresh_token: token_response.refresh_token,
+        token_type: token_response.token_type.unwrap_or_else(|| "Bearer".into()),
+        expires_at,
+        environment: if is_production {
+            "production".into()
+        } else {
+            "sandbox".into()
+        },
+    };
+
+    credential_store::save_credentials(&creds)?;
+
+    println!(
+        "{}",
+        serde_json::json!({
+            "authenticated": true,
+            "environment": creds.environment,
+            "expires_at": creds.expires_at,
+        })
+    );
+
+    Ok(())
+}
+
+fn handle_logout() -> Result<(), KobanaError> {
+    credential_store::delete_credentials()?;
+    println!(
+        "{}",
+        serde_json::json!({
+            "logged_out": true,
+            "message": "Credentials removed."
+        })
+    );
+    Ok(())
+}
+
+fn handle_status() -> Result<(), KobanaError> {
+    // Check env var first
+    if let Ok(token) = std::env::var("KOBANA_TOKEN") {
+        if !token.is_empty() {
+            let env = config::resolve_environment(false, false);
+            println!(
+                "{}",
+                serde_json::json!({
+                    "authenticated": true,
+                    "method": "KOBANA_TOKEN",
+                    "environment": format!("{:?}", env),
+                })
+            );
+            return Ok(());
+        }
+    }
+
+    // Check saved credentials
+    match credential_store::load_credentials() {
+        Ok(creds) => {
+            let expired = creds
+                .expires_at
+                .map(|exp| chrono::Utc::now().timestamp() > exp)
+                .unwrap_or(false);
+
+            println!(
+                "{}",
+                serde_json::json!({
+                    "authenticated": true,
+                    "method": "saved_credentials",
+                    "environment": creds.environment,
+                    "expired": expired,
+                    "expires_at": creds.expires_at,
+                    "has_refresh_token": creds.refresh_token.is_some(),
+                })
+            );
+        }
+        Err(_) => {
+            println!(
+                "{}",
+                serde_json::json!({
+                    "authenticated": false,
+                    "message": "No authentication configured. Set KOBANA_TOKEN or run 'kobana auth login'.",
+                })
+            );
+        }
+    }
+
+    Ok(())
+}
+
+fn handle_export() -> Result<(), KobanaError> {
+    // Check env var first
+    if let Ok(token) = std::env::var("KOBANA_TOKEN") {
+        if !token.is_empty() {
+            println!(
+                "{}",
+                serde_json::json!({
+                    "access_token": token,
+                    "token_type": "Bearer",
+                    "source": "KOBANA_TOKEN",
+                })
+            );
+            return Ok(());
+        }
+    }
+
+    let creds = credential_store::load_credentials()?;
+    println!(
+        "{}",
+        serde_json::json!({
+            "access_token": creds.access_token,
+            "refresh_token": creds.refresh_token,
+            "token_type": creds.token_type,
+            "expires_at": creds.expires_at,
+            "environment": creds.environment,
+            "source": "saved_credentials",
+        })
+    );
+
+    Ok(())
+}
