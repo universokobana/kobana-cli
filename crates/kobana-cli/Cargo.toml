@@ -1,0 +1,26 @@
+[package]
+name = "kobana-cli"
+version = "0.1.0"
+edition = "2021"
+default-run = "kobana"
+
+[[bin]]
+name = "kobana"
+path = "src/main.rs"
+
+[dependencies]
+kobana = { path = "../kobana" }
+clap = { version = "4", features = ["derive", "string"] }
+reqwest = { version = "0.12", features = ["stream", "json", "rustls-tls"], default-features = false }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+dirs = "5"
+dotenvy = "0.15"
+uuid = { version = "1", features = ["v4"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+chrono = "0.4"
+comfy-table = "7"
+csv = "1"

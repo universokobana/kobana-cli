@@ -1,0 +1,3 @@
+[workspace]
+resolver = "2"
+members = ["crates/kobana", "crates/kobana-cli"]
