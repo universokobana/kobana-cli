@@ -112,7 +112,7 @@ pub async fn authorization_code_flow(
     let listener = TcpListener::bind("127.0.0.1:0")
         .map_err(|e| KobanaError::Internal(format!("failed to bind callback server: {e}")))?;
     let port = listener.local_addr().unwrap().port();
-    let redirect_uri = format!("http://localhost:{port}");
+    let redirect_uri = format!("http://127.0.0.1:{port}");
 
     // Generate PKCE pair
     let code_verifier = generate_code_verifier();
