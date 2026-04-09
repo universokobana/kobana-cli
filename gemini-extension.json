@@ -1,0 +1,6 @@
+{
+  "name": "kobana-cli",
+  "version": "latest",
+  "description": "CLI tool for managing Kobana financial API resources dynamically using OpenAPI specs.",
+  "contextFileName": "CONTEXT.md"
+}
