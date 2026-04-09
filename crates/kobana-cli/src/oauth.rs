@@ -89,6 +89,7 @@ pub async fn client_credentials_flow(
 }
 
 /// Refresh an access token
+#[allow(dead_code)]
 pub async fn refresh_token(
     refresh_token: &str,
     production: bool,

@@ -1,6 +1,8 @@
 use clap::{Arg, Command};
 use kobana::spec::{CommandNode, ResolvedEndpoint};
 
+use crate::helpers;
+
 /// Build a clap Command tree from a CommandNode tree
 pub fn build_command_tree(node: &CommandNode, name: &str) -> Command {
     let mut cmd = Command::new(name.to_string())
@@ -166,6 +168,23 @@ pub fn build_root_command(v1_tree: &CommandNode, v2_tree: &CommandNode) -> Comma
                     .long("list")
                     .action(clap::ArgAction::SetTrue)
                     .help("List available services/resources"),
+            ),
+    );
+
+    // Add helper commands
+    for helper in helpers::all_helpers() {
+        root = root.subcommand(helper.command());
+    }
+
+    // Add completions command
+    root = root.subcommand(
+        Command::new("completions")
+            .about("Generate shell completions")
+            .arg(
+                Arg::new("shell")
+                    .help("Shell to generate completions for (bash, zsh, fish, powershell, elvish)")
+                    .required(true)
+                    .value_name("SHELL"),
             ),
     );
 

@@ -1,10 +1,12 @@
 mod auth;
 mod auth_commands;
 mod commands;
+mod completions;
 mod config;
 mod credential_store;
 mod executor;
 mod formatter;
+mod helpers;
 mod logging;
 mod oauth;
 mod pagination;
@@ -52,6 +54,31 @@ async fn run() -> Result<(), KobanaError> {
 
     if let Some(("auth", auth_matches)) = matches.subcommand() {
         return auth_commands::handle_auth(auth_matches).await;
+    }
+
+    if let Some(("completions", comp_matches)) = matches.subcommand() {
+        let shell = comp_matches.get_one::<String>("shell").unwrap();
+        let mut cmd = commands::build_root_command(&v1_tree, &v2_tree);
+        return completions::generate_completions(shell, &mut cmd);
+    }
+
+    // Check for helper commands (+emitir, +cobrar, etc.)
+    if let Some((sub_name, sub_matches)) = matches.subcommand() {
+        if sub_name.starts_with('+') {
+            if let Some(helper) = helpers::find_helper(sub_name) {
+                let sandbox = matches.get_flag("sandbox");
+                let production = matches.get_flag("production");
+                let env = config::resolve_environment(sandbox, production);
+                let helper_dry_run = sub_matches.get_flag("dry-run");
+                let token = if helper_dry_run {
+                    auth::resolve_token().unwrap_or_default()
+                } else {
+                    auth::resolve_token()?
+                };
+                let client = kobana::client::KobanaClient::new(env.base_url(), &token)?;
+                return helper.execute(&client, sub_matches).await;
+            }
+        }
     }
 
     // Resolve endpoint
