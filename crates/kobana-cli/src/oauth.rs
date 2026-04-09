@@ -4,7 +4,8 @@ use sha2::Digest;
 use std::io::{BufRead, Write};
 use std::net::TcpListener;
 
-const OAUTH_AUTHORIZE_URL: &str = "https://app.kobana.com.br/oauth/authorize";
+const OAUTH_AUTHORIZE_URL_SANDBOX: &str = "https://app-sandbox.kobana.com.br/oauth/authorize";
+const OAUTH_AUTHORIZE_URL_PRODUCTION: &str = "https://app.kobana.com.br/oauth/authorize";
 const OAUTH_TOKEN_URL_SANDBOX: &str = "https://api-sandbox.kobana.com.br/oauth/token";
 const OAUTH_TOKEN_URL_PRODUCTION: &str = "https://api.kobana.com.br/oauth/token";
 
@@ -117,8 +118,14 @@ pub async fn authorization_code_flow(
     let code_verifier = generate_code_verifier();
     let code_challenge = generate_code_challenge(&code_verifier);
 
+    let authorize_base = if production {
+        OAUTH_AUTHORIZE_URL_PRODUCTION
+    } else {
+        OAUTH_AUTHORIZE_URL_SANDBOX
+    };
+
     let authorize_url = format!(
-        "{OAUTH_AUTHORIZE_URL}?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&code_challenge={code_challenge}&code_challenge_method=S256&scope={scopes}"
+        "{authorize_base}?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&code_challenge={code_challenge}&code_challenge_method=S256&scope={scopes}"
     );
 
     eprintln!("Opening browser for authorization...");

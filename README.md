@@ -49,16 +49,19 @@ Obtenha o token em *Integracões > API > Token de API* na interface da Kobana.
 export KOBANA_TOKEN=seu_token_aqui
 ```
 
-### OAuth
+### OAuth (PKCE)
+
+O CLI usa OAuth com PKCE — funciona sem configurar nada:
 
 ```bash
-# Client credentials
-kobana auth login --client-id <ID> --client-secret <SECRET>
-
-# Authorization code (abre browser)
-export KOBANA_CLIENT_ID=seu_client_id
-export KOBANA_CLIENT_SECRET=seu_client_secret
+# Login (abre browser, zero config)
 kobana auth login
+
+# Login com escopos específicos
+kobana auth login --scopes "charge.pix,financial.accounts,login"
+
+# Client credentials (para apps server-side)
+kobana auth login --client-id <ID> --client-secret <SECRET>
 
 # Ver status
 kobana auth status
@@ -79,6 +82,32 @@ Credenciais salvas são criptografadas com AES-256-GCM. A chave fica no keyring 
 | 1 | Token direto | `KOBANA_TOKEN` |
 | 2 | Arquivo de credenciais | `KOBANA_CREDENTIALS_FILE` |
 | 3 | Credenciais salvas | `kobana auth login` |
+
+### Ambientes
+
+O CLI opera em dois ambientes. **Sandbox é o default** — use para testes sem afetar dados reais.
+
+| Ambiente | API | OAuth | Flag |
+|----------|-----|-------|------|
+| Sandbox | `api-sandbox.kobana.com.br` | `app-sandbox.kobana.com.br` | `--sandbox` (default) |
+| Produção | `api.kobana.com.br` | `app.kobana.com.br` | `--production` |
+
+```bash
+# Sandbox (default — não precisa de flag)
+kobana charge pix list
+
+# Produção
+kobana charge pix list --production
+
+# Via variável de ambiente
+export KOBANA_ENVIRONMENT=production
+kobana charge pix list
+
+# Login em produção
+kobana auth login --production
+```
+
+Os tokens são **diferentes entre ambientes** — um token de sandbox não funciona em produção e vice-versa.
 
 ## Uso
 
