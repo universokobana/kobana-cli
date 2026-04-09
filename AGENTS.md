@@ -15,6 +15,29 @@ cargo clippy -- -D warnings  # Lint check
 cargo test           # Run tests
 ```
 
+## CI/CD & Releases
+
+CI runs on every push and PR to `main` via GitHub Actions (`.github/workflows/ci.yml`):
+
+1. **Test** — `cargo test --all` + `cargo clippy -- -D warnings` on Ubuntu
+2. **Build** — cross-platform matrix: Linux (amd64/arm64), macOS (amd64/arm64), Windows (amd64)
+3. **Release** — triggered when a commit on `main` starts with `release:`. Creates a GitHub Release with binaries for all 5 targets.
+
+### How to create a release
+
+1. Update version in `crates/kobana-cli/Cargo.toml` and `crates/kobana/Cargo.toml`
+2. Update `CHANGELOG.md` with the new version section
+3. Commit with the `release:` prefix:
+
+```bash
+git add -A
+git commit -m "release: v0.2.0"
+git push
+```
+
+> [!IMPORTANT]
+> The release job keys off the commit message prefix `release:`. Without this prefix, CI will build and test but will **not** create a GitHub Release. Do not use this prefix for non-release commits.
+
 ## Architecture
 
 The CLI uses a **two-phase argument parsing** strategy:

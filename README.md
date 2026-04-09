@@ -214,6 +214,43 @@ kobana completions fish > ~/.config/fish/completions/kobana.fish
 kobana completions powershell > kobana.ps1
 ```
 
+## CI/CD & Releases
+
+O projeto usa GitHub Actions para CI e releases automatizadas.
+
+### CI
+
+Toda push e PR na `main` executa:
+
+1. `cargo test` + `cargo clippy`
+2. Build cross-platform (Linux amd64/arm64, macOS amd64/arm64, Windows amd64)
+
+### Criar uma release
+
+1. Atualize a versão em `crates/kobana-cli/Cargo.toml` e `crates/kobana/Cargo.toml`
+2. Atualize o `CHANGELOG.md`
+3. Commit com prefixo `release:`:
+
+```bash
+git add -A
+git commit -m "release: v0.2.0"
+git push
+```
+
+O workflow detecta o prefixo `release:` no commit message, compila os 5 targets e cria uma GitHub Release com os binários anexados.
+
+### Download de binários
+
+Binários pré-compilados estão disponíveis na [página de Releases](../../releases):
+
+| Plataforma | Arquivo |
+|------------|---------|
+| Linux x86_64 | `kobana-linux-amd64` |
+| Linux ARM64 | `kobana-linux-arm64` |
+| macOS Intel | `kobana-darwin-amd64` |
+| macOS Apple Silicon | `kobana-darwin-arm64` |
+| Windows x86_64 | `kobana-windows-amd64.exe` |
+
 ## Arquitetura
 
 ```
