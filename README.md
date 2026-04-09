@@ -12,10 +12,27 @@ kobana <servico> <recurso> <metodo> [flags]
 
 ## Instalação
 
+### Homebrew (macOS e Linux)
+
+```bash
+brew tap universokobana/tap
+brew install kobana
+```
+
+Para atualizar:
+
+```bash
+brew update && brew upgrade kobana
+```
+
+### Binários pré-compilados
+
+Baixe o binário para sua plataforma na [página de Releases](https://github.com/universokobana/kobana-cli/releases/latest) e coloque no seu `PATH`.
+
 ### Build a partir do source
 
 ```bash
-git clone https://github.com/kobana/kobana-cli.git
+git clone https://github.com/universokobana/kobana-cli.git
 cd kobana-cli
 cargo install --path crates/kobana-cli
 ```
