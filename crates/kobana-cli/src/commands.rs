@@ -211,7 +211,7 @@ pub fn build_root_command(v1_tree: &CommandNode, v2_tree: &CommandNode) -> Comma
                     .arg(
                         Arg::new("scopes")
                             .long("scopes")
-                            .help("OAuth scopes (comma-separated, default: all)")
+                            .help("OAuth scopes (comma-separated, default: read)")
                             .value_name("SCOPES"),
                     )
                     .arg(

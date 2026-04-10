@@ -67,8 +67,8 @@ O CLI usa OAuth com PKCE — funciona sem configurar nada:
 # Login (abre browser, zero config)
 kobana auth login
 
-# Login com escopos específicos
-kobana auth login --scopes "charge.pix,financial.accounts,login"
+# Login com escopos específicos (default: read)
+kobana auth login --scopes "read,write"
 
 # Client credentials (para apps server-side)
 kobana auth login --client-id <ID> --client-secret <SECRET>
