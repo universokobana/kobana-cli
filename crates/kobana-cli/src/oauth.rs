@@ -6,8 +6,8 @@ use std::net::TcpListener;
 
 const OAUTH_AUTHORIZE_URL_SANDBOX: &str = "https://app-sandbox.kobana.com.br/oauth/authorize";
 const OAUTH_AUTHORIZE_URL_PRODUCTION: &str = "https://app.kobana.com.br/oauth/authorize";
-const OAUTH_TOKEN_URL_SANDBOX: &str = "https://api-sandbox.kobana.com.br/oauth/token";
-const OAUTH_TOKEN_URL_PRODUCTION: &str = "https://api.kobana.com.br/oauth/token";
+const OAUTH_TOKEN_URL_SANDBOX: &str = "https://app-sandbox.kobana.com.br/oauth/token";
+const OAUTH_TOKEN_URL_PRODUCTION: &str = "https://app.kobana.com.br/oauth/token";
 
 /// Default public client ID for the Kobana CLI (PKCE, no secret needed)
 pub const DEFAULT_CLIENT_ID: &str = "kobana-cli";
