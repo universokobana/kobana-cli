@@ -1,20 +1,95 @@
+use crate::config::Environment;
 use kobana::error::KobanaError;
 use serde::Deserialize;
 use sha2::Digest;
 use std::io::{BufRead, Write};
 use std::net::TcpListener;
 
-const OAUTH_AUTHORIZE_URL_SANDBOX: &str = "https://app-sandbox.kobana.com.br/oauth/authorize";
-const OAUTH_AUTHORIZE_URL_PRODUCTION: &str = "https://app.kobana.com.br/oauth/authorize";
-const OAUTH_TOKEN_URL_SANDBOX: &str = "https://app-sandbox.kobana.com.br/oauth/token";
-const OAUTH_TOKEN_URL_PRODUCTION: &str = "https://app.kobana.com.br/oauth/token";
+fn oauth_authorize_url(env: &Environment) -> &'static str {
+    match env {
+        Environment::Sandbox => "https://app-sandbox.kobana.com.br/oauth/authorize",
+        Environment::Production => "https://app.kobana.com.br/oauth/authorize",
+        Environment::Development => "http://localhost:5005/oauth/authorize",
+    }
+}
+
+fn oauth_token_url(env: &Environment) -> &'static str {
+    match env {
+        Environment::Sandbox => "https://app-sandbox.kobana.com.br/oauth/token",
+        Environment::Production => "https://app.kobana.com.br/oauth/token",
+        Environment::Development => "http://localhost:5005/oauth/token",
+    }
+}
 
 /// Default public client ID for the Kobana CLI (PKCE, no secret needed)
 pub const DEFAULT_CLIENT_ID: &str = "kobana-cli";
 
-/// Default scopes requested by the CLI (read-only)
+/// All available Kobana OAuth scopes
+pub const ALL_SCOPES: &[&str] = &[
+    "admin.subaccounts",
+    "admin.users",
+    "automation.email_accounts",
+    "automation.email_deliveries",
+    "automation.sms_accounts",
+    "automation.sms_deliveries",
+    "automation.webhook_deliveries",
+    "automation.webhooks",
+    "billing.transactions",
+    "charge.automatic_pix.accounts",
+    "charge.automatic_pix.locations",
+    "charge.automatic_pix.pix",
+    "charge.automatic_pix.recurrences",
+    "charge.automatic_pix.requests",
+    "charge.bank_billet_accounts",
+    "charge.bank_billet_payments",
+    "charge.bank_billet_registrations",
+    "charge.bank_billets",
+    "charge.customer_subscriptions",
+    "charge.installments",
+    "charge.payments",
+    "charge.pix",
+    "charge.pix_accounts",
+    "core.providers",
+    "crm.customers",
+    "crm.people",
+    "data.bank_billet_queries",
+    "financial.accounts",
+    "financial.balances",
+    "financial.providers",
+    "financial.statement_transactions",
+    "integration.certificates",
+    "integration.connections",
+    "integration.discharges",
+    "integration.edi_boxes",
+    "integration.remittances",
+    "login",
+    "mailbox.entries",
+    "mailbox.files",
+    "partner.bank_contracts",
+    "payment.bank_billets",
+    "payment.batches",
+    "payment.darfs",
+    "payment.dda",
+    "payment.dda.bank_billets",
+    "payment.dda_accounts",
+    "payment.payments",
+    "payment.pix",
+    "payment.taxes",
+    "payment.utilities",
+    "security.access_tokens",
+    "system.events",
+    "system.imports",
+    "system.reports",
+    "transfer.batches",
+    "transfer.internal",
+    "transfer.pix",
+    "transfer.ted",
+    "transfer.transfers",
+];
+
+/// Default scopes requested by the CLI (all scopes)
 pub fn default_scopes() -> String {
-    "read".to_string()
+    ALL_SCOPES.join("+")
 }
 
 #[derive(Debug, Deserialize)]
@@ -44,7 +119,8 @@ pub async fn authorization_code_flow(
     client_id: &str,
     client_secret: Option<&str>,
     scopes: &str,
-    production: bool,
+    env: &Environment,
+    verbose: bool,
 ) -> Result<TokenResponse, KobanaError> {
     let listener = TcpListener::bind("127.0.0.1:0")
         .map_err(|e| KobanaError::Internal(format!("failed to bind callback server: {e}")))?;
@@ -55,11 +131,7 @@ pub async fn authorization_code_flow(
     let code_verifier = generate_code_verifier();
     let code_challenge = generate_code_challenge(&code_verifier);
 
-    let authorize_base = if production {
-        OAUTH_AUTHORIZE_URL_PRODUCTION
-    } else {
-        OAUTH_AUTHORIZE_URL_SANDBOX
-    };
+    let authorize_base = oauth_authorize_url(env);
 
     let authorize_url = format!(
         "{authorize_base}?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&code_challenge={code_challenge}&code_challenge_method=S256&scope={scopes}"
@@ -73,11 +145,7 @@ pub async fn authorization_code_flow(
     eprintln!("Waiting for authorization callback on port {port}...");
     let code = wait_for_callback(listener)?;
 
-    let token_url = if production {
-        OAUTH_TOKEN_URL_PRODUCTION
-    } else {
-        OAUTH_TOKEN_URL_SANDBOX
-    };
+    let token_url = oauth_token_url(env);
 
     exchange_code(
         token_url,
@@ -86,6 +154,7 @@ pub async fn authorization_code_flow(
         &code,
         &redirect_uri,
         &code_verifier,
+        verbose,
     )
     .await
 }
@@ -94,13 +163,9 @@ pub async fn authorization_code_flow(
 pub async fn client_credentials_flow(
     client_id: &str,
     client_secret: &str,
-    production: bool,
+    env: &Environment,
 ) -> Result<TokenResponse, KobanaError> {
-    let token_url = if production {
-        OAUTH_TOKEN_URL_PRODUCTION
-    } else {
-        OAUTH_TOKEN_URL_SANDBOX
-    };
+    let token_url = oauth_token_url(env);
 
     let client = reqwest::Client::new();
     let response = client
@@ -131,13 +196,9 @@ pub async fn client_credentials_flow(
 #[allow(dead_code)]
 pub async fn refresh_token(
     refresh_token: &str,
-    production: bool,
+    env: &Environment,
 ) -> Result<TokenResponse, KobanaError> {
-    let token_url = if production {
-        OAUTH_TOKEN_URL_PRODUCTION
-    } else {
-        OAUTH_TOKEN_URL_SANDBOX
-    };
+    let token_url = oauth_token_url(env);
 
     let client = reqwest::Client::new();
     let response = client
@@ -170,8 +231,13 @@ async fn exchange_code(
     code: &str,
     redirect_uri: &str,
     code_verifier: &str,
+    verbose: bool,
 ) -> Result<TokenResponse, KobanaError> {
-    let client = reqwest::Client::new();
+    let user_agent = format!("kobana-cli/{}", env!("CARGO_PKG_VERSION"));
+    let client = reqwest::Client::builder()
+        .user_agent(&user_agent)
+        .build()
+        .map_err(|e| KobanaError::Internal(format!("failed to build client: {e}")))?;
 
     let mut params = vec![
         ("grant_type", "authorization_code"),
@@ -188,15 +254,45 @@ async fn exchange_code(
         params.push(("client_secret", &secret_string));
     }
 
+    if verbose {
+        eprintln!("\n--- POST {token_url} ---");
+        eprintln!("User-Agent: {user_agent}");
+        eprintln!("Content-Type: application/x-www-form-urlencoded");
+        eprintln!("Accept: application/json");
+        eprintln!("Body (form):");
+        for (k, v) in &params {
+            let display = if *k == "code" || *k == "code_verifier" || *k == "client_secret" {
+                format!("{}...", &v[..v.len().min(8)])
+            } else {
+                v.to_string()
+            };
+            eprintln!("  {k}={display}");
+        }
+        eprintln!("---");
+    }
+
     let response = client
         .post(token_url)
+        .header("Accept", "application/json")
         .form(&params)
         .send()
         .await
         .map_err(|e| KobanaError::Auth(format!("token exchange failed: {e}")))?;
 
     let status = response.status();
+    let version = response.version();
+    let headers = response.headers().clone();
     let body = response.text().await.unwrap_or_default();
+
+    if verbose {
+        eprintln!("--- Response: {status} ({version:?}) ---");
+        for (name, value) in headers.iter() {
+            eprintln!("{name}: {}", value.to_str().unwrap_or("<binary>"));
+        }
+        eprintln!();
+        eprintln!("Body ({} bytes): {body}", body.len());
+        eprintln!("---\n");
+    }
 
     if !status.is_success() {
         return Err(KobanaError::Auth(format!(

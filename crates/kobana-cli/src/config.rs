@@ -5,6 +5,7 @@ pub enum Environment {
     #[default]
     Sandbox,
     Production,
+    Development,
 }
 
 impl Environment {
@@ -12,6 +13,7 @@ impl Environment {
         match self {
             Self::Sandbox => "https://api-sandbox.kobana.com.br",
             Self::Production => "https://api.kobana.com.br",
+            Self::Development => "http://localhost:5005/api",
         }
     }
 }
@@ -38,7 +40,10 @@ pub fn load_dotenv() {
 }
 
 /// Resolve the environment from flags or env var
-pub fn resolve_environment(sandbox: bool, production: bool) -> Environment {
+pub fn resolve_environment(sandbox: bool, production: bool, development: bool) -> Environment {
+    if development {
+        return Environment::Development;
+    }
     if production {
         return Environment::Production;
     }
@@ -47,6 +52,7 @@ pub fn resolve_environment(sandbox: bool, production: bool) -> Environment {
     }
     match std::env::var("KOBANA_ENVIRONMENT").as_deref() {
         Ok("production") => Environment::Production,
+        Ok("development") => Environment::Development,
         _ => Environment::Sandbox,
     }
 }

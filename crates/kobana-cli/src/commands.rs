@@ -91,6 +91,13 @@ pub fn build_root_command(v1_tree: &CommandNode, v2_tree: &CommandNode) -> Comma
                 .help("Use production environment"),
         )
         .arg(
+            Arg::new("development")
+                .long("development")
+                .global(true)
+                .action(clap::ArgAction::SetTrue)
+                .help("Use development environment (localhost:5005)"),
+        )
+        .arg(
             Arg::new("verbose")
                 .long("verbose")
                 .global(true)
@@ -211,7 +218,7 @@ pub fn build_root_command(v1_tree: &CommandNode, v2_tree: &CommandNode) -> Comma
                     .arg(
                         Arg::new("scopes")
                             .long("scopes")
-                            .help("OAuth scopes (comma-separated, default: read)")
+                            .help("OAuth scopes (comma-separated, default: all)")
                             .value_name("SCOPES"),
                     )
                     .arg(

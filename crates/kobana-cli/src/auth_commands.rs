@@ -5,9 +5,12 @@ use crate::credential_store::{self, StoredCredentials};
 use crate::oauth;
 
 /// Handle `kobana auth <subcommand>`
-pub async fn handle_auth(matches: &clap::ArgMatches) -> Result<(), KobanaError> {
+pub async fn handle_auth(
+    matches: &clap::ArgMatches,
+    root_matches: &clap::ArgMatches,
+) -> Result<(), KobanaError> {
     match matches.subcommand() {
-        Some(("login", login_matches)) => handle_login(login_matches).await,
+        Some(("login", login_matches)) => handle_login(login_matches, root_matches).await,
         Some(("logout", _)) => handle_logout(),
         Some(("status", _)) => handle_status(),
         Some(("export", _)) => handle_export(),
@@ -15,16 +18,22 @@ pub async fn handle_auth(matches: &clap::ArgMatches) -> Result<(), KobanaError> 
     }
 }
 
-async fn handle_login(matches: &clap::ArgMatches) -> Result<(), KobanaError> {
+async fn handle_login(
+    matches: &clap::ArgMatches,
+    root_matches: &clap::ArgMatches,
+) -> Result<(), KobanaError> {
+    let verbose = root_matches.get_flag("verbose");
     let client_id = matches.get_one::<String>("client-id").cloned();
     let client_secret = matches.get_one::<String>("client-secret").cloned();
     let production = matches.get_flag("production");
-    let env = if production {
+    let development = matches.get_flag("development");
+    let env = if development {
+        config::Environment::Development
+    } else if production {
         config::Environment::Production
     } else {
-        config::resolve_environment(false, false)
+        config::resolve_environment(false, false, false)
     };
-    let is_production = env == config::Environment::Production;
 
     // Resolve scopes: --scopes flag or all scopes by default
     let scopes = matches
@@ -35,7 +44,7 @@ async fn handle_login(matches: &clap::ArgMatches) -> Result<(), KobanaError> {
     let token_response = if let (Some(id), Some(secret)) = (&client_id, &client_secret) {
         // Client credentials flow (requires both id + secret)
         eprintln!("Authenticating with client credentials...");
-        oauth::client_credentials_flow(id, secret, is_production).await?
+        oauth::client_credentials_flow(id, secret, &env).await?
     } else {
         // Authorization Code + PKCE flow
         // Priority: --client-id flag > KOBANA_CLIENT_ID env > default "kobana-cli"
@@ -48,12 +57,18 @@ async fn handle_login(matches: &clap::ArgMatches) -> Result<(), KobanaError> {
             .or_else(|| std::env::var("KOBANA_CLIENT_SECRET").ok());
 
         eprintln!("Authenticating with PKCE (client: {id})...");
-        oauth::authorization_code_flow(&id, secret.as_deref(), &scopes, is_production).await?
+        oauth::authorization_code_flow(&id, secret.as_deref(), &scopes, &env, verbose).await?
     };
 
     let expires_at = token_response
         .expires_in
         .map(|secs| chrono::Utc::now().timestamp() + secs);
+
+    let env_name = match env {
+        config::Environment::Production => "production",
+        config::Environment::Sandbox => "sandbox",
+        config::Environment::Development => "development",
+    };
 
     let creds = StoredCredentials {
         access_token: token_response.access_token,
@@ -62,11 +77,7 @@ async fn handle_login(matches: &clap::ArgMatches) -> Result<(), KobanaError> {
             .token_type
             .unwrap_or_else(|| "Bearer".into()),
         expires_at,
-        environment: if is_production {
-            "production".into()
-        } else {
-            "sandbox".into()
-        },
+        environment: env_name.into(),
     };
 
     credential_store::save_credentials(&creds)?;
@@ -98,7 +109,7 @@ fn handle_logout() -> Result<(), KobanaError> {
 fn handle_status() -> Result<(), KobanaError> {
     if let Ok(token) = std::env::var("KOBANA_TOKEN") {
         if !token.is_empty() {
-            let env = config::resolve_environment(false, false);
+            let env = config::resolve_environment(false, false, false);
             println!(
                 "{}",
                 serde_json::json!({

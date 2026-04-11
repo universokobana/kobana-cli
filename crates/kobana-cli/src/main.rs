@@ -53,7 +53,7 @@ async fn run() -> Result<(), KobanaError> {
     }
 
     if let Some(("auth", auth_matches)) = matches.subcommand() {
-        return auth_commands::handle_auth(auth_matches).await;
+        return auth_commands::handle_auth(auth_matches, &matches).await;
     }
 
     if let Some(("completions", comp_matches)) = matches.subcommand() {
@@ -68,7 +68,8 @@ async fn run() -> Result<(), KobanaError> {
             if let Some(helper) = helpers::find_helper(sub_name) {
                 let sandbox = matches.get_flag("sandbox");
                 let production = matches.get_flag("production");
-                let env = config::resolve_environment(sandbox, production);
+                let development = matches.get_flag("development");
+                let env = config::resolve_environment(sandbox, production, development);
                 let helper_dry_run = sub_matches.get_flag("dry-run");
                 let token = if helper_dry_run {
                     auth::resolve_token().unwrap_or_default()
@@ -90,7 +91,8 @@ async fn run() -> Result<(), KobanaError> {
     // Resolve environment
     let sandbox = matches.get_flag("sandbox");
     let production = matches.get_flag("production");
-    let env = config::resolve_environment(sandbox, production);
+    let development = matches.get_flag("development");
+    let env = config::resolve_environment(sandbox, production, development);
 
     // For dry-run, we don't need auth
     let dry_run = matches.get_flag("dry-run");
