@@ -230,6 +230,12 @@ pub fn build_root_command(v1_tree: &CommandNode, v2_tree: &CommandNode) -> Comma
                     .long("check")
                     .action(clap::ArgAction::SetTrue)
                     .help("Only check for updates, do not install"),
+            )
+            .arg(
+                Arg::new("json")
+                    .long("json")
+                    .action(clap::ArgAction::SetTrue)
+                    .help("Print output as JSON instead of a human-readable message"),
             ),
     )
 }

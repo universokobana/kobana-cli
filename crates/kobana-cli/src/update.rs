@@ -121,46 +121,105 @@ pub fn compare_versions(a: &str, b: &str) -> std::cmp::Ordering {
 }
 
 /// Handle the `kobana update` command.
-pub async fn handle_update(check_only: bool) -> Result<(), KobanaError> {
+pub async fn handle_update(check_only: bool, as_json: bool) -> Result<(), KobanaError> {
     let current = env!("CARGO_PKG_VERSION").to_string();
     let (latest, release_url) = fetch_latest_release(Duration::from_secs(15)).await?;
     let update_available = compare_versions(&latest, &current) == std::cmp::Ordering::Greater;
     let method = detect_install_method();
     let command = install_command(&method);
 
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&serde_json::json!({
-            "current": current,
-            "latest": latest,
-            "update_available": update_available,
-            "release_url": release_url,
-            "install_method": method.as_str(),
-            "install_command": command,
-        }))
-        .unwrap_or_default()
-    );
-
     // Update the cached timestamp so auto-check doesn't spam the user.
     update_last_check(&latest);
 
-    if !update_available || check_only {
+    if as_json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&serde_json::json!({
+                "current": current,
+                "latest": latest,
+                "update_available": update_available,
+                "release_url": release_url,
+                "install_method": method.as_str(),
+                "install_command": command,
+            }))
+            .unwrap_or_default()
+        );
+        return Ok(());
+    }
+
+    if !update_available {
+        println!("kobana {current} is already up to date.");
+        return Ok(());
+    }
+
+    println!("Update available: kobana {current} → {latest}");
+
+    if check_only {
+        println!("Run: {command}");
+        return Ok(());
+    }
+
+    // Ask for confirmation before running anything destructive.
+    let prompt = match method {
+        InstallMethod::Homebrew | InstallMethod::Cargo => {
+            format!("Run `{command}` now?")
+        }
+        InstallMethod::Standalone => "Download and install the new binary now?".to_string(),
+        InstallMethod::Unknown => {
+            println!("Install method not recognized. Run: {command}");
+            return Ok(());
+        }
+    };
+
+    // Only prompt when stdin is a terminal; otherwise fall back to printing
+    // the command and exiting, so scripts don't hang.
+    if !std::io::IsTerminal::is_terminal(&std::io::stdin()) {
+        println!("Run: {command}");
+        return Ok(());
+    }
+
+    let confirm = inquire::Confirm::new(&prompt)
+        .with_default(true)
+        .prompt()
+        .map_err(|e| KobanaError::Internal(format!("prompt error: {e}")))?;
+
+    if !confirm {
+        println!("Update skipped.");
         return Ok(());
     }
 
     match method {
-        InstallMethod::Homebrew => {
-            eprintln!("Installed via Homebrew. Run: {command}");
-            Ok(())
-        }
-        InstallMethod::Cargo => {
-            eprintln!("Installed via cargo. Run: {command}");
-            Ok(())
-        }
-        InstallMethod::Standalone | InstallMethod::Unknown => {
-            perform_self_update(&latest).await
-        }
+        InstallMethod::Homebrew => run_shell_command("brew", &["upgrade", "kobana"]),
+        InstallMethod::Cargo => run_shell_command(
+            "cargo",
+            &[
+                "install",
+                "--git",
+                "https://github.com/universokobana/kobana-cli",
+                "kobana-cli",
+                "--force",
+            ],
+        ),
+        InstallMethod::Standalone => perform_self_update(&latest).await,
+        InstallMethod::Unknown => Ok(()),
     }
+}
+
+/// Run an external command inline, inheriting stdin/stdout/stderr so the user
+/// sees progress from tools like brew and cargo.
+fn run_shell_command(program: &str, args: &[&str]) -> Result<(), KobanaError> {
+    let status = std::process::Command::new(program)
+        .args(args)
+        .status()
+        .map_err(|e| KobanaError::Internal(format!("failed to spawn {program}: {e}")))?;
+
+    if !status.success() {
+        return Err(KobanaError::Internal(format!(
+            "{program} {} exited with status {status}",
+            args.join(" ")
+        )));
+    }
+    Ok(())
 }
 
 /// Download the release asset for the current platform and replace the

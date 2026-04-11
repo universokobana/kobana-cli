@@ -55,7 +55,8 @@ async fn run() -> Result<(), KobanaError> {
 
     if let Some(("update", update_matches)) = matches.subcommand() {
         let check_only = update_matches.get_flag("check");
-        return update::handle_update(check_only).await;
+        let as_json = update_matches.get_flag("json");
+        return update::handle_update(check_only, as_json).await;
     }
 
     if let Some(("auth", auth_matches)) = matches.subcommand() {
