@@ -344,32 +344,131 @@ fn wait_for_callback(listener: TcpListener) -> Result<String, KobanaError> {
         .read_line(&mut request_line)
         .map_err(|e| KobanaError::Auth(format!("failed to read callback: {e}")))?;
 
-    // Parse the code from the request: GET /?code=xxx HTTP/1.1
-    let code = request_line
+    // Parse the query string from: GET /?code=xxx HTTP/1.1 or /?error=xxx
+    let query: std::collections::HashMap<String, String> = request_line
         .split_whitespace()
-        .nth(1) // URI part
-        .and_then(|uri| {
-            uri.split('?')
-                .nth(1)
-                .and_then(|query| {
-                    query.split('&').find_map(|param| {
-                        let (key, value) = param.split_once('=')?;
-                        if key == "code" {
-                            Some(value.to_string())
-                        } else {
-                            None
-                        }
-                    })
+        .nth(1)
+        .and_then(|uri| uri.split_once('?').map(|(_, q)| q.to_string()))
+        .map(|q| {
+            q.split('&')
+                .filter_map(|param| {
+                    let (key, value) = param.split_once('=')?;
+                    Some((
+                        url_decode(key),
+                        url_decode(value),
+                    ))
                 })
+                .collect()
         })
-        .ok_or_else(|| KobanaError::Auth("no authorization code in callback".into()))?;
+        .unwrap_or_default();
 
-    let response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><body><h2>Autorizado!</h2><p>Pode fechar esta aba e voltar ao terminal.</p></body></html>";
-    let mut writer = std::io::BufWriter::new(&stream);
+    // Always write an HTML response before returning, so the browser tab
+    // shows a meaningful message and the TCP connection is closed cleanly.
+    let result = if let Some(code) = query.get("code") {
+        write_html(
+            &stream,
+            200,
+            "Autorização concedida",
+            "<h2 style=\"color:#10b981;\">✓ Autorização concedida</h2>\
+             <p><strong>Você foi autenticado com sucesso.</strong></p>\
+             <p>Pode fechar esta aba e voltar ao terminal.</p>",
+        );
+        Ok(code.clone())
+    } else if let Some(error) = query.get("error") {
+        let description = query
+            .get("error_description")
+            .cloned()
+            .unwrap_or_else(|| error.clone());
+        write_html(
+            &stream,
+            400,
+            "Autorização negada",
+            &format!(
+                "<h2 style=\"color:#ef4444;\">✗ Autorização negada</h2>\
+                 <p><strong>{}</strong></p>\
+                 <p>{}</p>\
+                 <p>Pode fechar esta aba e voltar ao terminal.</p>",
+                html_escape(error),
+                html_escape(&description)
+            ),
+        );
+        Err(KobanaError::Auth(format!(
+            "authorization denied: {error}: {description}"
+        )))
+    } else {
+        write_html(
+            &stream,
+            400,
+            "Callback inválido",
+            "<h2 style=\"color:#ef4444;\">✗ Callback inválido</h2>\
+             <p>A requisição não contém um código de autorização nem um erro.</p>",
+        );
+        Err(KobanaError::Auth(
+            "no authorization code in callback".into(),
+        ))
+    };
+
+    result
+}
+
+fn write_html(stream: &std::net::TcpStream, status: u16, title: &str, body: &str) {
+    let status_line = match status {
+        200 => "200 OK",
+        400 => "400 Bad Request",
+        _ => "200 OK",
+    };
+    let html = format!(
+        "<!DOCTYPE html><html lang=\"pt-BR\"><head>\
+         <meta charset=\"utf-8\"><title>{title}</title>\
+         <style>body{{font-family:-apple-system,system-ui,sans-serif;\
+         max-width:480px;margin:80px auto;padding:24px;text-align:center;\
+         color:#1f2937;}}h2{{margin:0 0 16px;}}p{{margin:8px 0;line-height:1.5;}}</style>\
+         </head><body>{body}</body></html>"
+    );
+    let response = format!(
+        "HTTP/1.1 {status_line}\r\nContent-Type: text/html; charset=utf-8\r\n\
+         Content-Length: {}\r\nConnection: close\r\n\r\n{html}",
+        html.len()
+    );
+    let mut writer = std::io::BufWriter::new(stream);
     let _ = writer.write_all(response.as_bytes());
     let _ = writer.flush();
+}
 
-    Ok(code)
+fn url_decode(s: &str) -> String {
+    let bytes = s.as_bytes();
+    let mut out: Vec<u8> = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        match bytes[i] {
+            b'+' => {
+                out.push(b' ');
+                i += 1;
+            }
+            b'%' if i + 2 < bytes.len() => {
+                let hex = &s[i + 1..i + 3];
+                if let Ok(byte) = u8::from_str_radix(hex, 16) {
+                    out.push(byte);
+                } else {
+                    out.push(b'%');
+                }
+                i += 3;
+            }
+            b => {
+                out.push(b);
+                i += 1;
+            }
+        }
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
+fn html_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
 }
 
 fn open_browser(url: &str) -> Result<(), KobanaError> {
