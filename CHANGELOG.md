@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-04-11
+
+### Added
+
+- **`kobana update` command** — checks GitHub Releases for a newer version and prints status (current, latest, install method, install command). With `--check`, only prints; without, performs an atomic self-update for standalone Unix binaries or prints the correct upgrade command for Homebrew/Cargo installs
+- **Daily auto-update check** — every normal command performs a best-effort (3s timeout) check at most once per day and prints a yellow stderr warning when a newer release exists. Respects TTY (no ANSI codes when piped/logged)
+
+### Changed
+
+- **BREAKING: environment flags** — removed `--sandbox`, `--production`, `--development`. Use a single `--env <production|sandbox|development>` flag. The default is now **production** (was sandbox). `KOBANA_ENVIRONMENT` continues to work and accepts the same values
+- **BREAKING: default environment** — now `production` instead of `sandbox`
+
 ## [0.3.0] - 2026-04-11
 
 ### Added
