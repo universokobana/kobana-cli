@@ -164,8 +164,7 @@ kobana financial accounts balances --params '{"financial_account_uid": "UID"}'
 | `--page-delay <MS>` | Delay entre paginas (default: 100ms) | `--page-delay 200` |
 | `--dry-run` | Valida e mostra a requisicao sem executar | |
 | `--output <PATH>` | Salva resposta em arquivo (downloads) | `--output ./boleto.pdf` |
-| `--sandbox` | Usa ambiente sandbox (`api-sandbox.kobana.com.br`) | |
-| `--production` | Usa ambiente producao (`api.kobana.com.br`) | |
+| `--env <ENV>` | Ambiente: `production` (default), `sandbox`, `development` | `--env sandbox` |
 | `--version`, `-v` | Versao da API (v1 ou v2, inferida do servico) | `--version v2` |
 | `--verbose` | Mostra headers e detalhes da requisicao no stderr | |
 | `--help`, `-h` | Ajuda contextual | |

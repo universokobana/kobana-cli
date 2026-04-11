@@ -95,26 +95,30 @@ Credenciais salvas são criptografadas com AES-256-GCM. A chave fica no keyring 
 
 ### Ambientes
 
-O CLI opera em dois ambientes. **Sandbox é o default** — use para testes sem afetar dados reais.
+O CLI opera em três ambientes. **Produção é o default.**
 
-| Ambiente | API | OAuth | Flag |
-|----------|-----|-------|------|
-| Sandbox | `api-sandbox.kobana.com.br` | `app-sandbox.kobana.com.br` | `--sandbox` (default) |
-| Produção | `api.kobana.com.br` | `app.kobana.com.br` | `--production` |
+| Ambiente | API | OAuth | `--env` |
+|----------|-----|-------|---------|
+| Produção | `api.kobana.com.br` | `app.kobana.com.br` | `production` (default) |
+| Sandbox | `api-sandbox.kobana.com.br` | `app-sandbox.kobana.com.br` | `sandbox` |
+| Development | `localhost:5005/api` | `localhost:5005` | `development` |
 
 ```bash
-# Sandbox (default — não precisa de flag)
+# Produção (default — não precisa de flag)
 kobana charge pix list
 
-# Produção
-kobana charge pix list --production
+# Sandbox
+kobana charge pix list --env sandbox
+
+# Development local
+kobana charge pix list --env development
 
 # Via variável de ambiente
-export KOBANA_ENVIRONMENT=production
+export KOBANA_ENVIRONMENT=sandbox
 kobana charge pix list
 
-# Login em produção
-kobana auth login --production
+# Login em sandbox
+kobana auth login --env sandbox
 ```
 
 Os tokens são **diferentes entre ambientes** — um token de sandbox não funciona em produção e vice-versa.
@@ -221,8 +225,7 @@ Retorna parâmetros, campos obrigatórios, tipos e respostas — tudo derivado d
 | `--page-all` | Auto-paginação com saída NDJSON |
 | `--page-limit <N>` | Máximo de páginas (default: 10) |
 | `--page-delay <MS>` | Delay entre páginas (default: 100ms) |
-| `--sandbox` | Ambiente sandbox (default) |
-| `--production` | Ambiente produção |
+| `--env <ENV>` | Ambiente: `production` (default), `sandbox`, `development` |
 | `--verbose` | Detalhes da requisição no stderr |
 | `--output <PATH>` | Salva resposta em arquivo |
 | `--output-format <FMT>` | Formato: `json`, `table`, `csv` |

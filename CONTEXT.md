@@ -31,7 +31,7 @@ kobana <servico> <recurso> <metodo> --help
 -   `--fields '<CAMPOS>'`: Limita campos na resposta (crítico para eficiência de context window de IA).
 -   `--output <PATH>`: Salva resposta em arquivo.
 -   `--dry-run`: Mostra a requisição sem executar.
--   `--sandbox` / `--production`: Seleciona o ambiente.
+-   `--env <production|sandbox|development>`: Seleciona o ambiente (default: `production`).
 
 ## Usage Patterns
 

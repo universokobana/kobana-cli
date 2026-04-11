@@ -230,7 +230,7 @@ Alimentado pelo OpenAPI spec embutido. Sem chamadas de rede.
 5. `executor.rs`: executar requests, formatar response
 6. `auth.rs`: Bearer token via env var (`KOBANA_TOKEN`)
 7. `schema.rs`: introspecao de endpoints
-8. Flags globais: `--params`, `--json`, `--fields`, `--dry-run`, `--sandbox/--production`
+8. Flags globais: `--params`, `--json`, `--fields`, `--dry-run`, `--env <production|sandbox|development>`
 9. Exit codes estruturados
 
 ### Fase 2 — Auth Completa

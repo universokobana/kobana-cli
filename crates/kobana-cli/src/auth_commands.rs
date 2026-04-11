@@ -170,15 +170,9 @@ async fn handle_login(
     let verbose = root_matches.get_flag("verbose");
     let client_id = matches.get_one::<String>("client-id").cloned();
     let client_secret = matches.get_one::<String>("client-secret").cloned();
-    let production = matches.get_flag("production");
-    let development = matches.get_flag("development");
-    let env = if development {
-        config::Environment::Development
-    } else if production {
-        config::Environment::Production
-    } else {
-        config::resolve_environment(false, false, false)
-    };
+    let env = config::resolve_environment(
+        root_matches.get_one::<String>("env").map(|s| s.as_str()),
+    );
 
     // Resolve scopes:
     //   1. --scopes flag (non-interactive)
@@ -215,11 +209,7 @@ async fn handle_login(
         .expires_in
         .map(|secs| chrono::Utc::now().timestamp() + secs);
 
-    let env_name = match env {
-        config::Environment::Production => "production",
-        config::Environment::Sandbox => "sandbox",
-        config::Environment::Development => "development",
-    };
+    let env_name = env.as_str();
 
     let creds = StoredCredentials {
         access_token: token_response.access_token,
@@ -269,7 +259,7 @@ fn handle_logout() -> Result<(), KobanaError> {
 fn handle_status() -> Result<(), KobanaError> {
     if let Ok(token) = std::env::var("KOBANA_TOKEN") {
         if !token.is_empty() {
-            let env = config::resolve_environment(false, false, false);
+            let env = config::resolve_environment(None);
             println!(
                 "{}",
                 serde_json::json!({

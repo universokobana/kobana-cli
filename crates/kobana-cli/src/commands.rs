@@ -77,25 +77,19 @@ pub fn build_root_command(v1_tree: &CommandNode, v2_tree: &CommandNode) -> Comma
                 .help("Show the request without executing"),
         )
         .arg(
-            Arg::new("sandbox")
-                .long("sandbox")
+            Arg::new("env")
+                .long("env")
                 .global(true)
-                .action(clap::ArgAction::SetTrue)
-                .help("Use sandbox environment"),
-        )
-        .arg(
-            Arg::new("production")
-                .long("production")
-                .global(true)
-                .action(clap::ArgAction::SetTrue)
-                .help("Use production environment"),
-        )
-        .arg(
-            Arg::new("development")
-                .long("development")
-                .global(true)
-                .action(clap::ArgAction::SetTrue)
-                .help("Use development environment (localhost:5005)"),
+                .value_name("ENV")
+                .value_parser(clap::builder::PossibleValuesParser::new([
+                    "production",
+                    "sandbox",
+                    "development",
+                ]))
+                .help(
+                    "API environment: production (default), sandbox, or development (localhost:5005). \
+                     Can also be set via KOBANA_ENVIRONMENT.",
+                ),
         )
         .arg(
             Arg::new("verbose")
@@ -220,12 +214,6 @@ pub fn build_root_command(v1_tree: &CommandNode, v2_tree: &CommandNode) -> Comma
                             .long("scopes")
                             .help("OAuth scopes (comma-separated, default: all)")
                             .value_name("SCOPES"),
-                    )
-                    .arg(
-                        Arg::new("production")
-                            .long("production")
-                            .action(clap::ArgAction::SetTrue)
-                            .help("Use production environment"),
                     ),
             )
             .subcommand(Command::new("logout").about("Remove saved credentials"))

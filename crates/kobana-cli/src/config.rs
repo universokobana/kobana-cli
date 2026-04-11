@@ -3,8 +3,8 @@ use std::path::PathBuf;
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub enum Environment {
     #[default]
-    Sandbox,
     Production,
+    Sandbox,
     Development,
 }
 
@@ -14,6 +14,14 @@ impl Environment {
             Self::Sandbox => "https://api-sandbox.kobana.com.br",
             Self::Production => "https://api.kobana.com.br",
             Self::Development => "http://localhost:5005/api",
+        }
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Sandbox => "sandbox",
+            Self::Production => "production",
+            Self::Development => "development",
         }
     }
 }
@@ -39,20 +47,17 @@ pub fn load_dotenv() {
     let _ = dotenvy::from_path(config.join(".env"));
 }
 
-/// Resolve the environment from flags or env var
-pub fn resolve_environment(sandbox: bool, production: bool, development: bool) -> Environment {
-    if development {
-        return Environment::Development;
-    }
-    if production {
-        return Environment::Production;
-    }
-    if sandbox {
-        return Environment::Sandbox;
-    }
-    match std::env::var("KOBANA_ENVIRONMENT").as_deref() {
-        Ok("production") => Environment::Production,
-        Ok("development") => Environment::Development,
-        _ => Environment::Sandbox,
+/// Resolve the environment from the `--env` flag or KOBANA_ENVIRONMENT.
+/// Defaults to Production when neither is set.
+pub fn resolve_environment(env_flag: Option<&str>) -> Environment {
+    let value = env_flag
+        .map(|s| s.to_string())
+        .or_else(|| std::env::var("KOBANA_ENVIRONMENT").ok());
+
+    match value.as_deref() {
+        Some("sandbox") => Environment::Sandbox,
+        Some("development") => Environment::Development,
+        Some("production") | None => Environment::Production,
+        Some(_) => Environment::Production,
     }
 }
