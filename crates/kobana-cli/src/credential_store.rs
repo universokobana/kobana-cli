@@ -87,8 +87,18 @@ pub fn delete_credentials() -> Result<(), KobanaError> {
     Ok(())
 }
 
-fn credentials_path() -> PathBuf {
+pub fn credentials_path() -> PathBuf {
     config::config_dir().join("credentials.enc")
+}
+
+/// Returns the storage backend in use for the encryption key.
+/// Returns "keyring" if the OS keyring entry exists, otherwise "file".
+pub fn key_backend() -> &'static str {
+    if get_keyring_key().is_ok() {
+        "keyring"
+    } else {
+        "file"
+    }
 }
 
 fn encrypt(key: &[u8; 32], plaintext: &[u8]) -> Result<Vec<u8>, KobanaError> {
@@ -141,13 +151,16 @@ fn get_or_create_encryption_key() -> Result<[u8; 32], KobanaError> {
     // Generate new key
     let key: [u8; 32] = rand::random();
 
-    // Try to store in keyring
-    if save_keyring_key(&key).is_ok() {
-        return Ok(key);
+    // Try to store in keyring, and verify by reading back.
+    // Some keyring backends silently "succeed" without persisting.
+    let keyring_ok = save_keyring_key(&key).is_ok() && get_keyring_key().is_ok();
+
+    // Always write to file as well so we never lose the key if the keyring
+    // backend becomes unavailable between runs.
+    if !keyring_ok {
+        save_key_to_file(&key_path, &key)?;
     }
 
-    // Fall back to file
-    save_key_to_file(&key_path, &key)?;
     Ok(key)
 }
 

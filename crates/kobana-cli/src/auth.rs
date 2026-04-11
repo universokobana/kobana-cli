@@ -36,19 +36,23 @@ pub fn resolve_token() -> Result<String, KobanaError> {
     }
 
     // Priority 4: Saved credentials
-    if let Ok(creds) = credential_store::load_credentials() {
-        // Check expiration
-        if let Some(expires_at) = creds.expires_at {
-            if chrono::Utc::now().timestamp() > expires_at {
-                return Err(KobanaError::Auth(
-                    "saved credentials expired. Run 'kobana auth login' to re-authenticate.".into(),
-                ));
+    match credential_store::load_credentials() {
+        Ok(creds) => {
+            // Check expiration
+            if let Some(expires_at) = creds.expires_at {
+                if chrono::Utc::now().timestamp() > expires_at {
+                    return Err(KobanaError::Auth(
+                        "saved credentials expired. Run 'kobana auth login' to re-authenticate.".into(),
+                    ));
+                }
             }
+            Ok(creds.access_token)
         }
-        return Ok(creds.access_token);
+        Err(KobanaError::Auth(msg)) if msg == "No saved credentials found" => {
+            Err(KobanaError::Auth(
+                "No authentication configured. Set KOBANA_TOKEN or run 'kobana auth login'.".into(),
+            ))
+        }
+        Err(e) => Err(e),
     }
-
-    Err(KobanaError::Auth(
-        "No authentication configured. Set KOBANA_TOKEN or run 'kobana auth login'.".into(),
-    ))
 }

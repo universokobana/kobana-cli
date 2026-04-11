@@ -82,13 +82,22 @@ async fn handle_login(
 
     credential_store::save_credentials(&creds)?;
 
+    let scopes_list: Vec<&str> = scopes.split('+').collect();
+    let cred_path = credential_store::credentials_path();
+    let backend = credential_store::key_backend();
+
     println!(
         "{}",
-        serde_json::json!({
-            "authenticated": true,
+        serde_json::to_string_pretty(&serde_json::json!({
+            "status": "success",
+            "message": "Authentication successful. Encrypted credentials saved.",
             "environment": creds.environment,
+            "credentials_file": cred_path.to_string_lossy(),
+            "encryption": format!("AES-256-GCM (key in OS keyring or local `.key`; current backend: {backend})"),
             "expires_at": creds.expires_at,
-        })
+            "scopes": scopes_list,
+        }))
+        .unwrap_or_default()
     );
 
     Ok(())
