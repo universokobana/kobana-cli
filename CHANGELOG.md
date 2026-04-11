@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-04-11
+
+### Added
+
+- **Interactive OAuth scope selector** — TUI drill-down for `auth login` when `--scopes` is not provided: first pick top-level groups, then sub-scopes per group, then read/write permission level
+- **Human-readable scope descriptions** — pt-BR descriptions embedded for all 58 Kobana OAuth scopes and for top-level groups
+- **Friendly OAuth denial page** — when the user declines on the consent screen, the browser shows a styled error page with the decoded reason instead of a connection-closed error; the CLI returns a descriptive auth error
+- **UTF-8 URL decoding** on the OAuth callback query string
+
+### Fixed
+
+- **Credential key persistence** — enable `keyring` backend features (`apple-native`, `windows-native`, `sync-secret-service`); without features, keyring v3 silently "succeeded" and the encryption key was lost between runs, breaking every follow-up command after `auth login`
+- **`resolve_token` error visibility** — propagate credential store errors instead of masking them behind a generic "No authentication configured" message
+
+### Changed
+
+- **`auth login` output** — richer JSON payload matching gws-cli style (credentials_file, encryption backend, scopes list)
+
 ## [0.2.2] - 2026-04-11
 
 ### Added
