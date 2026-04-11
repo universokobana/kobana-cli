@@ -11,6 +11,7 @@ mod logging;
 mod oauth;
 mod pagination;
 mod schema;
+mod update;
 mod validate;
 
 use kobana::error::KobanaError;
@@ -52,6 +53,11 @@ async fn run() -> Result<(), KobanaError> {
         return schema::handle_schema(schema_matches, &v1_spec, &v2_spec, &v1_tree, &v2_tree);
     }
 
+    if let Some(("update", update_matches)) = matches.subcommand() {
+        let check_only = update_matches.get_flag("check");
+        return update::handle_update(check_only).await;
+    }
+
     if let Some(("auth", auth_matches)) = matches.subcommand() {
         return auth_commands::handle_auth(auth_matches, &matches).await;
     }
@@ -61,6 +67,10 @@ async fn run() -> Result<(), KobanaError> {
         let mut cmd = commands::build_root_command(&v1_tree, &v2_tree);
         return completions::generate_completions(shell, &mut cmd);
     }
+
+    // Silently check for a new version once per day (best effort, swallows errors).
+    // Skip for special commands that should be deterministic or pipe-clean.
+    update::auto_check().await;
 
     // Check for helper commands (+emitir, +cobrar, etc.)
     if let Some((sub_name, sub_matches)) = matches.subcommand() {

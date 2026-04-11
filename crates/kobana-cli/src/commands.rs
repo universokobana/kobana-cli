@@ -233,7 +233,17 @@ pub fn build_root_command(v1_tree: &CommandNode, v2_tree: &CommandNode) -> Comma
             .subcommand(Command::new("export").about("Export credentials as JSON")),
     );
 
-    root
+    // `kobana update` — check for new releases and self-update standalone installs
+    root.subcommand(
+        Command::new("update")
+            .about("Check for a new version and update the CLI")
+            .arg(
+                Arg::new("check")
+                    .long("check")
+                    .action(clap::ArgAction::SetTrue)
+                    .help("Only check for updates, do not install"),
+            ),
+    )
 }
 
 /// Human-readable about text for v2 services
