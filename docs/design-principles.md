@@ -10,10 +10,10 @@ Toda saida e JSON. Agentes de IA nao parsam tabelas formatadas.
 
 ```bash
 # Default: JSON
-kobana charge pix list
+kobana banking charge pix list
 
 # Humanos podem pedir tabela
-kobana charge pix list --output-format table
+kobana banking charge pix list --output-format table
 ```
 
 Erros tambem sao JSON no stdout:
@@ -36,7 +36,7 @@ APIs financeiras retornam payloads grandes. `--fields` limita a resposta:
 ```bash
 # Sem fields: resposta com 50+ campos por boleto
 # Com fields: so o que o agente precisa
-kobana v1 bank-billets list --fields "id,amount,status,due_at"
+kobana banking v1 bank-billets list --fields "id,amount,status,due_at"
 ```
 
 ---
@@ -47,10 +47,10 @@ Em vez de dezenas de flags (`--amount`, `--expire-at`, `--customer-name`), aceit
 
 ```bash
 # Bom: payload direto, mapeamento 1:1 com a API
-kobana v1 bank-billets create --json '{"amount": 150, "expire_at": "2026-05-01"}'
+kobana banking v1 bank-billets create --json '{"amount": 150, "expire_at": "2026-05-01"}'
 
 # Evitar: flags individuais que duplicam a API
-kobana v1 bank-billets create --amount 150 --expire-at 2026-05-01
+kobana banking v1 bank-billets create --amount 150 --expire-at 2026-05-01
 ```
 
 ---
@@ -60,7 +60,7 @@ kobana v1 bank-billets create --amount 150 --expire-at 2026-05-01
 Toda operacao que modifica estado (POST, PUT, PATCH, DELETE) deve suportar `--dry-run`:
 
 ```bash
-kobana charge pix create --json '{...}' --dry-run
+kobana banking charge pix create --json '{...}' --dry-run
 # Output: mostra a requisicao que seria feita, sem executar
 ```
 
@@ -71,7 +71,7 @@ kobana charge pix create --json '{...}' --dry-run
 Agentes consultam o schema antes de montar payloads:
 
 ```bash
-kobana schema charge.pix.create
+kobana schema banking.charge.pix.create
 # Retorna: parametros, campos obrigatorios, tipos, exemplos
 ```
 
@@ -95,7 +95,7 @@ Agentes geram inputs que humanos nunca gerariam. Validar:
 `--page-all` emite uma linha JSON por pagina (Newline Delimited JSON), permitindo streaming sem buffering:
 
 ```bash
-kobana v1 bank-billets list --page-all | jq -r '.[] | .id'
+kobana banking v1 bank-billets list --page-all | jq -r '.[] | .id'
 ```
 
 ---
@@ -106,7 +106,7 @@ O CLI deve funcionar sem interacao em ambientes CI:
 
 ```bash
 export KOBANA_TOKEN=xxxxx
-kobana v1 bank-billets list
+kobana banking v1 bank-billets list
 # Funciona sem login interativo
 ```
 
@@ -132,7 +132,7 @@ Scripts precisam saber o tipo de falha sem parsear stderr:
 `--help` em qualquer nivel mostra documentacao derivada do OpenAPI spec, incluindo campos obrigatorios e exemplos:
 
 ```bash
-kobana charge pix create --help
+kobana banking charge pix create --help
 # Mostra: descricao, campos obrigatorios, exemplo de --json
 ```
 

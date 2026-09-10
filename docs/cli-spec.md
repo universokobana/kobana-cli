@@ -11,10 +11,11 @@ Escrito em **Rust** (clap + serde + reqwest + tokio). Inspirado no [gws-cli](htt
 ## Sintaxe Principal
 
 ```bash
-kobana <service> <resource> <method> [flags]
+kobana <product> <service> <resource> <method> [flags]
 ```
 
 Onde:
+- `<product>` — produto Kobana (hoje apenas `banking`, o Gateway Bancário)
 - `<service>` — dominio da API (ex: `charge`, `payment`, `transfer`, `financial`, `admin`)
 - `<resource>` — recurso dentro do dominio (ex: `pix`, `bank-billets`, `accounts`)
 - `<method>` — acao (ex: `list`, `get`, `create`, `update`, `delete`, `cancel`)
@@ -23,16 +24,16 @@ Onde:
 
 ```bash
 # Listar boletos
-kobana charge bank-billets list --params '{"page": 1, "per_page": 50}'
+kobana banking charge bank-billets list --params '{"page": 1, "per_page": 50}'
 
 # Criar cobranca Pix
-kobana charge pix create --json '{"amount": 1500, "payer": {...}}'
+kobana banking charge pix create --json '{"amount": 1500, "payer": {...}}'
 
 # Ver detalhes de uma transferencia
-kobana transfer pix get --params '{"uid": "019d6b00-4751-719d-8a6f-20cb9223bea4"}'
+kobana banking transfer pix get --params '{"uid": "019d6b00-4751-719d-8a6f-20cb9223bea4"}'
 
 # Consultar saldo
-kobana financial accounts balances --params '{"financial_account_uid": "UID"}'
+kobana banking financial accounts balances --params '{"financial_account_uid": "UID"}'
 ```
 
 ---
@@ -227,8 +228,8 @@ Credenciais sao criptografadas em repouso (AES-256-GCM) com chave armazenada no 
 
 ```bash
 # Ver schema de um endpoint
-kobana schema charge.pix.create
-kobana schema v1.bank_billets.list
+kobana schema banking.charge.pix.create
+kobana schema banking.v1.bank_billets.list
 
 # Ver todos os servicos disponiveis
 kobana schema --list
@@ -245,13 +246,13 @@ Retorna JSON com: parametros, corpo da requisicao, tipo de resposta, campos obri
 
 ```bash
 # Paginar manualmente
-kobana charge pix list --params '{"page": 1, "per_page": 50}'
+kobana banking charge pix list --params '{"page": 1, "per_page": 50}'
 
 # Auto-paginacao (NDJSON — um JSON por linha)
-kobana charge pix list --page-all
+kobana banking charge pix list --page-all
 
 # Limitar paginas
-kobana charge pix list --page-all --page-limit 5
+kobana banking charge pix list --page-all --page-limit 5
 ```
 
 ---
@@ -292,12 +293,12 @@ Variaveis tambem podem ser definidas em arquivo `.env`.
 
 ```bash
 # Listar boletos com filtro
-kobana v1 bank-billets list \
+kobana banking v1 bank-billets list \
   --params '{"status": "opened", "per_page": 25}' \
   --fields "id,amount,status,due_at,customer_person_name"
 
 # Criar boleto
-kobana v1 bank-billets create \
+kobana banking v1 bank-billets create \
   --json '{
     "amount": 150.50,
     "expire_at": "2026-05-01",
@@ -308,17 +309,17 @@ kobana v1 bank-billets create \
   --dry-run
 
 # Cancelar boleto
-kobana v1 bank-billets cancel --params '{"id": 12345}'
+kobana banking v1 bank-billets cancel --params '{"id": 12345}'
 
 # Enviar boleto por email
-kobana v1 bank-billets send-email --params '{"id": 12345}'
+kobana banking v1 bank-billets send-email --params '{"id": 12345}'
 ```
 
 ### Cobrancas Pix (V2)
 
 ```bash
 # Criar cobranca Pix
-kobana charge pix create \
+kobana banking charge pix create \
   --json '{
     "amount": 99.90,
     "pix_account_uid": "UID_HERE",
@@ -326,32 +327,32 @@ kobana charge pix create \
   }'
 
 # Listar cobrancas com paginacao automatica
-kobana charge pix list --page-all --fields "uid,amount,status,created_at"
+kobana banking charge pix list --page-all --fields "uid,amount,status,created_at"
 
 # Cancelar cobranca
-kobana charge pix cancel --params '{"uid": "PIX_UID"}'
+kobana banking charge pix cancel --params '{"uid": "PIX_UID"}'
 ```
 
 ### Pagamentos (V2)
 
 ```bash
 # Criar pagamento de boleto
-kobana payment bank-billets create \
+kobana banking payment bank-billets create \
   --json '{"barcode": "23793.38128 ...", "amount": 150.00}' \
   --dry-run
 
 # Aprovar lote de pagamentos
-kobana payment batches approve --params '{"uid": "BATCH_UID"}'
+kobana banking payment batches approve --params '{"uid": "BATCH_UID"}'
 
 # Listar pagamentos Pix
-kobana payment pix list --params '{"per_page": 20}'
+kobana banking payment pix list --params '{"per_page": 20}'
 ```
 
 ### Transferencias (V2)
 
 ```bash
 # Transferencia Pix
-kobana transfer pix create \
+kobana banking transfer pix create \
   --json '{
     "amount": 500.00,
     "pix_key": "email@example.com",
@@ -359,7 +360,7 @@ kobana transfer pix create \
   }'
 
 # TED
-kobana transfer ted create \
+kobana banking transfer ted create \
   --json '{
     "amount": 1000.00,
     "bank_code": "001",
@@ -372,27 +373,27 @@ kobana transfer ted create \
 
 ```bash
 # Consultar saldo
-kobana financial accounts balances \
+kobana banking financial accounts balances \
   --params '{"financial_account_uid": "UID"}' \
   --fields "uid,balance,available_balance"
 
 # Extrato
-kobana financial accounts statement \
+kobana banking financial accounts statement \
   --params '{"financial_account_uid": "UID"}' \
   --page-all
 
 # Listar provedores financeiros
-kobana financial providers list
+kobana banking financial providers list
 ```
 
 ### Administracao (V2)
 
 ```bash
 # Listar subcontas
-kobana admin subaccounts list --fields "uid,name,status"
+kobana banking admin subaccounts list --fields "uid,name,status"
 
 # Ver informacoes da conta
-kobana me get
+kobana banking me get
 ```
 
 ---
@@ -401,9 +402,9 @@ kobana me get
 
 ```bash
 kobana --help                          # ajuda geral
-kobana charge --help                   # servicos de cobranca
-kobana charge pix --help               # operacoes de Pix cobranca
-kobana charge pix create --help        # parametros de criacao
+kobana banking charge --help                   # servicos de cobranca
+kobana banking charge pix --help               # operacoes de Pix cobranca
+kobana banking charge pix create --help        # parametros de criacao
 ```
 
 Toda saida de `--help` inclui exemplos de uso e campos obrigatorios derivados do OpenAPI spec.

@@ -5,7 +5,7 @@
 `kobana` is a Rust CLI tool for interacting with the Kobana financial API (v1 and v2). It dynamically generates its command surface at startup by parsing OpenAPI 3.1 specs embedded in the binary.
 
 > [!IMPORTANT]
-> **Dynamic Commands**: This project does NOT hardcode API endpoints as Rust structs. Instead, it embeds OpenAPI JSON specs and builds `clap` commands dynamically via two-phase parsing. When updating the API surface, replace the spec files in `crates/kobana-cli/specs/` and rebuild. Do NOT add new crates or modules per endpoint.
+> **Dynamic Commands**: This project does NOT hardcode API endpoints as Rust structs. Instead, it embeds OpenAPI JSON specs and builds `clap` commands dynamically via two-phase parsing. When updating the API surface, replace the spec files in `crates/kobana-cli/specs/` (named `<product>-<version>.json`) and rebuild. Do NOT add new crates or modules per endpoint.
 
 ## Build & Test
 
@@ -42,8 +42,8 @@ git push
 
 The CLI uses a **two-phase argument parsing** strategy:
 
-1. Parse argv to extract the service name (e.g., `charge`, `v1`)
-2. Load the embedded OpenAPI spec, build a dynamic `clap::Command` tree, then re-parse
+1. Load `product::REGISTRY` — parse each product's embedded specs and build their command trees
+2. Build the dynamic `clap::Command` tree from those products, then parse argv against it
 
 ### Workspace Layout
 
@@ -54,13 +54,59 @@ The repository is a Cargo workspace with two crates:
 | `crates/kobana/`               | `kobana`           | Library — HTTP client, error types, spec parsing, validation |
 | `crates/kobana-cli/`           | `kobana-cli`       | Binary crate — the `kobana` CLI              |
 
+### Adding a Product
+
+The CLI syntax is `kobana <product> <service> <resource> <method>`. Products are
+data, not code: everything product-specific lives in `REGISTRY` in
+`crates/kobana-cli/src/product.rs`. Nothing else in the CLI is product-aware.
+
+To add one:
+
+1. Save the product's OpenAPI spec as JSON in `crates/kobana-cli/specs/<product>-v1.json`
+2. Add a `Product` entry to `REGISTRY` with its hosts and a `SpecEntry`
+
+Every Kobana product carries the version prefix in its own spec paths, so
+`SpecEntry::version_prefix` is just the prefix to strip for tree placement —
+the request URL keeps it:
+
+| Product | `Hosts::production` | Spec paths | `version_prefix` |
+|---------|---------------------|------------|------------------|
+| `banking` | `https://api.kobana.com.br` | `/v1/bank_billets`, `/v2/charge/pix` | `/v1`, `/v2` |
+| `billing` | `https://api.billing.kobana.com.br` | `/v1/subscriptions` | `/v1` |
+| `inbox` | `https://api.inbox.kobana.com.br` | `/v1/workspaces` | `/v1` |
+| `finance` | `https://api.finance.kobana.com.br` | `/v1/financial-accounts` | `/v1` |
+
+> [!NOTE]
+> The published finance spec still shows `servers: https://api.finance.kobana.com.br/v1`
+> with paths starting at the resource (`/financial-accounts`). That is a known
+> bug on the finance side and is being fixed — the `/v1` moves into the paths,
+> matching every other product. Do not add a per-product switch for it; if you
+> pick up a finance spec that still has the old shape, wait for the corrected one.
+
+`Hosts` must never include the version prefix.
+
+`Layout` decides how a spec becomes CLI services:
+
+- `Layout::Single { name }` — the whole spec is one service (`kobana banking v1 …`).
+  Use this for every product whose API is a single flat `/v1`.
+- `Layout::SplitTopLevel` — each top-level node becomes its own service. Only
+  banking v2 needs this: it is why `kobana banking charge pix list` works and
+  `v2` never appears as a CLI segment.
+
+Sandbox hosts follow `api.<product>.sandbox.kobana.com.br`, except banking,
+which predates the convention (`api-sandbox.kobana.com.br`).
+
+Only `banking` is registered today. Note that `inbox` additionally requires
+mTLS plus a JWT audience, which the current `KobanaClient` does not support —
+registering its spec is necessary but not sufficient.
+
 #### Library (`crates/kobana/src/`)
 
 | File           | Purpose                                                    |
 | -------------- | ---------------------------------------------------------- |
 | `client.rs`    | HTTP client with Bearer auth and idempotency keys          |
 | `error.rs`     | `KobanaError` enum, structured exit codes, JSON serialization |
-| `spec.rs`      | OpenAPI spec parsing, command tree builder, method inference |
+| `spec.rs`      | OpenAPI spec parsing, command tree builder, method inference, `SpecLayout` |
 | `validate.rs`  | Path/URL/identifier validators against injection attacks   |
 
 #### CLI (`crates/kobana-cli/src/`)
@@ -68,6 +114,7 @@ The repository is a Cargo workspace with two crates:
 | File                 | Purpose                                                        |
 | -------------------- | -------------------------------------------------------------- |
 | `main.rs`            | Entrypoint, two-phase CLI parsing, dispatch                    |
+| `product.rs`         | Product registry — hosts, embedded specs, CLI service layout   |
 | `commands.rs`        | Recursive `clap::Command` builder from OpenAPI spec            |
 | `executor.rs`        | HTTP request construction, response handling, dry-run           |
 | `auth.rs`            | Token resolution chain (env var → file → saved credentials)    |
@@ -102,7 +149,7 @@ vhs docs/demo.tape
 - Use **double quotes** for simple strings: `Type "kobana --help" Enter`
 - Use **backtick quotes** when the typed text contains JSON with double quotes:
   ```
-  Type `kobana charge pix list --params '{"per_page": 5}'` Enter
+  Type `kobana banking charge pix list --params '{"per_page": 5}'` Enter
   ```
   `\"` escapes inside double-quoted `Type` strings are **not supported** by VHS and will cause parse errors.
 
@@ -126,10 +173,10 @@ Set Height 600
 Type "kobana --help" Enter
 Sleep 3s
 
-Type `kobana charge pix create --dry-run --json '{"amount": 99.90, "pix_account_uid": "UID"}'` Enter
+Type `kobana banking charge pix create --dry-run --json '{"amount": 99.90, "pix_account_uid": "UID"}'` Enter
 Sleep 3s
 
-Type "kobana schema charge.pix.create" Enter
+Type "kobana schema banking.charge.pix.create" Enter
 Sleep 3s
 ```
 

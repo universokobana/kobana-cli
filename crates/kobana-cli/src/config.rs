@@ -9,14 +9,6 @@ pub enum Environment {
 }
 
 impl Environment {
-    pub fn base_url(&self) -> &'static str {
-        match self {
-            Self::Sandbox => "https://api-sandbox.kobana.com.br",
-            Self::Production => "https://api.kobana.com.br",
-            Self::Development => "http://localhost:5005/api",
-        }
-    }
-
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Sandbox => "sandbox",

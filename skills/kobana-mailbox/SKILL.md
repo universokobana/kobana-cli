@@ -8,7 +8,7 @@ metadata:
     requires:
       bins:
         - kobana
-    cliHelp: "kobana mailbox --help"
+    cliHelp: "kobana banking mailbox --help"
 ---
 
 # mailbox — Caixa Postal
@@ -16,7 +16,7 @@ metadata:
 > **PREREQUISITE:** Read `../kobana-shared/SKILL.md` for auth, global flags, and security rules.
 
 ```bash
-kobana mailbox <resource> <method> [flags]
+kobana banking mailbox <resource> <method> [flags]
 ```
 
 ## API Resources
@@ -83,7 +83,7 @@ kobana mailbox <resource> <method> [flags]
 ## Discovering Commands
 
 ```bash
-kobana mailbox --help
-kobana mailbox entries --help
-kobana schema mailbox.entries.create
+kobana banking mailbox --help
+kobana banking mailbox entries --help
+kobana schema banking.mailbox.entries.create
 ```

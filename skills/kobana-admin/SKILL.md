@@ -8,7 +8,7 @@ metadata:
     requires:
       bins:
         - kobana
-    cliHelp: "kobana admin --help"
+    cliHelp: "kobana banking admin --help"
 ---
 
 # admin — Administração
@@ -16,7 +16,7 @@ metadata:
 > **PREREQUISITE:** Read `../kobana-shared/SKILL.md` for auth, global flags, and security rules.
 
 ```bash
-kobana admin <resource> <method> [flags]
+kobana banking admin <resource> <method> [flags]
 ```
 
 ## API Resources
@@ -48,7 +48,7 @@ kobana admin <resource> <method> [flags]
 ## Discovering Commands
 
 ```bash
-kobana admin --help
-kobana admin subaccounts --help
-kobana schema admin.subaccounts.create
+kobana banking admin --help
+kobana banking admin subaccounts --help
+kobana schema banking.admin.subaccounts.create
 ```

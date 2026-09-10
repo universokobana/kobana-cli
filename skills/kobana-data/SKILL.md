@@ -8,7 +8,7 @@ metadata:
     requires:
       bins:
         - kobana
-    cliHelp: "kobana data --help"
+    cliHelp: "kobana banking data --help"
 ---
 
 # data — Consultas
@@ -16,7 +16,7 @@ metadata:
 > **PREREQUISITE:** Read `../kobana-shared/SKILL.md` for auth, global flags, and security rules.
 
 ```bash
-kobana data <resource> <method> [flags]
+kobana banking data <resource> <method> [flags]
 ```
 
 ## API Resources
@@ -32,6 +32,6 @@ kobana data <resource> <method> [flags]
 ## Discovering Commands
 
 ```bash
-kobana data --help
-kobana schema data.bank-billet-queries.create
+kobana banking data --help
+kobana schema banking.data.bank-billet-queries.create
 ```

@@ -49,8 +49,11 @@ kobana auth login
 ## CLI Syntax
 
 ```bash
-kobana <service> <resource> <method> [flags]
+kobana <product> <service> <resource> <method> [flags]
 ```
+
+`<product>` is the Kobana product. Only `banking` (Gateway Bancário) is
+currently available in the CLI.
 
 ### Method Flags
 
@@ -76,7 +79,7 @@ kobana <service> <resource> <method> [flags]
 Wrap `--params` and `--json` values in single quotes so the shell does not interpret the inner double quotes:
 
 ```bash
-kobana charge pix list --params '{"per_page": 5}'
+kobana banking charge pix list --params '{"per_page": 5}'
 ```
 
 ## Environment Variables

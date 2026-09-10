@@ -24,19 +24,19 @@ Sleep 4s
 # ── Listar serviços via Schema ──
 Type "# Introspecção de schema" Enter
 Sleep 1s
-Type "kobana schema charge.pix.create" Enter
+Type "kobana schema banking.charge.pix.create" Enter
 Sleep 4s
 
 # ── Dry-run: criar cobrança Pix ──
 Type "# Dry-run: validar requisição sem executar" Enter
 Sleep 1s
-Type `kobana charge pix create --dry-run --json '{"amount": 99.90, "pix_account_uid": "abc-123"}'` Enter
+Type `kobana banking charge pix create --dry-run --json '{"amount": 99.90, "pix_account_uid": "abc-123"}'` Enter
 Sleep 4s
 
 # ── Dry-run: criar boleto ──
 Type "# Dry-run: emitir boleto via API v1" Enter
 Sleep 1s
-Type `kobana v1 bank-billets create --dry-run --json '{"amount": 150.50, "expire_at": "2026-05-01", "customer_person_name": "Maria Silva", "customer_cnpj_cpf": "012.345.678-90", "bank_billet_account_id": 1}'` Enter
+Type `kobana banking v1 bank-billets create --dry-run --json '{"amount": 150.50, "expire_at": "2026-05-01", "customer_person_name": "Maria Silva", "customer_cnpj_cpf": "012.345.678-90", "bank_billet_account_id": 1}'` Enter
 Sleep 4s
 
 # ── Helper: +cobrar ──
@@ -48,7 +48,7 @@ Sleep 4s
 # ── Help contextual ──
 Type "# Help contextual em qualquer nível" Enter
 Sleep 1s
-Type "kobana charge pix --help" Enter
+Type "kobana banking charge pix --help" Enter
 Sleep 4s
 
 # ── Auth status ──

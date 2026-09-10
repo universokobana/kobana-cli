@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **BREAKING: comandos agora exigem o produto** — a sintaxe mudou de `kobana <servico> <recurso> <metodo>` para `kobana <produto> <servico> <recurso> <metodo>`. A API original da Kobana passou a ser o produto Gateway Bancário (`banking`), então `kobana charge pix list` vira `kobana banking charge pix list` e `kobana v1 bank-billets list` vira `kobana banking v1 bank-billets list`
+- **BREAKING: `kobana schema <endpoint>`** também exige o produto: `kobana schema banking.charge.pix.create`. A saída de `kobana schema --list` passa a ser agrupada por produto
+- Apenas o produto `banking` está disponível; Financeiro Inteligente (`finance`), Faturamento Automático (`billing`) e Inbox Autônomo (`inbox`) ainda não são suportados
+
+### Internal
+
+- **Registro de produtos orientado a dados** (`crates/kobana-cli/src/product.rs`) — hosts, specs embutidas e layout de serviços de cada produto passam a ser uma entrada em `REGISTRY`. Adicionar um produto agora é adicionar uma spec em `specs/` e uma entrada na tabela; nenhum outro módulo do CLI conhece produtos
+- **URL base por produto** — `Environment::base_url()` (que fixava `api.kobana.com.br`) foi removido; o host vem do produto resolvido, já que cada produto tem API própria
+- **Prefixo de versão configurável** (`crates/kobana/src/spec.rs`) — `build_command_tree` recebe o prefixo a remover em vez de ter `/v1/`/`/v2/` hardcoded, que era uma amarra do banking dentro da biblioteca
+- **`kobana schema`** passou a percorrer a mesma árvore de comandos usada no dispatch, em vez de reimplementar casamento de paths e inferência de método — elimina a duplicação que podia divergir do CLI real. A saída ganhou os campos `product` e `path_params`
+- Specs renomeadas para `specs/banking-v1.json` e `specs/banking-v2.json`
+
 ## [0.4.1] - 2026-04-11
 
 ### Changed

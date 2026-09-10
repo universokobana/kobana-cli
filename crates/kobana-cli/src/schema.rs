@@ -1,50 +1,50 @@
 use kobana::error::KobanaError;
-use kobana::spec::{ApiSpec, CommandNode, ParameterLocation};
+use kobana::spec::{CommandNode, ParameterLocation, ResolvedEndpoint};
+
+use crate::product::{self, LoadedProduct};
 
 /// Handle the `kobana schema` command
 pub fn handle_schema(
     matches: &clap::ArgMatches,
-    v1_spec: &ApiSpec,
-    v2_spec: &ApiSpec,
-    v1_tree: &CommandNode,
-    v2_tree: &CommandNode,
+    products: &[LoadedProduct],
 ) -> Result<(), KobanaError> {
     let list = matches.get_flag("list");
 
-    if list {
-        // If no endpoint specified, list all services
-        if matches.get_one::<String>("endpoint").is_none() {
-            return list_services(v1_tree, v2_tree);
-        }
-    }
-
     if let Some(endpoint_path) = matches.get_one::<String>("endpoint") {
-        return show_endpoint_schema(endpoint_path, v1_spec, v2_spec);
+        return show_endpoint_schema(endpoint_path, products);
     }
 
     if list {
-        return list_services(v1_tree, v2_tree);
+        return list_products(products);
     }
 
     Err(KobanaError::Validation(
-        "Usage: kobana schema <endpoint> or kobana schema --list".into(),
+        "Usage: kobana schema <produto>.<servico>.<recurso>.<metodo> or kobana schema --list".into(),
     ))
 }
 
-fn list_services(v1_tree: &CommandNode, v2_tree: &CommandNode) -> Result<(), KobanaError> {
-    let mut services = serde_json::json!({
-        "v1": {
-            "resources": list_resources(v1_tree),
-        },
-    });
+fn list_products(products: &[LoadedProduct]) -> Result<(), KobanaError> {
+    let mut out = serde_json::Map::new();
 
-    for (name, node) in &v2_tree.children {
-        services[name] = serde_json::json!({
-            "resources": list_resources(node),
-        });
+    for loaded in products {
+        let mut services = serde_json::Map::new();
+        for (name, service) in &loaded.services {
+            services.insert(
+                name.clone(),
+                serde_json::json!({ "resources": list_resources(&service.tree) }),
+            );
+        }
+
+        out.insert(
+            loaded.product.slug.to_string(),
+            serde_json::json!({
+                "description": loaded.product.about,
+                "services": services,
+            }),
+        );
     }
 
-    println!("{}", serde_json::to_string_pretty(&services)?);
+    println!("{}", serde_json::to_string_pretty(&out)?);
     Ok(())
 }
 
@@ -89,131 +89,77 @@ fn collect_methods(node: &CommandNode) -> Vec<String> {
 
 fn show_endpoint_schema(
     endpoint_path: &str,
-    v1_spec: &ApiSpec,
-    v2_spec: &ApiSpec,
+    products: &[LoadedProduct],
 ) -> Result<(), KobanaError> {
-    // Parse endpoint path like "charge.pix.create" or "v1.bank-billets.list"
+    // Parse a path like "banking.charge.pix.create" or "banking.v1.bank-billets.list"
     let parts: Vec<&str> = endpoint_path.split('.').collect();
-    if parts.len() < 2 {
+    if parts.len() < 3 || !product::is_product(parts[0]) {
         return Err(KobanaError::Validation(format!(
-            "invalid endpoint path '{endpoint_path}'. Use format: service.resource.method (e.g., charge.pix.create)"
+            "invalid endpoint path '{endpoint_path}'. Use format: product.service.resource.method (e.g., banking.charge.pix.create)"
         )));
     }
 
-    let method_name = parts.last().unwrap();
-    let resource_parts = &parts[..parts.len() - 1];
+    let (product_name, service_name, method_name) =
+        (parts[0], parts[1], *parts.last().unwrap());
+    let resource_parts = &parts[2..parts.len() - 1];
 
-    // Determine which spec to search
-    let spec = if resource_parts[0] == "v1" {
-        v1_spec
-    } else {
-        v2_spec
-    };
+    let loaded = product::find(products, product_name)
+        .ok_or_else(|| KobanaError::Schema(format!("product '{product_name}' not found")))?;
+    let service = loaded.service(service_name).ok_or_else(|| {
+        KobanaError::Schema(format!(
+            "service '{service_name}' not found in product '{product_name}'"
+        ))
+    })?;
 
-    // Build the API path pattern to search for
-    let search_segments: Vec<String> = if resource_parts[0] == "v1" {
-        resource_parts[1..]
-            .iter()
-            .map(|s| s.replace('-', "_"))
-            .collect()
-    } else {
-        resource_parts.iter().map(|s| s.replace('-', "_")).collect()
-    };
-
-    // Search for matching endpoint
-    let version_prefix = if resource_parts[0] == "v1" {
-        "/v1"
-    } else {
-        "/v2"
-    };
-
-    for (api_path, path_item) in &spec.paths {
-        if !api_path.starts_with(version_prefix) {
-            continue;
-        }
-
-        let stripped = &api_path[version_prefix.len()..];
-        let path_segments: Vec<&str> = stripped
-            .split('/')
-            .filter(|s| !s.is_empty() && !s.starts_with('{'))
-            .collect();
-
-        if path_segments.len() != search_segments.len() {
-            continue;
-        }
-
-        let matches = path_segments
-            .iter()
-            .zip(search_segments.iter())
-            .all(|(a, b)| *a == b.as_str());
-
-        if !matches {
-            continue;
-        }
-
-        // Find the operation matching the method name
-        for (http_method, operation) in &path_item.operations {
-            let inferred = infer_method_name(http_method, api_path);
-            if inferred == *method_name {
-                let query_params: Vec<serde_json::Value> = operation
-                    .parameters
-                    .iter()
-                    .filter(|p| p.location == ParameterLocation::Query)
-                    .map(|p| {
-                        serde_json::json!({
-                            "name": p.name,
-                            "required": p.required,
-                            "description": p.description,
-                            "schema": p.schema,
-                        })
-                    })
-                    .collect();
-
-                let schema_output = serde_json::json!({
-                    "method": http_method.as_str(),
-                    "path": api_path,
-                    "summary": operation.summary,
-                    "description": operation.description,
-                    "parameters": query_params,
-                    "request_body": operation.request_body,
-                    "responses": operation.responses,
-                });
-
-                println!("{}", serde_json::to_string_pretty(&schema_output)?);
-                return Ok(());
-            }
-        }
+    // Walk the same tree the CLI dispatches on, so schema output can never
+    // drift from what the commands actually accept
+    let mut node = service.tree.as_ref();
+    for part in resource_parts {
+        node = node.children.get(*part).ok_or_else(|| {
+            KobanaError::Schema(format!("endpoint '{endpoint_path}' not found"))
+        })?;
     }
 
-    Err(KobanaError::Schema(format!(
-        "endpoint '{endpoint_path}' not found"
-    )))
+    let endpoint = node
+        .endpoints
+        .iter()
+        .find(|e| e.cli_method == method_name)
+        .ok_or_else(|| KobanaError::Schema(format!("endpoint '{endpoint_path}' not found")))?;
+
+    print_endpoint(loaded, endpoint)
 }
 
-fn infer_method_name(http_method: &kobana::spec::HttpMethod, path: &str) -> String {
-    use kobana::spec::HttpMethod;
+fn print_endpoint(
+    loaded: &LoadedProduct,
+    endpoint: &ResolvedEndpoint,
+) -> Result<(), KobanaError> {
+    let query_params: Vec<serde_json::Value> = endpoint
+        .operation
+        .parameters
+        .iter()
+        .filter(|p| p.location == ParameterLocation::Query)
+        .map(|p| {
+            serde_json::json!({
+                "name": p.name,
+                "required": p.required,
+                "description": p.description,
+                "schema": p.schema,
+            })
+        })
+        .collect();
 
-    // Check for action suffix (e.g., /cancel, /approve)
-    let segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
-    if let Some(last) = segments.last() {
-        if !last.starts_with('{') && segments.len() > 2 {
-            // Check if the previous segment is a parameter
-            if segments.len() >= 2 {
-                let prev = segments[segments.len() - 2];
-                if prev.starts_with('{') {
-                    return last.replace('_', "-");
-                }
-            }
-        }
-    }
+    let schema_output = serde_json::json!({
+        "product": loaded.product.slug,
+        "method": endpoint.http_method.as_str(),
+        "path": endpoint.path_template,
+        "path_params": endpoint.path_params,
+        "summary": endpoint.operation.summary,
+        "description": endpoint.operation.description,
+        "parameters": query_params,
+        "request_body": endpoint.operation.request_body,
+        "responses": endpoint.operation.responses,
+    });
 
-    let has_path_param = path.contains('{');
-    match (http_method, has_path_param) {
-        (HttpMethod::Get, false) => "list".to_string(),
-        (HttpMethod::Get, true) => "get".to_string(),
-        (HttpMethod::Post, _) => "create".to_string(),
-        (HttpMethod::Put, _) => "update".to_string(),
-        (HttpMethod::Patch, _) => "update".to_string(),
-        (HttpMethod::Delete, _) => "delete".to_string(),
-    }
+    println!("{}", serde_json::to_string_pretty(&schema_output)?);
+    Ok(())
 }

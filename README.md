@@ -5,7 +5,7 @@ CLI para a API da [Kobana](https://kobana.com.br) — acesso completo às APIs v
 Projetado para humanos e agentes de IA, com saída JSON estruturada, introspecção de schema, dry-run e paginação automática.
 
 ```
-kobana <servico> <recurso> <metodo> [flags]
+kobana <produto> <servico> <recurso> <metodo> [flags]
 ```
 
 ![Kobana CLI Demo](docs/demo.gif)
@@ -105,17 +105,17 @@ O CLI opera em três ambientes. **Produção é o default.**
 
 ```bash
 # Produção (default — não precisa de flag)
-kobana charge pix list
+kobana banking charge pix list
 
 # Sandbox
-kobana charge pix list --env sandbox
+kobana banking charge pix list --env sandbox
 
 # Development local
-kobana charge pix list --env development
+kobana banking charge pix list --env development
 
 # Via variável de ambiente
 export KOBANA_ENVIRONMENT=sandbox
-kobana charge pix list
+kobana banking charge pix list
 
 # Login em sandbox
 kobana auth login --env sandbox
@@ -128,10 +128,20 @@ Os tokens são **diferentes entre ambientes** — um token de sandbox não funci
 ### Sintaxe
 
 ```bash
-kobana <servico> <recurso> <metodo> [flags]
+kobana <produto> <servico> <recurso> <metodo> [flags]
 ```
 
-Serviços disponíveis:
+Produtos disponíveis:
+
+| Produto | Descrição |
+|---------|-----------|
+| `banking` | Gateway Bancário — cobranças, pagamentos, transferências (API v1 e v2) |
+
+> Os demais produtos Kobana — Financeiro Inteligente (`finance`), Faturamento
+> Automático (`billing`) e Inbox Autônomo (`inbox`) — ainda não estão
+> disponíveis no CLI.
+
+Serviços do produto `banking`:
 
 | Comando | Descrição |
 |---------|-----------|
@@ -149,39 +159,39 @@ Serviços disponíveis:
 
 ```bash
 # Listar boletos com filtro
-kobana v1 bank-billets list \
+kobana banking v1 bank-billets list \
   --params '{"status": "opened", "per_page": 25}' \
   --fields "id,amount,status,due_at"
 
 # Criar cobrança Pix
-kobana charge pix create \
+kobana banking charge pix create \
   --json '{"amount": 99.90, "pix_account_uid": "UID"}'
 
 # Consultar saldo
-kobana financial accounts balances list \
+kobana banking financial accounts balances list \
   --params '{"financial_account_uid": "UID"}'
 
 # Transferência Pix
-kobana transfer pix create \
+kobana banking transfer pix create \
   --json '{"amount": 500, "pix_key": "email@example.com"}'
 
 # Listar com paginação automática (NDJSON)
-kobana charge pix list --page-all --fields "uid,amount,status"
+kobana banking charge pix list --page-all --fields "uid,amount,status"
 
 # Ver detalhes de um boleto
-kobana v1 bank-billets get --params '{"id": 12345}'
+kobana banking v1 bank-billets get --params '{"id": 12345}'
 
 # Cancelar boleto
-kobana v1 bank-billets cancel --params '{"id": 12345}'
+kobana banking v1 bank-billets cancel --params '{"id": 12345}'
 
 # Dry-run — ver a requisição sem executar
-kobana charge pix create --json '{"amount": 100}' --dry-run
+kobana banking charge pix create --json '{"amount": 100}' --dry-run
 
 # Saída em tabela
-kobana v1 bank-billets list --output-format table
+kobana banking v1 bank-billets list --output-format table
 
 # Salvar resposta em arquivo
-kobana v1 bank-billets get --params '{"id": 12345}' --output boleto.json
+kobana banking v1 bank-billets get --params '{"id": 12345}' --output boleto.json
 ```
 
 ### Helpers
@@ -208,8 +218,8 @@ kobana +cancelar-lote --ids "123,456,789"
 kobana schema --list
 
 # Ver schema de um endpoint específico
-kobana schema charge.pix.create
-kobana schema v1.bank-billets.list
+kobana schema banking.charge.pix.create
+kobana schema banking.v1.bank-billets.list
 ```
 
 Retorna parâmetros, campos obrigatórios, tipos e respostas — tudo derivado do OpenAPI spec embutido.
@@ -317,7 +327,7 @@ kobana-cli/
 ├── crates/
 │   ├── kobana/          # Biblioteca: HTTP client, error types, OpenAPI parsing, validação
 │   └── kobana-cli/      # Binário: CLI, auth, formatação, paginação, helpers
-│       └── specs/       # OpenAPI specs v1 e v2 embutidos
+│       └── specs/       # OpenAPI specs embutidos (<produto>-<versao>.json)
 └── docs/                # Especificações e documentação de design
 ```
 

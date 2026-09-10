@@ -10,16 +10,12 @@ mod helpers;
 mod logging;
 mod oauth;
 mod pagination;
+mod product;
 mod schema;
 mod update;
 mod validate;
 
 use kobana::error::KobanaError;
-use kobana::spec::ApiSpec;
-
-// Embed OpenAPI specs at compile time
-const V1_SPEC_JSON: &str = include_str!("../specs/v1.json");
-const V2_SPEC_JSON: &str = include_str!("../specs/v2.json");
 
 #[tokio::main]
 async fn main() {
@@ -37,20 +33,16 @@ async fn main() {
 }
 
 async fn run() -> Result<(), KobanaError> {
-    // Phase 1: Parse specs and build command trees
-    let v1_spec = ApiSpec::parse(V1_SPEC_JSON)?;
-    let v2_spec = ApiSpec::parse(V2_SPEC_JSON)?;
-
-    let v1_tree = v1_spec.build_command_tree();
-    let v2_tree = v2_spec.build_command_tree();
+    // Phase 1: Load every registered product (parse specs, build command trees)
+    let products = product::load_all()?;
 
     // Phase 2: Build clap command and parse args
-    let root_cmd = commands::build_root_command(&v1_tree, &v2_tree);
+    let root_cmd = commands::build_root_command(&products);
     let matches = root_cmd.get_matches();
 
     // Handle special commands
     if let Some(("schema", schema_matches)) = matches.subcommand() {
-        return schema::handle_schema(schema_matches, &v1_spec, &v2_spec, &v1_tree, &v2_tree);
+        return schema::handle_schema(schema_matches, &products);
     }
 
     if let Some(("update", update_matches)) = matches.subcommand() {
@@ -65,7 +57,7 @@ async fn run() -> Result<(), KobanaError> {
 
     if let Some(("completions", comp_matches)) = matches.subcommand() {
         let shell = comp_matches.get_one::<String>("shell").unwrap();
-        let mut cmd = commands::build_root_command(&v1_tree, &v2_tree);
+        let mut cmd = commands::build_root_command(&products);
         return completions::generate_completions(shell, &mut cmd);
     }
 
@@ -86,15 +78,20 @@ async fn run() -> Result<(), KobanaError> {
                 } else {
                     auth::resolve_token()?
                 };
-                let client = kobana::client::KobanaClient::new(env.base_url(), &token)?;
+                // Helpers wrap banking endpoints (+emitir, +cobrar, …)
+                let banking = product::find(&products, "banking").ok_or_else(|| {
+                    KobanaError::Internal("banking product is not registered".into())
+                })?;
+                let client =
+                    kobana::client::KobanaClient::new(banking.product.base_url(&env), &token)?;
                 return helper.execute(&client, sub_matches).await;
             }
         }
     }
 
     // Resolve endpoint
-    let (endpoint, method_matches) =
-        commands::resolve_endpoint(&matches, &v1_tree, &v2_tree).ok_or_else(|| {
+    let (loaded_product, endpoint, method_matches) =
+        commands::resolve_endpoint(&matches, &products).ok_or_else(|| {
             KobanaError::Validation("could not resolve endpoint from arguments".into())
         })?;
 
@@ -111,8 +108,8 @@ async fn run() -> Result<(), KobanaError> {
         auth::resolve_token()?
     };
 
-    // Create client
-    let client = kobana::client::KobanaClient::new(env.base_url(), &token)?;
+    // Create client — each product has its own API host
+    let client = kobana::client::KobanaClient::new(loaded_product.product.base_url(&env), &token)?;
 
     // Execute
     executor::execute(&client, endpoint, &method_matches, &matches).await

@@ -2,6 +2,7 @@ use clap::{Arg, Command};
 use kobana::spec::{CommandNode, ResolvedEndpoint};
 
 use crate::helpers;
+use crate::product::{self, LoadedProduct};
 
 /// Build a clap Command tree from a CommandNode tree
 pub fn build_command_tree(node: &CommandNode, name: &str) -> Command {
@@ -41,11 +42,26 @@ fn build_method_command(endpoint: &ResolvedEndpoint) -> Command {
     cmd
 }
 
+/// Build the command tree for a product: services, resources and methods
+fn build_product_command(loaded: &LoadedProduct) -> Command {
+    let mut cmd = Command::new(loaded.product.slug)
+        .about(loaded.product.about)
+        .subcommand_required(true)
+        .arg_required_else_help(true);
+
+    for (service_name, service) in &loaded.services {
+        cmd = cmd
+            .subcommand(build_command_tree(&service.tree, service_name).about(service.about.clone()));
+    }
+
+    cmd
+}
+
 /// Build the top-level kobana Command with all services
-pub fn build_root_command(v1_tree: &CommandNode, v2_tree: &CommandNode) -> Command {
+pub fn build_root_command(products: &[LoadedProduct]) -> Command {
     let mut root = Command::new("kobana")
         .version(env!("CARGO_PKG_VERSION"))
-        .about("Kobana API CLI — acesso completo a API Kobana v1 e v2")
+        .about("Kobana API CLI — kobana <produto> <servico> <recurso> <metodo>")
         .subcommand_required(true)
         .arg_required_else_help(true)
         .arg(
@@ -144,15 +160,9 @@ pub fn build_root_command(v1_tree: &CommandNode, v2_tree: &CommandNode) -> Comma
                 .default_value("100"),
         );
 
-    // Add v1 as a top-level subcommand
-    let v1_cmd = build_command_tree(v1_tree, "v1").about("API v1 (boletos, clientes, webhooks)");
-    root = root.subcommand(v1_cmd);
-
-    // Add v2 services as top-level subcommands
-    for (service_name, service_node) in &v2_tree.children {
-        let service_cmd = build_command_tree(service_node, service_name)
-            .about(service_about(service_name));
-        root = root.subcommand(service_cmd);
+    // Add the product level: kobana <produto> <servico> <recurso> <metodo>
+    for loaded in products {
+        root = root.subcommand(build_product_command(loaded));
     }
 
     // Add special commands
@@ -161,14 +171,14 @@ pub fn build_root_command(v1_tree: &CommandNode, v2_tree: &CommandNode) -> Comma
             .about("Introspect API schema for an endpoint")
             .arg(
                 Arg::new("endpoint")
-                    .help("Endpoint path (e.g., charge.pix.create)")
+                    .help("Endpoint path (e.g., banking.charge.pix.create)")
                     .value_name("ENDPOINT"),
             )
             .arg(
                 Arg::new("list")
                     .long("list")
                     .action(clap::ArgAction::SetTrue)
-                    .help("List available services/resources"),
+                    .help("List available products/services/resources"),
             ),
     );
 
@@ -240,44 +250,21 @@ pub fn build_root_command(v1_tree: &CommandNode, v2_tree: &CommandNode) -> Comma
     )
 }
 
-/// Human-readable about text for v2 services
-fn service_about(name: &str) -> &'static str {
-    match name {
-        "charge" => "Cobranças (Pix, boletos, Pix automático)",
-        "payment" => "Pagamentos (boletos, Pix, taxas, concessionárias)",
-        "transfer" => "Transferências (Pix, TED, interna)",
-        "financial" => "Financeiro (contas, saldos, extratos)",
-        "admin" => "Administração (subcontas, usuários, conexões)",
-        "mailbox" => "Caixa postal (EDI, arquivos)",
-        "data" => "Consultas (boletos, QR codes Pix)",
-        "edi" => "EDI (caixas EDI)",
-        "me" => "Informações da conta",
-        "payments" => "Pagamentos (unificado)",
-        "transfers" => "Transferências (unificado)",
-        "security" => "Segurança (tokens de acesso)",
-        _ => "API Kobana",
-    }
-}
-
 /// Resolve which endpoint was matched from the clap matches
 pub fn resolve_endpoint<'a>(
     matches: &clap::ArgMatches,
-    v1_tree: &'a CommandNode,
-    v2_tree: &'a CommandNode,
-) -> Option<(&'a ResolvedEndpoint, clap::ArgMatches)> {
-    let (service_name, service_matches) = matches.subcommand()?;
+    products: &'a [LoadedProduct],
+) -> Option<(&'a LoadedProduct, &'a ResolvedEndpoint, clap::ArgMatches)> {
+    let (product_name, product_matches) = matches.subcommand()?;
 
-    if service_name == "schema" || service_name == "auth" {
-        return None; // handled separately
-    }
+    // Special commands (schema, auth, update, completions, helpers) are not products
+    let loaded = product::find(products, product_name)?;
 
-    let tree = if service_name == "v1" {
-        v1_tree
-    } else {
-        v2_tree.children.get(service_name)?
-    };
+    let (service_name, service_matches) = product_matches.subcommand()?;
+    let service = loaded.service(service_name)?;
 
-    resolve_in_tree(tree, service_matches)
+    let (endpoint, method_matches) = resolve_in_tree(&service.tree, service_matches)?;
+    Some((loaded, endpoint, method_matches))
 }
 
 fn resolve_in_tree<'a>(

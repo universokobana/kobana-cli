@@ -8,7 +8,7 @@ metadata:
     requires:
       bins:
         - kobana
-    cliHelp: "kobana charge --help"
+    cliHelp: "kobana banking charge --help"
 ---
 
 # charge — Cobranças
@@ -16,7 +16,7 @@ metadata:
 > **PREREQUISITE:** Read `../kobana-shared/SKILL.md` for auth, global flags, and security rules.
 
 ```bash
-kobana charge <resource> <method> [flags]
+kobana banking charge <resource> <method> [flags]
 ```
 
 ## Helper Commands
@@ -87,7 +87,7 @@ kobana charge <resource> <method> [flags]
 ## Discovering Commands
 
 ```bash
-kobana charge --help
-kobana charge pix --help
-kobana schema charge.pix.create
+kobana banking charge --help
+kobana banking charge pix --help
+kobana schema banking.charge.pix.create
 ```

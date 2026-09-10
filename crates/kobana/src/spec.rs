@@ -133,21 +133,21 @@ impl ApiSpec {
         Ok(ApiSpec { version, paths })
     }
 
-    /// Build a command tree from the spec, stripping the version prefix.
+    /// Build a command tree from the spec, stripping `version_prefix`
+    /// (e.g. `/v1`) from each path.
     ///
     /// All non-parameter segments become nodes in the command tree.
     /// Path parameters are skipped (they become --params values).
     /// The CLI method (list, get, create, etc.) is inferred from the HTTP method
     /// and whether the path ends with a parameter.
-    pub fn build_command_tree(&self) -> CommandNode {
+    ///
+    /// Every Kobana product carries the version in its own spec paths, so the
+    /// prefix only decides tree placement — the endpoint keeps the full path.
+    pub fn build_command_tree(&self, version_prefix: &str) -> CommandNode {
         let mut root = CommandNode::default();
 
         for (path, path_item) in &self.paths {
-            // Strip version prefix: /v1/... or /v2/...
-            let stripped = path
-                .strip_prefix("/v1/")
-                .or_else(|| path.strip_prefix("/v2/"))
-                .unwrap_or(path);
+            let stripped = path.strip_prefix(version_prefix).unwrap_or(path);
 
             let raw_segments: Vec<&str> = stripped.split('/').filter(|s| !s.is_empty()).collect();
 
@@ -330,6 +330,51 @@ fn parse_parameter(value: &serde_json::Value) -> Option<Parameter> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Every Kobana product spec carries the version in its own paths
+    /// (`/v1/subscriptions`, `/v2/charge/pix`).
+    const SPEC: &str = r#"{
+        "info": {"version": "1.0"},
+        "paths": {
+            "/v1/subscriptions": {"get": {"responses": {}}, "post": {"responses": {}}},
+            "/v1/subscriptions/{id}/pause": {"post": {"responses": {}}}
+        }
+    }"#;
+
+    #[test]
+    fn version_prefix_is_stripped_from_the_tree_but_kept_in_the_path() {
+        let spec = ApiSpec::parse(SPEC).unwrap();
+        let tree = spec.build_command_tree("/v1");
+
+        // `v1` must not become a tree node...
+        assert!(tree.children.contains_key("subscriptions"));
+        assert!(!tree.children.contains_key("v1"));
+
+        // ...but the request path has to keep it
+        let mut got: Vec<(String, String)> = tree.children["subscriptions"]
+            .endpoints
+            .iter()
+            .map(|e| (e.cli_method.clone(), e.path_template.clone()))
+            .collect();
+        got.sort();
+
+        let mut want = vec![
+            ("create".to_string(), "/v1/subscriptions".to_string()),
+            ("list".to_string(), "/v1/subscriptions".to_string()),
+            ("pause".to_string(), "/v1/subscriptions/{id}/pause".to_string()),
+        ];
+        want.sort();
+        assert_eq!(got, want);
+    }
+
+    #[test]
+    fn a_non_matching_prefix_leaves_paths_untouched() {
+        let spec = ApiSpec::parse(SPEC).unwrap();
+        let tree = spec.build_command_tree("/v2");
+
+        // Nothing is stripped, so `v1` shows up as a node instead
+        assert!(tree.children.contains_key("v1"));
+    }
 
     #[test]
     fn test_infer_cli_method() {

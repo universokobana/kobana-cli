@@ -8,7 +8,7 @@ metadata:
     requires:
       bins:
         - kobana
-    cliHelp: "kobana transfer --help"
+    cliHelp: "kobana banking transfer --help"
 ---
 
 # transfer — Transferências
@@ -16,7 +16,7 @@ metadata:
 > **PREREQUISITE:** Read `../kobana-shared/SKILL.md` for auth, global flags, and security rules.
 
 ```bash
-kobana transfer <resource> <method> [flags]
+kobana banking transfer <resource> <method> [flags]
 ```
 
 ## API Resources
@@ -61,7 +61,7 @@ kobana transfer <resource> <method> [flags]
 ## Discovering Commands
 
 ```bash
-kobana transfer --help
-kobana transfer pix --help
-kobana schema transfer.pix.create
+kobana banking transfer --help
+kobana banking transfer pix --help
+kobana schema banking.transfer.pix.create
 ```

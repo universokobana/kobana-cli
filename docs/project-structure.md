@@ -133,9 +133,9 @@ argv: ["kobana", "charge", "pix", "list", "--params", '{"page":1}']
 ### Mapeamento Path -> Comando
 
 ```
-/v2/charge/pix              -> kobana charge pix list/create
-/v2/charge/pix/{uid}        -> kobana charge pix get/update
-/v2/charge/pix/{uid}/cancel -> kobana charge pix cancel
+/v2/charge/pix              -> kobana banking charge pix list/create
+/v2/charge/pix/{uid}        -> kobana banking charge pix get/update
+/v2/charge/pix/{uid}/cancel -> kobana banking charge pix cancel
 ```
 
 Regras de inferencia de metodo:
@@ -193,7 +193,7 @@ Chave de encriptacao no OS keyring (macOS Keychain, Windows Credential Manager, 
 ## Schema Introspection
 
 ```bash
-kobana schema charge.pix.create
+kobana schema banking.charge.pix.create
 ```
 
 Output:

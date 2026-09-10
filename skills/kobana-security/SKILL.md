@@ -8,7 +8,7 @@ metadata:
     requires:
       bins:
         - kobana
-    cliHelp: "kobana security --help"
+    cliHelp: "kobana banking security --help"
 ---
 
 # security — Tokens de Acesso
@@ -16,7 +16,7 @@ metadata:
 > **PREREQUISITE:** Read `../kobana-shared/SKILL.md` for auth, global flags, and security rules.
 
 ```bash
-kobana security <resource> <method> [flags]
+kobana banking security <resource> <method> [flags]
 ```
 
 ## API Resources
@@ -33,7 +33,7 @@ kobana security <resource> <method> [flags]
 ## Discovering Commands
 
 ```bash
-kobana security --help
-kobana security access-tokens --help
-kobana schema security.access-tokens.create
+kobana banking security --help
+kobana banking security access-tokens --help
+kobana schema banking.security.access-tokens.create
 ```

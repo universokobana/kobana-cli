@@ -8,7 +8,7 @@ metadata:
     requires:
       bins:
         - kobana
-    cliHelp: "kobana financial --help"
+    cliHelp: "kobana banking financial --help"
 ---
 
 # financial — Financeiro
@@ -16,7 +16,7 @@ metadata:
 > **PREREQUISITE:** Read `../kobana-shared/SKILL.md` for auth, global flags, and security rules.
 
 ```bash
-kobana financial <resource> <method> [flags]
+kobana banking financial <resource> <method> [flags]
 ```
 
 ## API Resources
@@ -52,7 +52,7 @@ kobana financial <resource> <method> [flags]
 ## Discovering Commands
 
 ```bash
-kobana financial --help
-kobana financial accounts --help
-kobana schema financial.accounts.balances.list
+kobana banking financial --help
+kobana banking financial accounts --help
+kobana schema banking.financial.accounts.balances.list
 ```

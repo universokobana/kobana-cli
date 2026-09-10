@@ -8,7 +8,7 @@ metadata:
     requires:
       bins:
         - kobana
-    cliHelp: "kobana v1 --help"
+    cliHelp: "kobana banking v1 --help"
 ---
 
 # v1 — API Legada
@@ -16,7 +16,7 @@ metadata:
 > **PREREQUISITE:** Read `../kobana-shared/SKILL.md` for auth, global flags, and security rules.
 
 ```bash
-kobana v1 <resource> <method> [flags]
+kobana banking v1 <resource> <method> [flags]
 ```
 
 ## Helper Commands
@@ -154,7 +154,7 @@ kobana v1 <resource> <method> [flags]
 ## Discovering Commands
 
 ```bash
-kobana v1 --help
-kobana v1 bank-billets --help
-kobana schema v1.bank-billets.create
+kobana banking v1 --help
+kobana banking v1 bank-billets --help
+kobana schema banking.v1.bank-billets.create
 ```

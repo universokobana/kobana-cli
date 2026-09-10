@@ -8,7 +8,7 @@ metadata:
     requires:
       bins:
         - kobana
-    cliHelp: "kobana payment --help"
+    cliHelp: "kobana banking payment --help"
 ---
 
 # payment — Pagamentos
@@ -16,7 +16,7 @@ metadata:
 > **PREREQUISITE:** Read `../kobana-shared/SKILL.md` for auth, global flags, and security rules.
 
 ```bash
-kobana payment <resource> <method> [flags]
+kobana banking payment <resource> <method> [flags]
 ```
 
 ## API Resources
@@ -85,7 +85,7 @@ kobana payment <resource> <method> [flags]
 ## Discovering Commands
 
 ```bash
-kobana payment --help
-kobana payment pix --help
-kobana schema payment.pix.create
+kobana banking payment --help
+kobana banking payment pix --help
+kobana schema banking.payment.pix.create
 ```
