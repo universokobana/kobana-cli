@@ -53,7 +53,7 @@ fn build_product_command(loaded: &LoadedProduct) -> Command {
 
     for (name, node) in &loaded.tree.children {
         let mut child = build_command_tree(node, name);
-        if let Some(about) = product::resource_about(name) {
+        if let Some(about) = product::resource_about(loaded.product.slug, name) {
             child = child.about(about);
         }
         cmd = cmd.subcommand(child);

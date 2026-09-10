@@ -14,13 +14,13 @@ O CLI `kobana` fornece acesso completo às APIs da Kobana (v1 e v2) a partir do 
 kobana <produto> <recurso> <metodo> [flags]
 ```
 
-Produtos disponíveis: `banking` (Gateway Bancário) e `inbox` (Inbox Autônomo).
-`finance` (Financeiro Inteligente) e `billing` (Faturamento Automático) ainda
-não estão suportados.
+Produtos disponíveis: `banking` (Gateway Bancário), `inbox` (Inbox Autônomo),
+`billing` (Faturamento Automático) e `finance` (Financeiro Inteligente).
 
-O `inbox` tem credenciais próprias: `KOBANA_TOKEN` precisa ser um JWT do Inbox
-e `KOBANA_INBOX_CLIENT_CERT` precisa apontar para um PEM de certificado de
-cliente (a API fica atrás de mTLS).
+Cada produto é uma API separada com host e credenciais próprios — um
+`KOBANA_TOKEN` do banking não vale para os outros. O `inbox` ainda exige
+`KOBANA_INBOX_CLIENT_CERT` apontando para um PEM de certificado de cliente
+(a API fica atrás de mTLS).
 
 Use `--help` para obter ajuda sobre os comandos disponíveis.
 

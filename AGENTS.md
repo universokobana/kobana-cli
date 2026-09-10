@@ -76,19 +76,24 @@ the request URL keeps it:
 
 | Product | `Hosts::production` | Spec paths | `version_prefix` |
 |---------|---------------------|------------|------------------|
-| `banking` ✅ | `https://api.kobana.com.br` | `/v1/bank_billets`, `/v2/charge/pix` | `/v1`, `/v2` |
-| `inbox` ✅ | `https://api.inbox.kobana.com.br` | `/v1/workspaces` | `/v1` |
+| `banking` | `https://api.kobana.com.br` | `/v1/bank_billets`, `/v2/charge/pix` | `/v1`, `/v2` |
+| `inbox` | `https://api.inbox.kobana.com.br` | `/v1/workspaces` | `/v1` |
 | `billing` | `https://api.billing.kobana.com.br` | `/v1/subscriptions` | `/v1` |
 | `finance` | `https://api.finance.kobana.com.br` | `/v1/financial-accounts` | `/v1` |
 
-✅ = registered in `REGISTRY` today.
+All four are registered.
 
-> [!NOTE]
-> The published finance spec still shows `servers: https://api.finance.kobana.com.br/v1`
-> with paths starting at the resource (`/financial-accounts`). That is a known
-> bug on the finance side and is being fixed — the `/v1` moves into the paths,
-> matching every other product. Do not add a per-product switch for it; if you
-> pick up a finance spec that still has the old shape, wait for the corrected one.
+> [!IMPORTANT]
+> **The published finance spec does not match that table yet.** It still ships
+> `servers: https://api.finance.kobana.com.br/v1` with paths starting at the
+> resource (`/financial-accounts`). That is a known bug being fixed upstream —
+> the `/v1` moves into the paths, like every other product.
+>
+> `specs/finance-v1.json` is therefore normalized when converted: the `/v1` is
+> stripped from `servers` and prepended to every path. Do not add a per-product
+> switch in the code for this. When the upstream spec is corrected, re-convert
+> it **without** the normalization step — the result is byte-identical in shape,
+> and `every_endpoint_path_exists_in_its_spec` keeps the URLs honest either way.
 
 `Hosts` must never include the version prefix.
 
@@ -106,9 +111,17 @@ for products whose edge terminates mTLS. `inbox` sets it; `banking` does not.
 `product::client_for()` loads it and is the only place clients are built —
 never call `KobanaClient::new` directly from a command.
 
-`billing` and `finance` are not registered yet. Their specs are published at
-`docs.<product>.kobana.com.br/pt/api/overview/openapi.md` as YAML and must be
-converted to JSON before being embedded.
+Specs are published at `docs.<product>.kobana.com.br/pt/api/overview/openapi.md`
+as YAML and must be converted to JSON before being embedded. macOS ships Ruby,
+which needs no extra dependency:
+
+```bash
+ruby -ryaml -rjson -e "File.write('out.json', JSON.pretty_generate(YAML.unsafe_load_file('in.yaml')))"
+```
+
+`resource_about()` is keyed by `(product, resource)`, not by resource name
+alone: `payments` exists in banking and billing, `transfers` in banking and
+finance, and they mean different things.
 
 #### Library (`crates/kobana/src/`)
 

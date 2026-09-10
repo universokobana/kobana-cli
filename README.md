@@ -136,12 +136,14 @@ Produtos disponíveis:
 | Produto | Descrição |
 |---------|-----------|
 | `banking` | Gateway Bancário — cobranças, pagamentos, transferências (API v1 e v2) |
-| `inbox` | Inbox Autônomo — caixas de entrada, agentes, e-mails, webhooks (API v1) |
+| `inbox` | Inbox Autônomo — caixas de entrada, agentes, e-mails, webhooks |
+| `billing` | Faturamento Automático — assinaturas, planos, produtos, faturas, NF-e |
+| `finance` | Financeiro Inteligente — contas, lançamentos, fluxo de caixa, conciliação |
 
-> Financeiro Inteligente (`finance`) e Faturamento Automático (`billing`) ainda
-> não estão disponíveis no CLI.
+> Cada produto é uma API separada, com host e credenciais próprios. Um
+> `KOBANA_TOKEN` do Gateway Bancário não vale para os demais.
 
-O produto `inbox` tem API, credenciais e requisitos próprios — veja
+O produto `inbox` tem requisitos adicionais — veja
 [Inbox Autônomo](#inbox-autônomo) abaixo.
 
 Recursos de topo do produto `banking` (a versão da API — v1 ou v2 — é resolvida
@@ -161,6 +163,12 @@ a partir da spec, nunca aparece no comando):
 
 Recursos do produto `inbox`: `workspaces`, `inboxes`, `emails`, `agents`,
 `agent-runs`, `webhooks`, `system-events`.
+
+Recursos do produto `billing`: `subscriptions`, `plans`, `products`, `invoices`,
+`nfes`, `payments`, `proposals`, `coupons`, `billing-accounts`, `customers`, entre outros.
+
+Recursos do produto `finance`: `financial-accounts`, `financial-transactions`,
+`payables`, `receivables`, `cash-flow`, `reconciliations`, `categories`, entre outros.
 
 Use `kobana <produto> --help` para a lista completa.
 

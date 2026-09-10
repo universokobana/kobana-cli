@@ -19,6 +19,8 @@ use crate::config::Environment;
 const BANKING_V1_SPEC: &str = include_str!("../specs/banking-v1.json");
 const BANKING_V2_SPEC: &str = include_str!("../specs/banking-v2.json");
 const INBOX_V1_SPEC: &str = include_str!("../specs/inbox-v1.json");
+const BILLING_V1_SPEC: &str = include_str!("../specs/billing-v1.json");
+const FINANCE_V1_SPEC: &str = include_str!("../specs/finance-v1.json");
 
 /// A Kobana product exposed as the first CLI segment.
 pub struct Product {
@@ -157,6 +159,34 @@ Product {
     // to the origin, so requests must present a client certificate.
     client_cert_env: Some("KOBANA_INBOX_CLIENT_CERT"),
 },
+Product {
+    slug: "billing",
+    about: "Faturamento Automático — assinaturas, planos, faturas",
+    hosts: Hosts {
+        production: "https://api.billing.kobana.com.br",
+        sandbox: "https://api.billing.sandbox.kobana.com.br",
+        development: None,
+    },
+    specs: &[SpecEntry {
+        json: BILLING_V1_SPEC,
+        version_prefix: "/v1",
+    }],
+    client_cert_env: None,
+},
+Product {
+    slug: "finance",
+    about: "Financeiro Inteligente — contas, lançamentos, fluxo de caixa",
+    hosts: Hosts {
+        production: "https://api.finance.kobana.com.br",
+        sandbox: "https://api.finance.sandbox.kobana.com.br",
+        development: None,
+    },
+    specs: &[SpecEntry {
+        json: FINANCE_V1_SPEC,
+        version_prefix: "/v1",
+    }],
+    client_cert_env: None,
+},
 ];
 
 /// A product with its specs parsed and merged into one command tree.
@@ -210,23 +240,26 @@ pub fn is_product(slug: &str) -> bool {
 }
 
 /// Human-readable about text for a product's top-level resources.
-/// Resources without an entry are described by the API spec itself, or show
-/// no description at all.
-pub fn resource_about(name: &str) -> Option<&'static str> {
-    let about = match name {
+///
+/// Scoped per product: resource names repeat across products (`payments`
+/// exists in banking and billing, `transfers` in banking and finance) and they
+/// mean different things, so a global name map would mislabel them.
+/// Resources without an entry show no description.
+pub fn resource_about(product: &str, name: &str) -> Option<&'static str> {
+    let about = match (product, name) {
         // banking v2 domains
-        "charge" => "Cobranças (Pix, boletos, Pix automático)",
-        "payment" => "Pagamentos (boletos, Pix, taxas, concessionárias)",
-        "transfer" => "Transferências (Pix, TED, interna)",
-        "financial" => "Financeiro (contas, saldos, extratos)",
-        "admin" => "Administração (subcontas, usuários, conexões)",
-        "mailbox" => "Caixa postal (EDI, arquivos)",
-        "data" => "Consultas (boletos, QR codes Pix)",
-        "edi" => "EDI (caixas EDI)",
-        "me" => "Informações da conta",
-        "payments" => "Pagamentos (unificado)",
-        "transfers" => "Transferências (unificado)",
-        "security" => "Segurança (tokens de acesso)",
+        ("banking", "charge") => "Cobranças (Pix, boletos, Pix automático)",
+        ("banking", "payment") => "Pagamentos (boletos, Pix, taxas, concessionárias)",
+        ("banking", "transfer") => "Transferências (Pix, TED, interna)",
+        ("banking", "financial") => "Financeiro (contas, saldos, extratos)",
+        ("banking", "admin") => "Administração (subcontas, usuários, conexões)",
+        ("banking", "mailbox") => "Caixa postal (EDI, arquivos)",
+        ("banking", "data") => "Consultas (boletos, QR codes Pix)",
+        ("banking", "edi") => "EDI (caixas EDI)",
+        ("banking", "me") => "Informações da conta",
+        ("banking", "payments") => "Pagamentos (unificado)",
+        ("banking", "transfers") => "Transferências (unificado)",
+        ("banking", "security") => "Segurança (tokens de acesso)",
         _ => return None,
     };
     Some(about)
@@ -237,16 +270,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn banking_is_registered() {
-        assert!(is_product("banking"));
-    }
-
-    #[test]
-    fn rejects_unimplemented_products() {
-        // These products exist at Kobana but are not wired into the CLI yet
-        for slug in ["finance", "billing"] {
-            assert!(!is_product(slug), "{slug} should not be available yet");
-        }
+    fn every_kobana_product_is_registered() {
+        let slugs: Vec<&str> = REGISTRY.iter().map(|p| p.slug).collect();
+        assert_eq!(slugs, ["banking", "inbox", "billing", "finance"]);
     }
 
     #[test]
@@ -429,6 +455,78 @@ mod tests {
         // On a name clash the first spec wins, so `list` keeps the v1 path
         let list = billets.endpoints.iter().find(|e| e.cli_method == "list").unwrap();
         assert_eq!(list.path_template, "/v1/billets");
+    }
+
+    /// Guards the finance spec normalization. The published finance spec puts
+    /// `/v1` in `servers` and starts paths at the resource; `specs/finance-v1.json`
+    /// is normalized to carry it in the paths instead. Re-embedding the raw spec
+    /// would still satisfy `every_endpoint_path_exists_in_its_spec` while
+    /// silently dropping `/v1` from every URL — this catches that.
+    #[test]
+    fn every_endpoint_url_carries_a_version_prefix() {
+        fn walk(node: &CommandNode, out: &mut Vec<String>) {
+            out.extend(node.endpoints.iter().map(|e| e.path_template.clone()));
+            for child in node.children.values() {
+                walk(child, out);
+            }
+        }
+
+        for loaded in &load_all().unwrap() {
+            let mut templates = Vec::new();
+            walk(&loaded.tree, &mut templates);
+            assert!(!templates.is_empty(), "{} has no endpoints", loaded.product.slug);
+
+            for t in &templates {
+                let version = t.split('/').nth(1).unwrap_or_default();
+                assert!(
+                    version.strip_prefix('v').is_some_and(|d| {
+                        !d.is_empty() && d.chars().all(|c| c.is_ascii_digit())
+                    }),
+                    "{} endpoint '{t}' does not start with an API version",
+                    loaded.product.slug
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn billing_and_finance_are_registered_with_their_resources() {
+        let products = load_all().unwrap();
+
+        let billing = find(&products, "billing").expect("billing must load");
+        for resource in ["subscriptions", "plans", "invoices", "nfes", "products"] {
+            assert!(billing.tree.children.contains_key(resource), "billing {resource}");
+        }
+        assert_eq!(
+            billing.product.base_url(&Environment::Production),
+            "https://api.billing.kobana.com.br"
+        );
+
+        let finance = find(&products, "finance").expect("finance must load");
+        for resource in ["financial-accounts", "payables", "receivables", "cash-flow"] {
+            assert!(finance.tree.children.contains_key(resource), "finance {resource}");
+        }
+        assert_eq!(
+            finance.product.base_url(&Environment::Production),
+            "https://api.finance.kobana.com.br"
+        );
+
+        // The normalized finance spec must reach /v1/financial-accounts
+        let accounts = &finance.tree.children["financial-accounts"];
+        assert!(accounts
+            .endpoints
+            .iter()
+            .any(|e| e.path_template == "/v1/financial-accounts"));
+    }
+
+    /// Resource names repeat across products with different meanings, so the
+    /// help text must never leak from one product to another.
+    #[test]
+    fn resource_descriptions_do_not_leak_across_products() {
+        assert_eq!(resource_about("banking", "payments"), Some("Pagamentos (unificado)"));
+        assert_eq!(resource_about("billing", "payments"), None);
+        assert_eq!(resource_about("banking", "transfers"), Some("Transferências (unificado)"));
+        assert_eq!(resource_about("finance", "transfers"), None);
     }
 
     #[test]
