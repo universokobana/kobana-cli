@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-`kobana` is a Rust CLI tool for interacting with the Kobana financial API (v1 and v2). It dynamically generates its command surface at startup by parsing OpenAPI 3.1 specs embedded in the binary.
+`kobana` is a Rust CLI tool for interacting with the APIs of all four Kobana products — Gateway Bancário (`banking`), Financeiro Inteligente (`finance`), Faturamento Automático (`billing`) and Inbox Autônomo (`inbox`). Each is an independent API with its own hosts and credentials. The CLI dynamically generates its command surface at startup by parsing OpenAPI 3.1 specs embedded in the binary.
 
 > [!IMPORTANT]
 > **Dynamic Commands**: This project does NOT hardcode API endpoints as Rust structs. Instead, it embeds OpenAPI JSON specs and builds `clap` commands dynamically via two-phase parsing. When updating the API surface, replace the spec files in `crates/kobana-cli/specs/` (named `<product>-<version>.json`) and rebuild. Do NOT add new crates or modules per endpoint.

@@ -1,14 +1,104 @@
 # Kobana CLI
 
-CLI para a API da [Kobana](https://kobana.com.br) — acesso completo às APIs v1 e v2 direto do terminal.
+CLI para as APIs da [Kobana](https://kobana.com.br) — os quatro produtos em um
+único binário, direto do terminal.
 
-Projetado para humanos e agentes de IA, com saída JSON estruturada, introspecção de schema, dry-run e paginação automática.
+Projetado para humanos e agentes de IA, com saída JSON estruturada, introspecção
+de schema, dry-run e paginação automática.
 
 ```
 kobana <produto> <recurso> <metodo> [flags]
 ```
 
 ![Kobana CLI Demo](docs/demo.gif)
+
+## Produtos
+
+A Kobana não é mais uma API só. Cada produto é uma API independente, com host,
+documentação e credenciais próprios — e o CLI fala com todos. O produto é sempre
+o primeiro segmento do comando.
+
+| Produto | Comando | API | Documentação |
+|---------|---------|-----|--------------|
+| Gateway Bancário | `banking` | `api.kobana.com.br` | [docs.banking.kobana.com.br](https://docs.banking.kobana.com.br) |
+| Financeiro Inteligente | `finance` | `api.finance.kobana.com.br` | [docs.finance.kobana.com.br](https://docs.finance.kobana.com.br) |
+| Faturamento Automático | `billing` | `api.billing.kobana.com.br` | [docs.billing.kobana.com.br](https://docs.billing.kobana.com.br) |
+| Inbox Autônomo | `inbox` | `api.inbox.kobana.com.br` | [docs.inbox.kobana.com.br](https://docs.inbox.kobana.com.br) |
+
+> [!IMPORTANT]
+> Produtos não compartilham credenciais. Um token do Gateway Bancário não
+> autentica no Faturamento Automático, e vice-versa. Veja [Autenticação](#autenticação).
+
+### Gateway Bancário — `banking`
+
+Operações bancárias unificadas: uma única API conectada a mais de 40 bancos para
+emitir boletos, cobrar e pagar via Pix, transferir por TED, consultar extratos e
+conciliar.
+
+É o produto mais antigo da Kobana e o que originou este CLI — era "a API da
+Kobana" antes da separação por produtos. Tem duas gerações de API convivendo
+(v1 e v2), mas isso não aparece no comando: os recursos legados da v1
+(`bank-billets`, `customers`, `webhooks`) ficam lado a lado com os domínios da
+v2 (`charge`, `payment`, `transfer`, `financial`, `admin`, `mailbox`, `data`,
+`security`), e o CLI resolve a versão certa na URL.
+
+```bash
+kobana banking bank-billets list          # boleto (v1)
+kobana banking charge pix create          # cobrança Pix (v2)
+kobana banking transfer ted create        # TED (v2)
+```
+
+### Financeiro Inteligente — `finance`
+
+Back-office financeiro: contas a pagar, contas a receber, conciliação bancária e
+multi-empresa em uma plataforma. É onde o dinheiro é classificado e explicado,
+não movimentado — para movimentar, use o `banking`.
+
+Recursos: `financial-accounts`, `financial-transactions`, `payables`,
+`receivables`, `cash-flow`, `reconciliations`, `categories`,
+`classification-centers`, `automatic-rules`, `people`, `companies`, `taxes`,
+`attachments`, `banks`, `receipts`, `transfers`.
+
+```bash
+kobana finance payables list --params '{"status": "pending"}'
+kobana finance cash-flow list --params '{"start_date": "2026-01-01"}'
+```
+
+Os endpoints `aggregates` de `payables`, `receivables` e
+`financial-transactions` devolvem totais em vez de listas — úteis para não
+encher a janela de contexto de um agente.
+
+### Faturamento Automático — `billing`
+
+Cobrança recorrente: assinaturas, planos, faturas, gestão de clientes e portal
+próprio. Cuida do ciclo de faturamento (o que cobrar, de quem, quando e quanto);
+a liquidação bancária em si acontece no `banking`.
+
+Recursos principais: `subscriptions`, `plans`, `plan-groups`, `products`,
+`invoices`, `nfes`, `payments`, `payment-methods`, `proposals`, `coupons`,
+`credits`, `billing-accounts`, `customers`, `companies`, `tax-rules`.
+
+```bash
+kobana billing subscriptions list --params '{"status": "active"}'
+kobana billing invoices finalize --params '{"id": "INVOICE_ID"}'
+```
+
+### Inbox Autônomo — `inbox`
+
+Caixas de entrada com agentes. Recebe e-mails em endereços dedicados
+(`inboxes`), processa cada mensagem com agentes (`agents`, `agent-runs`) e
+entrega o resultado via webhooks com replay de entregas.
+
+Recursos: `workspaces`, `inboxes`, `emails`, `agents`, `agent-runs`,
+`webhooks` (com `deliveries`), `system-events`.
+
+```bash
+kobana inbox emails list --fields "id,subject,received_at"
+kobana inbox emails reprocess --params '{"id": "EMAIL_ID"}'
+```
+
+Este produto exige mTLS além do token — veja
+[mTLS no Inbox Autônomo](#mtls-no-inbox-autônomo).
 
 ## Instalação
 
@@ -51,7 +141,20 @@ Requer [Rust](https://rustup.rs/) 1.70+.
 
 ## Autenticação
 
-### Token de acesso (mais simples)
+Cada produto autentica separadamente. Em todos eles o token vai em
+`KOBANA_TOKEN`, mas **o token de um produto não vale para outro** — e a forma de
+obtê-lo muda:
+
+| Produto | Credencial | Como obter |
+|---------|-----------|------------|
+| `banking` | Token de API ou OAuth | Interface da Kobana ou `kobana auth login` |
+| `finance` | JWT (HS512) | Emitido pelo Financeiro Inteligente |
+| `billing` | JWT (HS512) | Emitido pelo Faturamento Automático |
+| `inbox` | JWT (HS512) + certificado mTLS | Emitido pelo Inbox Autônomo |
+
+### Gateway Bancário
+
+#### Token de acesso (mais simples)
 
 Obtenha o token em *Integracões > API > Token de API* na interface da Kobana.
 
@@ -59,7 +162,7 @@ Obtenha o token em *Integracões > API > Token de API* na interface da Kobana.
 export KOBANA_TOKEN=seu_token_aqui
 ```
 
-### OAuth (PKCE)
+#### OAuth (PKCE)
 
 O CLI usa OAuth com PKCE — funciona sem configurar nada:
 
@@ -85,6 +188,41 @@ kobana auth logout
 
 Credenciais salvas são criptografadas com AES-256-GCM. A chave fica no keyring do OS (macOS Keychain, etc.) com fallback para arquivo.
 
+> [!NOTE]
+> `kobana auth login` é do Gateway Bancário. Ele não emite tokens para
+> `finance`, `billing` ou `inbox`.
+
+### Financeiro, Faturamento e Inbox
+
+Essas três APIs usam **JWT assinado em HS512**, enviado como
+`Authorization: Bearer <jwt>`. Coloque o JWT do produto em `KOBANA_TOKEN` antes
+de chamar aquele produto:
+
+```bash
+KOBANA_TOKEN=$JWT_FINANCE kobana finance payables list
+KOBANA_TOKEN=$JWT_BILLING kobana billing subscriptions list
+```
+
+Como a variável é a mesma para todos os produtos, exporte-a por comando (ou use
+um `.env` por projeto) se você alterna entre produtos na mesma sessão.
+
+#### mTLS no Inbox Autônomo
+
+O `inbox` é o único produto atrás de **mTLS**: além do JWT, o CLI precisa
+apresentar um certificado de cliente no handshake TLS. Aponte
+`KOBANA_INBOX_CLIENT_CERT` para um arquivo PEM contendo a cadeia do certificado
+e sua chave privada:
+
+```bash
+export KOBANA_INBOX_CLIENT_CERT=~/.config/kobana/inbox-client.pem
+kobana inbox emails list
+```
+
+Sem essa variável o CLI avisa em stderr e segue — desenvolvimento local não usa
+mTLS, e em produção a API responde `401` explicando. O JWT do Inbox usa
+`iss=kobana`, `aud=inbox/<ambiente>` e `sub=<workspace.external_id>`, com escopos
+por recurso (`inbox.emails`, `inbox.webhooks`, …).
+
 ### Prioridade de resolução
 
 | Prioridade | Método | Configuração |
@@ -95,13 +233,21 @@ Credenciais salvas são criptografadas com AES-256-GCM. A chave fica no keyring 
 
 ### Ambientes
 
-O CLI opera em três ambientes. **Produção é o default.**
+O CLI opera em três ambientes. **Produção é o default.** Cada produto tem seus
+próprios hosts:
 
-| Ambiente | API | OAuth | `--env` |
-|----------|-----|-------|---------|
-| Produção | `api.kobana.com.br` | `app.kobana.com.br` | `production` (default) |
-| Sandbox | `api-sandbox.kobana.com.br` | `app-sandbox.kobana.com.br` | `sandbox` |
-| Development | `localhost:5005/api` | `localhost:5005` | `development` |
+| Produto | `production` (default) | `sandbox` | `development` |
+|---------|------------------------|-----------|---------------|
+| `banking` | `api.kobana.com.br` | `api-sandbox.kobana.com.br` | `localhost:5005/api` |
+| `finance` | `api.finance.kobana.com.br` | `api.finance.sandbox.kobana.com.br` | — |
+| `billing` | `api.billing.kobana.com.br` | `api.billing.sandbox.kobana.com.br` | — |
+| `inbox` | `api.inbox.kobana.com.br` | `api.inbox.sandbox.kobana.com.br` | `localhost:3028/api` |
+
+Produtos sem host de desenvolvimento próprio caem em produção quando você passa
+`--env development`.
+
+O OAuth (`kobana auth login`) é do Gateway Bancário e usa `app.kobana.com.br` em
+produção e `app-sandbox.kobana.com.br` em sandbox.
 
 ```bash
 # Produção (default — não precisa de flag)
@@ -131,65 +277,34 @@ Os tokens são **diferentes entre ambientes** — um token de sandbox não funci
 kobana <produto> <recurso> <metodo> [flags]
 ```
 
-Produtos disponíveis:
+- **`<produto>`** — `banking`, `finance`, `billing` ou `inbox` (veja [Produtos](#produtos))
+- **`<recurso>`** — pode ser aninhado: `bank-billets`, `charge pix`,
+  `webhooks deliveries`
+- **`<metodo>`** — a ação: `list`, `get`, `create`, `update`, `delete`, ou uma
+  ação específica do recurso como `cancel`, `pause`, `replay`
 
-| Produto | Descrição |
-|---------|-----------|
-| `banking` | Gateway Bancário — cobranças, pagamentos, transferências (API v1 e v2) |
-| `inbox` | Inbox Autônomo — caixas de entrada, agentes, e-mails, webhooks |
-| `billing` | Faturamento Automático — assinaturas, planos, produtos, faturas, NF-e |
-| `finance` | Financeiro Inteligente — contas, lançamentos, fluxo de caixa, conciliação |
+A versão da API nunca entra no comando. `kobana banking bank-billets list` vai
+para `/v1/bank_billets` e `kobana banking charge pix list` vai para
+`/v2/charge/pix` — o CLI resolve isso a partir da spec OpenAPI.
 
-> Cada produto é uma API separada, com host e credenciais próprios. Um
-> `KOBANA_TOKEN` do Gateway Bancário não vale para os demais.
-
-O produto `inbox` tem requisitos adicionais — veja
-[Inbox Autônomo](#inbox-autônomo) abaixo.
-
-Recursos de topo do produto `banking` (a versão da API — v1 ou v2 — é resolvida
-a partir da spec, nunca aparece no comando):
-
-| Comando | Descrição |
-|---------|-----------|
-| `charge` | Cobranças — Pix, Pix automático |
-| `payment` | Pagamentos — boletos, Pix, taxas, concessionárias |
-| `transfer` | Transferências — Pix, TED, interna |
-| `financial` | Financeiro — contas, saldos, extratos |
-| `admin` | Administração — subcontas, usuários |
-| `mailbox` | Caixa postal — EDI, arquivos |
-| `data` | Consultas — boletos, QR codes Pix |
-| `security` | Tokens de acesso |
-| `bank-billets`, `customers`, `webhooks`, … | Boletos, clientes e demais recursos da API v1 |
-
-Recursos do produto `inbox`: `workspaces`, `inboxes`, `emails`, `agents`,
-`agent-runs`, `webhooks`, `system-events`.
-
-Recursos do produto `billing`: `subscriptions`, `plans`, `products`, `invoices`,
-`nfes`, `payments`, `proposals`, `coupons`, `billing-accounts`, `customers`, entre outros.
-
-Recursos do produto `finance`: `financial-accounts`, `financial-transactions`,
-`payables`, `receivables`, `cash-flow`, `reconciliations`, `categories`, entre outros.
-
-Use `kobana <produto> --help` para a lista completa.
-
-### Inbox Autônomo
-
-O Inbox não compartilha credenciais com o Gateway Bancário:
-
-- `KOBANA_TOKEN` precisa ser um **JWT** (HS512) com `iss=kobana`,
-  `aud=inbox/<env>` e `sub=<workspace.external_id>`. `kobana auth login` é do
-  produto `banking` e não gera esse token.
-- `KOBANA_INBOX_CLIENT_CERT` precisa apontar para um arquivo PEM com a cadeia
-  de certificado do cliente e sua chave privada — a API fica atrás de mTLS. Sem
-  ele o CLI avisa em stderr e as requisições são recusadas.
+Parâmetros de URL e query vão em `--params`, corpo de requisição em `--json`:
 
 ```bash
-kobana inbox emails list --fields "id,subject,received_at"
-kobana inbox webhooks deliveries replay \
-  --params '{"id": "WEBHOOK_ID", "deliveryId": "DELIVERY_ID"}'
+kobana billing subscriptions pause --params '{"id": "SUBSCRIPTION_ID"}'
+kobana banking charge pix create --json '{"amount": 99.90, "pix_account_uid": "UID"}'
+```
+
+Toda a superfície é descoberta pelo `--help`, em qualquer nível:
+
+```bash
+kobana --help                    # produtos
+kobana finance --help            # recursos do Financeiro Inteligente
+kobana finance payables --help   # métodos de contas a pagar
 ```
 
 ### Exemplos
+
+#### Gateway Bancário
 
 ```bash
 # Listar boletos com filtro
@@ -228,9 +343,59 @@ kobana banking bank-billets list --output-format table
 kobana banking bank-billets get --params '{"id": 12345}' --output boleto.json
 ```
 
+#### Financeiro Inteligente
+
+```bash
+# Contas a pagar em aberto
+kobana finance payables list \
+  --params '{"status": "pending"}' \
+  --fields "id,description,amount,due_date"
+
+# Totais agregados em vez da lista inteira
+kobana finance payables aggregates --params '{"group_by": "category"}'
+
+# Enviar uma conta para pagamento no banco
+kobana finance payables send-to-bank --dry-run --params '{"id": "PAYABLE_ID"}'
+
+# Fluxo de caixa do mês
+kobana finance cash-flow list \
+  --params '{"start_date": "2026-01-01", "end_date": "2026-01-31"}'
+```
+
+#### Faturamento Automático
+
+```bash
+# Assinaturas ativas
+kobana billing subscriptions list \
+  --params '{"status": "active"}' \
+  --fields "id,status,plan_id,next_billing_at"
+
+# Pausar e retomar uma assinatura
+kobana billing subscriptions pause --params '{"id": "SUBSCRIPTION_ID"}'
+kobana billing subscriptions resume --params '{"id": "SUBSCRIPTION_ID"}'
+
+# Fechar uma fatura e emitir a NF-e
+kobana billing invoices finalize --dry-run --params '{"id": "INVOICE_ID"}'
+kobana billing invoices issue-nfe --dry-run --params '{"id": "INVOICE_ID"}'
+```
+
+#### Inbox Autônomo
+
+```bash
+# E-mails recebidos
+kobana inbox emails list --fields "id,subject,received_at"
+
+# Reprocessar um e-mail com os agentes
+kobana inbox emails reprocess --params '{"id": "EMAIL_ID"}'
+
+# Reenviar uma entrega de webhook que falhou
+kobana inbox webhooks deliveries replay \
+  --params '{"id": "WEBHOOK_ID", "deliveryId": "DELIVERY_ID"}'
+```
+
 ### Helpers
 
-Atalhos para operações comuns:
+Atalhos para operações comuns do **Gateway Bancário**:
 
 ```bash
 # Emitir boleto
@@ -248,15 +413,19 @@ kobana +cancelar-lote --ids "123,456,789"
 ## Introspecção de Schema
 
 ```bash
-# Listar todos os serviços e recursos
+# Listar todos os produtos e seus recursos
 kobana schema --list
 
 # Ver schema de um endpoint específico
 kobana schema banking.charge.pix.create
-kobana schema banking.bank-billets.list
+kobana schema finance.payables.create
+kobana schema billing.subscriptions.create
+kobana schema inbox.emails.list
 ```
 
-Retorna parâmetros, campos obrigatórios, tipos e respostas — tudo derivado do OpenAPI spec embutido.
+Retorna parâmetros, campos obrigatórios, tipos e respostas — tudo derivado dos
+OpenAPI specs embutidos. O caminho segue a mesma forma do comando:
+`<produto>.<recurso>.<metodo>`.
 
 ## Flags Globais
 
@@ -279,12 +448,13 @@ Retorna parâmetros, campos obrigatórios, tipos e respostas — tudo derivado d
 
 | Variável | Descrição |
 |----------|-----------|
-| `KOBANA_TOKEN` | Token de acesso Bearer |
+| `KOBANA_TOKEN` | Token do produto que você vai chamar (Bearer). Não é compartilhado entre produtos |
+| `KOBANA_INBOX_CLIENT_CERT` | Caminho para o PEM (certificado + chave) usado no mTLS do `inbox` |
 | `KOBANA_CREDENTIALS_FILE` | Caminho para arquivo JSON de credenciais |
-| `KOBANA_CLIENT_ID` | OAuth client ID |
-| `KOBANA_CLIENT_SECRET` | OAuth client secret |
+| `KOBANA_CLIENT_ID` | OAuth client ID (Gateway Bancário) |
+| `KOBANA_CLIENT_SECRET` | OAuth client secret (Gateway Bancário) |
 | `KOBANA_CONFIG_DIR` | Diretório de config (default: `~/.config/kobana`) |
-| `KOBANA_ENVIRONMENT` | `sandbox` (default) ou `production` |
+| `KOBANA_ENVIRONMENT` | `production` (default), `sandbox` ou `development` |
 | `KOBANA_LOG` | Nível de log para stderr (ex: `kobana=debug`) |
 | `KOBANA_LOG_FILE` | Diretório para logs JSON com rotação diária |
 
@@ -365,7 +535,9 @@ kobana-cli/
 └── docs/                # Especificações e documentação de design
 ```
 
-Comandos são gerados **dinamicamente** a partir dos OpenAPI specs da Kobana embutidos no binário. Atualizar a API = atualizar os specs + rebuild.
+Comandos são gerados **dinamicamente** a partir dos OpenAPI specs dos quatro
+produtos, embutidos no binário. Atualizar a API = atualizar o spec + rebuild;
+adicionar um produto = um spec novo mais uma entrada no registro de produtos.
 
 ## Licença
 
