@@ -1,0 +1,41 @@
+skills/kobana-inbox/SKILL.md
+  s_31ca264e3312b4::t_a6b2ded52f7533 1-86
+CHANGELOG.md
+  s_31ca264e3312b4::t_e410105dcdaecd 10-15
+crates/kobana-cli/specs/inbox-v1.json
+  s_31ca264e3312b4::t_81991ae40adba2 1-4928
+AGENTS.md
+  s_31ca264e3312b4::t_af6d928ab97adf 48-52,79-80,84-85,106-113,251-257
+CONTEXT.md
+  s_31ca264e3312b4::t_f42ae4ae8ddeab 17-23
+crates/kobana-cli/src/main.rs
+  s_31ca264e3312b4::t_6d656d401314fa 110
+  s_31ca264e3312b4::t_fcd9648827359f 85,111
+crates/kobana-cli/src/product.rs
+  s_31ca264e3312b4::t_00b0e5669b04c2 339,355-358,367-442,460
+  s_31ca264e3312b4::t_e257a806acc945 287
+  s_31ca264e3312b4::t_e7c2ddbec9b6c2 11,20,32-34,138-139,162-184
+  s_31ca264e3312b4::t_6d656d401314fa 85-89,92-95,97-111,114,119-131
+  s_31ca264e3312b4::t_fcd9648827359f 90-91,96,112-113,115-118
+README.md
+  s_31ca264e3312b4::t_f42ae4ae8ddeab 139,141-145,161-182
+  s_31ca264e3312b4::t_3ebed35e2b0918 183
+crates/kobana/src/client.rs
+  s_31ca264e3312b4::t_c9131343fb8226 33-61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "6d851c727e9fac0cf5f0165ccb3e7a2d8851b64a",
+  "prompts": {},
+  "sessions": {
+    "s_31ca264e3312b4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "492b3c1e-a2c4-496e-84e3-f30f6ae5c5df",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Rafael Lima <contato@rafael.adm.br>"
+    }
+  }
+}
