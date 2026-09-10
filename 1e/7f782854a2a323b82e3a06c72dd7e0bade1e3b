@@ -1,0 +1,23 @@
+CHANGELOG.md
+  s_31ca264e3312b4::t_a4126b9fe69650 10-12
+  s_31ca264e3312b4::t_108cd446d254a3 9
+crates/kobana/src/spec.rs
+  s_31ca264e3312b4::t_e257a806acc945 388-431
+  s_31ca264e3312b4::t_122601766c7a8a 169,175-181,212-215
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "1e7f782854a2a323b82e3a06c72dd7e0bade1e3b",
+  "prompts": {},
+  "sessions": {
+    "s_31ca264e3312b4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "492b3c1e-a2c4-496e-84e3-f30f6ae5c5df",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Rafael Lima <contato@rafael.adm.br>"
+    }
+  }
+}
