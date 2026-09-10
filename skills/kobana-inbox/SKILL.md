@@ -8,7 +8,7 @@ metadata:
     requires:
       bins:
         - kobana
-    cliHelp: "kobana inbox v1 --help"
+    cliHelp: "kobana inbox --help"
 ---
 
 # inbox — Inbox Autônomo
@@ -16,7 +16,7 @@ metadata:
 > **PREREQUISITE:** Read `../kobana-shared/SKILL.md` for auth, global flags, and security rules.
 
 ```bash
-kobana inbox v1 <resource> <method> [flags]
+kobana inbox <resource> <method> [flags]
 ```
 
 ## Authentication
@@ -65,22 +65,22 @@ The Inbox API is **not** the banking API and does not share its credentials:
 
 ```bash
 # Resources keyed by {id} take it through --params
-kobana inbox v1 emails get --params '{"id": "EMAIL_ID"}'
-kobana inbox v1 emails reprocess --params '{"id": "EMAIL_ID"}'
+kobana inbox emails get --params '{"id": "EMAIL_ID"}'
+kobana inbox emails reprocess --params '{"id": "EMAIL_ID"}'
 
 # Webhook deliveries are nested under a webhook
-kobana inbox v1 webhooks deliveries list --params '{"id": "WEBHOOK_ID"}'
-kobana inbox v1 webhooks deliveries replay \
+kobana inbox webhooks deliveries list --params '{"id": "WEBHOOK_ID"}'
+kobana inbox webhooks deliveries replay \
   --params '{"id": "WEBHOOK_ID", "deliveryId": "DELIVERY_ID"}'
 
 # Always dry-run mutations first
-kobana inbox v1 inboxes create --dry-run --json '{"name": "Financeiro"}'
+kobana inbox inboxes create --dry-run --json '{"name": "Financeiro"}'
 ```
 
 ## Discovering Commands
 
 ```bash
-kobana inbox v1 --help
-kobana schema inbox.v1.emails.list
+kobana inbox --help
+kobana schema inbox.emails.list
 kobana schema --list
 ```

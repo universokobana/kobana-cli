@@ -49,7 +49,7 @@ kobana auth login
 ## CLI Syntax
 
 ```bash
-kobana <product> <service> <resource> <method> [flags]
+kobana <product> <resource> <method> [flags]
 ```
 
 `<product>` is the Kobana product. Only `banking` (Gateway Bancário) is

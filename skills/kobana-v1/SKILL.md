@@ -1,6 +1,6 @@
 ---
 name: kobana-v1
-description: "Kobana API v1: Boletos, clientes, assinaturas, webhooks, CNAB, carnês."
+description: "Kobana Gateway Bancário (recursos legados v1): boletos, clientes, assinaturas, webhooks, CNAB, carnês."
 metadata:
   version: 0.1.0
   openclaw:
@@ -8,16 +8,20 @@ metadata:
     requires:
       bins:
         - kobana
-    cliHelp: "kobana banking v1 --help"
+    cliHelp: "kobana banking --help"
 ---
 
-# v1 — API Legada
+# banking — recursos legados (API v1)
 
 > **PREREQUISITE:** Read `../kobana-shared/SKILL.md` for auth, global flags, and security rules.
 
 ```bash
-kobana banking v1 <resource> <method> [flags]
+kobana banking <resource> <method> [flags]
 ```
+
+The resources below are served by the API v1, but the version is never part of
+the command — they sit directly under `banking`, next to the v2 domains
+(`charge`, `payment`, `transfer`, …) documented in the sibling skills.
 
 ## Helper Commands
 
@@ -154,7 +158,7 @@ kobana banking v1 <resource> <method> [flags]
 ## Discovering Commands
 
 ```bash
-kobana banking v1 --help
-kobana banking v1 bank-billets --help
-kobana schema banking.v1.bank-billets.create
+kobana banking --help
+kobana banking bank-billets --help
+kobana schema banking.bank-billets.create
 ```

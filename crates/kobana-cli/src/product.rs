@@ -1,12 +1,13 @@
 //! Kobana products — the first segment of the CLI syntax:
-//! `kobana <produto> <servico> <recurso> <metodo>`.
+//! `kobana <produto> <recurso> <metodo>`.
+//!
+//! API versions are an implementation detail of the URL, never a CLI segment:
+//! a product's specs are merged into one tree, so `/v1/bank_billets` and
+//! `/v2/charge/pix` read as `banking bank-billets` and `banking charge pix`.
 //!
 //! Each product is its own API, with its own hosts and its own OpenAPI specs.
 //! Adding one means adding a spec file under `specs/` and one entry to
 //! [`REGISTRY`] — nothing else in the CLI is product-aware.
-
-use std::collections::BTreeMap;
-use std::sync::Arc;
 
 use kobana::client::KobanaClient;
 use kobana::error::KobanaError;
@@ -50,22 +51,6 @@ pub struct SpecEntry {
     /// API version prefix carried by the spec's own paths, e.g. `/v1`.
     /// Stripped for tree placement; kept in the request URL.
     pub version_prefix: &'static str,
-    /// How the spec's tree maps onto CLI services
-    pub layout: Layout,
-}
-
-/// How a spec's command tree becomes CLI services.
-pub enum Layout {
-    /// The whole spec is a single service under `name`.
-    /// Used by banking v1 and by every other product's v1.
-    Single {
-        name: &'static str,
-        about: &'static str,
-    },
-    /// Each top-level node of the spec tree becomes its own service —
-    /// banking v2 exposes `charge`, `payment`, `transfer`, … this way, so `v2`
-    /// itself never appears in the CLI.
-    SplitTopLevel,
 }
 
 impl Product {
@@ -148,15 +133,10 @@ Product {
         SpecEntry {
             json: BANKING_V1_SPEC,
             version_prefix: "/v1",
-            layout: Layout::Single {
-                name: "v1",
-                about: "API v1 (boletos, clientes, webhooks)",
-            },
         },
         SpecEntry {
             json: BANKING_V2_SPEC,
             version_prefix: "/v2",
-            layout: Layout::SplitTopLevel,
         },
     ],
     client_cert_env: None,
@@ -172,10 +152,6 @@ Product {
     specs: &[SpecEntry {
         json: INBOX_V1_SPEC,
         version_prefix: "/v1",
-        layout: Layout::Single {
-            name: "v1",
-            about: "API v1 (workspaces, inboxes, agentes, e-mails, webhooks)",
-        },
     }],
     // The inbox edge terminates mTLS and forwards the certificate fingerprint
     // to the origin, so requests must present a client certificate.
@@ -183,64 +159,44 @@ Product {
 },
 ];
 
-/// A product with its specs parsed and its command trees built.
+/// A product with its specs parsed and merged into one command tree.
 pub struct LoadedProduct {
     pub product: &'static Product,
-    /// CLI service name → command tree
-    pub services: BTreeMap<String, LoadedService>,
+    /// Every resource the product exposes, from all of its specs
+    pub tree: CommandNode,
 }
 
-/// One CLI service (`v1`, `charge`, `payment`, …) with its command tree.
-pub struct LoadedService {
-    pub about: String,
-    pub tree: Arc<CommandNode>,
-}
-
-impl LoadedProduct {
-    /// Look up a service by its CLI name
-    pub fn service(&self, name: &str) -> Option<&LoadedService> {
-        self.services.get(name)
-    }
-}
-
-/// Parse every registered product's specs and build its command trees.
+/// Parse every registered product's specs and build its command tree.
 pub fn load_all() -> Result<Vec<LoadedProduct>, KobanaError> {
     REGISTRY.iter().map(load).collect()
 }
 
 fn load(product: &'static Product) -> Result<LoadedProduct, KobanaError> {
-    let mut services = BTreeMap::new();
+    let mut tree = CommandNode::default();
 
     for entry in product.specs {
         let spec = ApiSpec::parse(entry.json)?;
-        let tree = spec.build_command_tree(entry.version_prefix);
+        merge(&mut tree, spec.build_command_tree(entry.version_prefix));
+    }
 
-        match entry.layout {
-            Layout::Single { name, about } => {
-                services.insert(
-                    name.to_string(),
-                    LoadedService {
-                        about: about.to_string(),
-                        tree: Arc::new(tree),
-                    },
-                );
-            }
-            Layout::SplitTopLevel => {
-                for (name, node) in tree.children {
-                    let about = service_about(&name).to_string();
-                    services.insert(
-                        name,
-                        LoadedService {
-                            about,
-                            tree: Arc::new(node),
-                        },
-                    );
-                }
-            }
+    Ok(LoadedProduct { product, tree })
+}
+
+/// Merge one spec's tree into a product's tree.
+///
+/// Products span several API versions (banking serves v1 and v2) and they all
+/// land in the same tree, so two specs can contribute to the same resource.
+fn merge(into: &mut CommandNode, from: CommandNode) {
+    for endpoint in from.endpoints {
+        // First spec wins: a name can only be one command
+        if !into.endpoints.iter().any(|e| e.cli_method == endpoint.cli_method) {
+            into.endpoints.push(endpoint);
         }
     }
 
-    Ok(LoadedProduct { product, services })
+    for (name, child) in from.children {
+        merge(into.children.entry(name).or_default(), child);
+    }
 }
 
 /// Find a loaded product by its CLI slug
@@ -253,9 +209,12 @@ pub fn is_product(slug: &str) -> bool {
     REGISTRY.iter().any(|p| p.slug == slug)
 }
 
-/// Human-readable about text for services split out of a spec tree
-fn service_about(name: &str) -> &'static str {
-    match name {
+/// Human-readable about text for a product's top-level resources.
+/// Resources without an entry are described by the API spec itself, or show
+/// no description at all.
+pub fn resource_about(name: &str) -> Option<&'static str> {
+    let about = match name {
+        // banking v2 domains
         "charge" => "Cobranças (Pix, boletos, Pix automático)",
         "payment" => "Pagamentos (boletos, Pix, taxas, concessionárias)",
         "transfer" => "Transferências (Pix, TED, interna)",
@@ -268,8 +227,9 @@ fn service_about(name: &str) -> &'static str {
         "payments" => "Pagamentos (unificado)",
         "transfers" => "Transferências (unificado)",
         "security" => "Segurança (tokens de acesso)",
-        _ => "API Kobana",
-    }
+        _ => return None,
+    };
+    Some(about)
 }
 
 #[cfg(test)]
@@ -298,16 +258,19 @@ mod tests {
     }
 
     #[test]
-    fn banking_loads_v1_and_v2_services() {
+    fn banking_merges_v1_and_v2_into_one_tree() {
         let products = load_all().expect("specs must parse");
         let banking = find(&products, "banking").expect("banking must load");
 
-        // v1 stays a single service; v2 is split into its domains
-        assert!(banking.service("v1").is_some());
-        assert!(banking.service("charge").is_some());
-        assert!(banking.service("payment").is_some());
-        // `v2` itself is never a CLI segment
-        assert!(banking.service("v2").is_none());
+        // v1 resources and v2 domains sit side by side under the product
+        assert!(banking.tree.children.contains_key("bank-billets")); // v1
+        assert!(banking.tree.children.contains_key("customers")); // v1
+        assert!(banking.tree.children.contains_key("charge")); // v2
+        assert!(banking.tree.children.contains_key("payment")); // v2
+
+        // Versions are never CLI segments
+        assert!(!banking.tree.children.contains_key("v1"));
+        assert!(!banking.tree.children.contains_key("v2"));
     }
 
     #[test]
@@ -315,14 +278,17 @@ mod tests {
         let products = load_all().unwrap();
         let banking = find(&products, "banking").unwrap();
 
-        let v1 = &banking.service("v1").unwrap().tree;
-        let billets = v1.children.get("bank-billets").expect("v1 bank-billets");
+        let billets = banking
+            .tree
+            .children
+            .get("bank-billets")
+            .expect("bank-billets");
         assert!(billets
             .endpoints
             .iter()
             .any(|e| e.path_template == "/v1/bank_billets"));
 
-        let charge = &banking.service("charge").unwrap().tree;
+        let charge = &banking.tree.children["charge"];
         let pix = charge.children.get("pix").expect("charge pix");
         assert!(pix
             .endpoints
@@ -353,9 +319,7 @@ mod tests {
         let products = load_all().unwrap();
         let mut templates = Vec::new();
         for loaded in &products {
-            for service in loaded.services.values() {
-                walk(&service.tree, &mut templates);
-            }
+            walk(&loaded.tree, &mut templates);
         }
 
         assert!(templates.len() > 200, "expected a full command surface, got {}", templates.len());
@@ -390,9 +354,7 @@ mod tests {
         }
 
         for loaded in &load_all().unwrap() {
-            for (name, service) in &loaded.services {
-                check(&service.tree, &format!("{} {name}", loaded.product.slug));
-            }
+            check(&loaded.tree, loaded.product.slug);
         }
     }
 
@@ -400,7 +362,7 @@ mod tests {
     fn inbox_is_registered_with_its_resources() {
         let products = load_all().unwrap();
         let inbox = find(&products, "inbox").expect("inbox must load");
-        let v1 = &inbox.service("v1").expect("inbox v1").tree;
+        let v1 = &inbox.tree;
 
         for resource in [
             "workspaces",
@@ -428,6 +390,45 @@ mod tests {
             inbox.product.base_url(&Environment::Production),
             "https://api.inbox.kobana.com.br"
         );
+    }
+
+    /// Two specs of the same product land in one tree. Resources that exist in
+    /// both must merge instead of replacing each other, and a command name that
+    /// exists in both is kept from the first spec listed.
+    #[test]
+    fn merge_combines_specs_without_dropping_resources() {
+        const A: &str = r#"{
+            "info": {"version": "1.0"},
+            "paths": {
+                "/v1/billets": {"get": {"responses": {}}},
+                "/v1/customers": {"get": {"responses": {}}}
+            }
+        }"#;
+        const B: &str = r#"{
+            "info": {"version": "1.0"},
+            "paths": {
+                "/v2/billets": {"get": {"responses": {}}, "post": {"responses": {}}},
+                "/v2/charge": {"get": {"responses": {}}}
+            }
+        }"#;
+
+        let mut tree = ApiSpec::parse(A).unwrap().build_command_tree("/v1");
+        merge(&mut tree, ApiSpec::parse(B).unwrap().build_command_tree("/v2"));
+
+        // Resources unique to either spec survive
+        assert!(tree.children.contains_key("customers"));
+        assert!(tree.children.contains_key("charge"));
+
+        // A shared resource merges: `create` comes from B, `list` from A
+        let billets = &tree.children["billets"];
+        let mut methods: Vec<&str> =
+            billets.endpoints.iter().map(|e| e.cli_method.as_str()).collect();
+        methods.sort();
+        assert_eq!(methods, vec!["create", "list"]);
+
+        // On a name clash the first spec wins, so `list` keeps the v1 path
+        let list = billets.endpoints.iter().find(|e| e.cli_method == "list").unwrap();
+        assert_eq!(list.path_template, "/v1/billets");
     }
 
     #[test]

@@ -61,7 +61,7 @@ The repository is a Cargo workspace with two crates:
 
 ### Adding a Product
 
-The CLI syntax is `kobana <product> <service> <resource> <method>`. Products are
+The CLI syntax is `kobana <product> <resource> <method>`. Products are
 data, not code: everything product-specific lives in `REGISTRY` in
 `crates/kobana-cli/src/product.rs`. Nothing else in the CLI is product-aware.
 
@@ -92,13 +92,11 @@ the request URL keeps it:
 
 `Hosts` must never include the version prefix.
 
-`Layout` decides how a spec becomes CLI services:
-
-- `Layout::Single { name }` — the whole spec is one service (`kobana banking v1 …`).
-  Use this for every product whose API is a single flat `/v1`.
-- `Layout::SplitTopLevel` — each top-level node becomes its own service. Only
-  banking v2 needs this: it is why `kobana banking charge pix list` works and
-  `v2` never appears as a CLI segment.
+A product's specs are merged into one command tree, so an API version is never
+a CLI segment: `/v1/bank_billets` and `/v2/charge/pix` read as
+`banking bank-billets` and `banking charge pix`. Adding a spec to a product
+therefore adds its resources next to the existing ones — check the merged
+`--help` for name clashes, which `merge()` resolves first-spec-wins.
 
 Sandbox hosts follow `api.<product>.sandbox.kobana.com.br`, except banking,
 which predates the convention (`api-sandbox.kobana.com.br`).

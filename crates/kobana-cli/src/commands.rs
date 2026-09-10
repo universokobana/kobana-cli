@@ -42,16 +42,25 @@ fn build_method_command(endpoint: &ResolvedEndpoint) -> Command {
     cmd
 }
 
-/// Build the command tree for a product: services, resources and methods
+/// Build the command tree for a product: resources and methods.
+/// API versions are not CLI segments — `banking bank-billets` and
+/// `banking charge pix` come from the v1 and v2 specs alike.
 fn build_product_command(loaded: &LoadedProduct) -> Command {
     let mut cmd = Command::new(loaded.product.slug)
         .about(loaded.product.about)
         .subcommand_required(true)
         .arg_required_else_help(true);
 
-    for (service_name, service) in &loaded.services {
-        cmd = cmd
-            .subcommand(build_command_tree(&service.tree, service_name).about(service.about.clone()));
+    for (name, node) in &loaded.tree.children {
+        let mut child = build_command_tree(node, name);
+        if let Some(about) = product::resource_about(name) {
+            child = child.about(about);
+        }
+        cmd = cmd.subcommand(child);
+    }
+
+    for endpoint in &loaded.tree.endpoints {
+        cmd = cmd.subcommand(build_method_command(endpoint));
     }
 
     cmd
@@ -61,7 +70,7 @@ fn build_product_command(loaded: &LoadedProduct) -> Command {
 pub fn build_root_command(products: &[LoadedProduct]) -> Command {
     let mut root = Command::new("kobana")
         .version(env!("CARGO_PKG_VERSION"))
-        .about("Kobana API CLI — kobana <produto> <servico> <recurso> <metodo>")
+        .about("Kobana API CLI — kobana <produto> <recurso> <metodo>")
         .subcommand_required(true)
         .arg_required_else_help(true)
         .arg(
@@ -171,14 +180,14 @@ pub fn build_root_command(products: &[LoadedProduct]) -> Command {
             .about("Introspect API schema for an endpoint")
             .arg(
                 Arg::new("endpoint")
-                    .help("Endpoint path (e.g., banking.charge.pix.create)")
+                    .help("Endpoint path (e.g., banking.charge.pix.create, inbox.emails.list)")
                     .value_name("ENDPOINT"),
             )
             .arg(
                 Arg::new("list")
                     .long("list")
                     .action(clap::ArgAction::SetTrue)
-                    .help("List available products/services/resources"),
+                    .help("List available products and resources"),
             ),
     );
 
@@ -260,10 +269,7 @@ pub fn resolve_endpoint<'a>(
     // Special commands (schema, auth, update, completions, helpers) are not products
     let loaded = product::find(products, product_name)?;
 
-    let (service_name, service_matches) = product_matches.subcommand()?;
-    let service = loaded.service(service_name)?;
-
-    let (endpoint, method_matches) = resolve_in_tree(&service.tree, service_matches)?;
+    let (endpoint, method_matches) = resolve_in_tree(&loaded.tree, product_matches)?;
     Some((loaded, endpoint, method_matches))
 }
 

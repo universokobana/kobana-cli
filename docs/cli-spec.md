@@ -11,13 +11,13 @@ Escrito em **Rust** (clap + serde + reqwest + tokio). Inspirado no [gws-cli](htt
 ## Sintaxe Principal
 
 ```bash
-kobana <product> <service> <resource> <method> [flags]
+kobana <product> <resource> <method> [flags]
 ```
 
 Onde:
-- `<product>` — produto Kobana (hoje apenas `banking`, o Gateway Bancário)
-- `<service>` — dominio da API (ex: `charge`, `payment`, `transfer`, `financial`, `admin`)
-- `<resource>` — recurso dentro do dominio (ex: `pix`, `bank-billets`, `accounts`)
+- `<product>` — produto Kobana (`banking` ou `inbox`)
+- `<resource>` — recurso, podendo ser aninhado (ex: `bank-billets`, `charge pix`,
+  `webhooks deliveries`). A versao da API nao entra no comando
 - `<method>` — acao (ex: `list`, `get`, `create`, `update`, `delete`, `cancel`)
 
 ### Exemplos
@@ -166,7 +166,7 @@ kobana banking financial accounts balances --params '{"financial_account_uid": "
 | `--dry-run` | Valida e mostra a requisicao sem executar | |
 | `--output <PATH>` | Salva resposta em arquivo (downloads) | `--output ./boleto.pdf` |
 | `--env <ENV>` | Ambiente: `production` (default), `sandbox`, `development` | `--env sandbox` |
-| `--version`, `-v` | Versao da API (v1 ou v2, inferida do servico) | `--version v2` |
+| `--version`, `-V` | Versao do CLI | |
 | `--verbose` | Mostra headers e detalhes da requisicao no stderr | |
 | `--help`, `-h` | Ajuda contextual | |
 | `--output-format` | Formato de saida: `json` (default), `table`, `csv` | `--output-format table` |
@@ -229,12 +229,12 @@ Credenciais sao criptografadas em repouso (AES-256-GCM) com chave armazenada no 
 ```bash
 # Ver schema de um endpoint
 kobana schema banking.charge.pix.create
-kobana schema banking.v1.bank_billets.list
+kobana schema banking.bank_billets.list
 
-# Ver todos os servicos disponiveis
+# Ver todos os produtos e recursos disponiveis
 kobana schema --list
 
-# Ver recursos de um servico
+# Ver recursos de um produto
 kobana schema charge --list
 ```
 
@@ -281,7 +281,7 @@ Variaveis tambem podem ser definidas em arquivo `.env`.
 | `0` | Sucesso | Comando completou normalmente |
 | `1` | Erro de API | Kobana retornou 4xx/5xx |
 | `2` | Erro de auth | Credenciais ausentes, expiradas ou invalidas |
-| `3` | Erro de validacao | Argumentos invalidos, servico desconhecido |
+| `3` | Erro de validacao | Argumentos invalidos, recurso desconhecido |
 | `4` | Erro de schema | Nao conseguiu carregar spec OpenAPI |
 | `5` | Erro interno | Falha inesperada |
 
@@ -293,12 +293,12 @@ Variaveis tambem podem ser definidas em arquivo `.env`.
 
 ```bash
 # Listar boletos com filtro
-kobana banking v1 bank-billets list \
+kobana banking bank-billets list \
   --params '{"status": "opened", "per_page": 25}' \
   --fields "id,amount,status,due_at,customer_person_name"
 
 # Criar boleto
-kobana banking v1 bank-billets create \
+kobana banking bank-billets create \
   --json '{
     "amount": 150.50,
     "expire_at": "2026-05-01",
@@ -309,10 +309,10 @@ kobana banking v1 bank-billets create \
   --dry-run
 
 # Cancelar boleto
-kobana banking v1 bank-billets cancel --params '{"id": 12345}'
+kobana banking bank-billets cancel --params '{"id": 12345}'
 
 # Enviar boleto por email
-kobana banking v1 bank-billets send-email --params '{"id": 12345}'
+kobana banking bank-billets send-email --params '{"id": 12345}'
 ```
 
 ### Cobrancas Pix (V2)
@@ -402,7 +402,7 @@ kobana banking me get
 
 ```bash
 kobana --help                          # ajuda geral
-kobana banking charge --help                   # servicos de cobranca
+kobana banking charge --help                   # recursos de cobranca
 kobana banking charge pix --help               # operacoes de Pix cobranca
 kobana banking charge pix create --help        # parametros de criacao
 ```

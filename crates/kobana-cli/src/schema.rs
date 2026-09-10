@@ -27,19 +27,11 @@ fn list_products(products: &[LoadedProduct]) -> Result<(), KobanaError> {
     let mut out = serde_json::Map::new();
 
     for loaded in products {
-        let mut services = serde_json::Map::new();
-        for (name, service) in &loaded.services {
-            services.insert(
-                name.clone(),
-                serde_json::json!({ "resources": list_resources(&service.tree) }),
-            );
-        }
-
         out.insert(
             loaded.product.slug.to_string(),
             serde_json::json!({
                 "description": loaded.product.about,
-                "services": services,
+                "resources": list_resources(&loaded.tree),
             }),
         );
     }
@@ -91,29 +83,36 @@ fn show_endpoint_schema(
     endpoint_path: &str,
     products: &[LoadedProduct],
 ) -> Result<(), KobanaError> {
-    // Parse a path like "banking.charge.pix.create" or "banking.v1.bank-billets.list"
+    // Parse a path like "banking.charge.pix.create" or "inbox.emails.list"
     let parts: Vec<&str> = endpoint_path.split('.').collect();
     if parts.len() < 3 || !product::is_product(parts[0]) {
         return Err(KobanaError::Validation(format!(
-            "invalid endpoint path '{endpoint_path}'. Use format: product.service.resource.method (e.g., banking.charge.pix.create)"
+            "invalid endpoint path '{endpoint_path}'. Use format: product.resource.method (e.g., banking.charge.pix.create)"
         )));
     }
 
-    let (product_name, service_name, method_name) =
-        (parts[0], parts[1], *parts.last().unwrap());
-    let resource_parts = &parts[2..parts.len() - 1];
+    let (product_name, method_name) = (parts[0], *parts.last().unwrap());
+    let resource_parts = &parts[1..parts.len() - 1];
 
     let loaded = product::find(products, product_name)
         .ok_or_else(|| KobanaError::Schema(format!("product '{product_name}' not found")))?;
-    let service = loaded.service(service_name).ok_or_else(|| {
-        KobanaError::Schema(format!(
-            "service '{service_name}' not found in product '{product_name}'"
-        ))
-    })?;
+
+    // API versions stopped being path segments; say so rather than reporting
+    // a missing endpoint for every pre-existing `banking.v1.…` path
+    if let Some(version) = resource_parts.first().filter(|p| is_version(p)) {
+        let without: Vec<&str> = std::iter::once(product_name)
+            .chain(resource_parts[1..].iter().copied())
+            .chain(std::iter::once(method_name))
+            .collect();
+        return Err(KobanaError::Validation(format!(
+            "'{version}' is not part of endpoint paths — API versions are resolved from the spec. Use '{}'",
+            without.join(".")
+        )));
+    }
 
     // Walk the same tree the CLI dispatches on, so schema output can never
     // drift from what the commands actually accept
-    let mut node = service.tree.as_ref();
+    let mut node = &loaded.tree;
     for part in resource_parts {
         node = node.children.get(*part).ok_or_else(|| {
             KobanaError::Schema(format!("endpoint '{endpoint_path}' not found"))
@@ -127,6 +126,12 @@ fn show_endpoint_schema(
         .ok_or_else(|| KobanaError::Schema(format!("endpoint '{endpoint_path}' not found")))?;
 
     print_endpoint(loaded, endpoint)
+}
+
+/// `v1`, `v2`, … — a leftover API version in a path
+fn is_version(part: &str) -> bool {
+    part.strip_prefix('v')
+        .is_some_and(|rest| !rest.is_empty() && rest.chars().all(|c| c.is_ascii_digit()))
 }
 
 fn print_endpoint(
@@ -162,4 +167,28 @@ fn print_endpoint(
 
     println!("{}", serde_json::to_string_pretty(&schema_output)?);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn recognizes_api_version_segments() {
+        for part in ["v1", "v2", "v10"] {
+            assert!(is_version(part), "{part} should read as a version");
+        }
+        // Resources that merely start with a v must not be mistaken for one
+        for part in ["v", "va", "pix", "vouchers", "v1x", ""] {
+            assert!(!is_version(part), "{part} should not read as a version");
+        }
+    }
+
+    #[test]
+    fn old_versioned_paths_get_a_migration_error() {
+        let products = crate::product::load_all().unwrap();
+        let err = show_endpoint_schema("banking.v1.bank-billets.list", &products).unwrap_err();
+        let msg = err.to_string();
+        assert!(msg.contains("banking.bank-billets.list"), "{msg}");
+    }
 }

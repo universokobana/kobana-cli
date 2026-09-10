@@ -36,7 +36,7 @@ Sleep 4s
 # ── Dry-run: criar boleto ──
 Type "# Dry-run: emitir boleto via API v1" Enter
 Sleep 1s
-Type `kobana banking v1 bank-billets create --dry-run --json '{"amount": 150.50, "expire_at": "2026-05-01", "customer_person_name": "Maria Silva", "customer_cnpj_cpf": "012.345.678-90", "bank_billet_account_id": 1}'` Enter
+Type `kobana banking bank-billets create --dry-run --json '{"amount": 150.50, "expire_at": "2026-05-01", "customer_person_name": "Maria Silva", "customer_cnpj_cpf": "012.345.678-90", "bank_billet_account_id": 1}'` Enter
 Sleep 4s
 
 # ── Helper: +cobrar ──

@@ -5,7 +5,7 @@ CLI para a API da [Kobana](https://kobana.com.br) — acesso completo às APIs v
 Projetado para humanos e agentes de IA, com saída JSON estruturada, introspecção de schema, dry-run e paginação automática.
 
 ```
-kobana <produto> <servico> <recurso> <metodo> [flags]
+kobana <produto> <recurso> <metodo> [flags]
 ```
 
 ![Kobana CLI Demo](docs/demo.gif)
@@ -128,7 +128,7 @@ Os tokens são **diferentes entre ambientes** — um token de sandbox não funci
 ### Sintaxe
 
 ```bash
-kobana <produto> <servico> <recurso> <metodo> [flags]
+kobana <produto> <recurso> <metodo> [flags]
 ```
 
 Produtos disponíveis:
@@ -144,11 +144,11 @@ Produtos disponíveis:
 O produto `inbox` tem API, credenciais e requisitos próprios — veja
 [Inbox Autônomo](#inbox-autônomo) abaixo.
 
-Serviços do produto `banking`:
+Recursos de topo do produto `banking` (a versão da API — v1 ou v2 — é resolvida
+a partir da spec, nunca aparece no comando):
 
 | Comando | Descrição |
 |---------|-----------|
-| `v1` | API v1 — boletos, clientes, webhooks |
 | `charge` | Cobranças — Pix, Pix automático |
 | `payment` | Pagamentos — boletos, Pix, taxas, concessionárias |
 | `transfer` | Transferências — Pix, TED, interna |
@@ -157,12 +157,12 @@ Serviços do produto `banking`:
 | `mailbox` | Caixa postal — EDI, arquivos |
 | `data` | Consultas — boletos, QR codes Pix |
 | `security` | Tokens de acesso |
+| `bank-billets`, `customers`, `webhooks`, … | Boletos, clientes e demais recursos da API v1 |
 
-Serviços do produto `inbox`:
+Recursos do produto `inbox`: `workspaces`, `inboxes`, `emails`, `agents`,
+`agent-runs`, `webhooks`, `system-events`.
 
-| Comando | Descrição |
-|---------|-----------|
-| `v1` | API v1 — workspaces, inboxes, e-mails, agentes, webhooks |
+Use `kobana <produto> --help` para a lista completa.
 
 ### Inbox Autônomo
 
@@ -176,8 +176,8 @@ O Inbox não compartilha credenciais com o Gateway Bancário:
   ele o CLI avisa em stderr e as requisições são recusadas.
 
 ```bash
-kobana inbox v1 emails list --fields "id,subject,received_at"
-kobana inbox v1 webhooks deliveries replay \
+kobana inbox emails list --fields "id,subject,received_at"
+kobana inbox webhooks deliveries replay \
   --params '{"id": "WEBHOOK_ID", "deliveryId": "DELIVERY_ID"}'
 ```
 
@@ -185,7 +185,7 @@ kobana inbox v1 webhooks deliveries replay \
 
 ```bash
 # Listar boletos com filtro
-kobana banking v1 bank-billets list \
+kobana banking bank-billets list \
   --params '{"status": "opened", "per_page": 25}' \
   --fields "id,amount,status,due_at"
 
@@ -205,19 +205,19 @@ kobana banking transfer pix create \
 kobana banking charge pix list --page-all --fields "uid,amount,status"
 
 # Ver detalhes de um boleto
-kobana banking v1 bank-billets get --params '{"id": 12345}'
+kobana banking bank-billets get --params '{"id": 12345}'
 
 # Cancelar boleto
-kobana banking v1 bank-billets cancel --params '{"id": 12345}'
+kobana banking bank-billets cancel --params '{"id": 12345}'
 
 # Dry-run — ver a requisição sem executar
 kobana banking charge pix create --json '{"amount": 100}' --dry-run
 
 # Saída em tabela
-kobana banking v1 bank-billets list --output-format table
+kobana banking bank-billets list --output-format table
 
 # Salvar resposta em arquivo
-kobana banking v1 bank-billets get --params '{"id": 12345}' --output boleto.json
+kobana banking bank-billets get --params '{"id": 12345}' --output boleto.json
 ```
 
 ### Helpers
@@ -245,7 +245,7 @@ kobana schema --list
 
 # Ver schema de um endpoint específico
 kobana schema banking.charge.pix.create
-kobana schema banking.v1.bank-billets.list
+kobana schema banking.bank-billets.list
 ```
 
 Retorna parâmetros, campos obrigatórios, tipos e respostas — tudo derivado do OpenAPI spec embutido.

@@ -36,7 +36,7 @@ APIs financeiras retornam payloads grandes. `--fields` limita a resposta:
 ```bash
 # Sem fields: resposta com 50+ campos por boleto
 # Com fields: so o que o agente precisa
-kobana banking v1 bank-billets list --fields "id,amount,status,due_at"
+kobana banking bank-billets list --fields "id,amount,status,due_at"
 ```
 
 ---
@@ -47,10 +47,10 @@ Em vez de dezenas de flags (`--amount`, `--expire-at`, `--customer-name`), aceit
 
 ```bash
 # Bom: payload direto, mapeamento 1:1 com a API
-kobana banking v1 bank-billets create --json '{"amount": 150, "expire_at": "2026-05-01"}'
+kobana banking bank-billets create --json '{"amount": 150, "expire_at": "2026-05-01"}'
 
 # Evitar: flags individuais que duplicam a API
-kobana banking v1 bank-billets create --amount 150 --expire-at 2026-05-01
+kobana banking bank-billets create --amount 150 --expire-at 2026-05-01
 ```
 
 ---
@@ -95,7 +95,7 @@ Agentes geram inputs que humanos nunca gerariam. Validar:
 `--page-all` emite uma linha JSON por pagina (Newline Delimited JSON), permitindo streaming sem buffering:
 
 ```bash
-kobana banking v1 bank-billets list --page-all | jq -r '.[] | .id'
+kobana banking bank-billets list --page-all | jq -r '.[] | .id'
 ```
 
 ---
@@ -106,7 +106,7 @@ O CLI deve funcionar sem interacao em ambientes CI:
 
 ```bash
 export KOBANA_TOKEN=xxxxx
-kobana banking v1 bank-billets list
+kobana banking bank-billets list
 # Funciona sem login interativo
 ```
 

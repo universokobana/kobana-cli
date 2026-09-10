@@ -20,7 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **BREAKING: comandos agora exigem o produto** — a sintaxe mudou de `kobana <servico> <recurso> <metodo>` para `kobana <produto> <servico> <recurso> <metodo>`. A API original da Kobana passou a ser o produto Gateway Bancário (`banking`), então `kobana charge pix list` vira `kobana banking charge pix list` e `kobana v1 bank-billets list` vira `kobana banking v1 bank-billets list`
-- **BREAKING: `kobana schema <endpoint>`** também exige o produto: `kobana schema banking.charge.pix.create`. A saída de `kobana schema --list` passa a ser agrupada por produto
+- **BREAKING: a versão da API saiu do comando** — `kobana banking v1 bank-billets list` vira `kobana banking bank-billets list` e `kobana inbox v1 emails list` vira `kobana inbox emails list`. A versão é resolvida a partir da spec e continua na URL da requisição; os domínios do v2 (`charge`, `payment`, …) seguem inalterados, porque são domínios e não versões. As specs de um produto passam a ser mescladas em uma árvore só
+- **BREAKING: `kobana schema <endpoint>`** exige o produto e não aceita mais a versão: `kobana schema banking.charge.pix.create`, `kobana schema banking.bank-billets.list`. Caminhos com versão recebem um erro explicando a mudança e sugerindo o caminho novo. A saída de `kobana schema --list` passa a ser agrupada por produto
 - Apenas o produto `banking` está disponível; Financeiro Inteligente (`finance`), Faturamento Automático (`billing`) e Inbox Autônomo (`inbox`) ainda não são suportados
 
 ### Internal
