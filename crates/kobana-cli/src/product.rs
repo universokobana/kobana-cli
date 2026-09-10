@@ -8,6 +8,7 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
+use kobana::client::KobanaClient;
 use kobana::error::KobanaError;
 use kobana::spec::{ApiSpec, CommandNode};
 
@@ -16,6 +17,7 @@ use crate::config::Environment;
 // Embedded OpenAPI specs
 const BANKING_V1_SPEC: &str = include_str!("../specs/banking-v1.json");
 const BANKING_V2_SPEC: &str = include_str!("../specs/banking-v2.json");
+const INBOX_V1_SPEC: &str = include_str!("../specs/inbox-v1.json");
 
 /// A Kobana product exposed as the first CLI segment.
 pub struct Product {
@@ -27,6 +29,9 @@ pub struct Product {
     pub hosts: Hosts,
     /// The specs this product serves
     pub specs: &'static [SpecEntry],
+    /// Env var holding the path to a PEM client certificate, for products
+    /// whose edge requires mTLS. `None` when the product does not use it.
+    pub client_cert_env: Option<&'static str>,
 }
 
 /// API hosts for a product, per environment. Never include a version prefix —
@@ -77,13 +82,61 @@ impl Product {
     }
 }
 
+/// Build an HTTP client for a product in the given environment.
+///
+/// Products behind mTLS load a PEM client certificate from the path in their
+/// `client_cert_env` variable. When that variable is unset the client is built
+/// without one: local development does not need it, and the API answers with a
+/// descriptive 401 otherwise — so this warns instead of refusing to run. The
+/// warning is skipped for `dry_run`, which issues no request.
+pub fn client_for(
+    product: &Product,
+    env: &Environment,
+    token: &str,
+    dry_run: bool,
+) -> Result<KobanaClient, KobanaError> {
+    let base_url = product.base_url(env);
+
+    let Some(var) = product.client_cert_env else {
+        return KobanaClient::new(base_url, token);
+    };
+
+    match std::env::var(var) {
+        Ok(path) if !path.is_empty() => {
+            let pem = std::fs::read(&path).map_err(|e| {
+                KobanaError::Auth(format!("could not read {var} ({path}): {e}"))
+            })?;
+            KobanaClient::with_client_cert(base_url, token, &pem)
+        }
+        _ => {
+            if !dry_run {
+                warn(&format!(
+                "⚠ {} requires a client certificate (mTLS). Set {} to a PEM file \
+                     holding the certificate chain and its private key.",
+                    product.slug, var
+                ));
+            }
+            KobanaClient::new(base_url, token)
+        }
+    }
+}
+
+fn warn(msg: &str) {
+    if std::io::IsTerminal::is_terminal(&std::io::stderr()) {
+        eprintln!("\x1b[33m{msg}\x1b[0m");
+    } else {
+        eprintln!("{msg}");
+    }
+}
+
 /// Every product wired into the CLI.
 ///
 /// Only `banking` is served today. The other Kobana products have public APIs
 /// documented at `docs.<product>.kobana.com.br` and their hosts follow the same
 /// `api.<product>[.sandbox].kobana.com.br` shape, but their specs are not
 /// embedded yet — see the notes in AGENTS.md before adding one.
-pub static REGISTRY: &[Product] = &[Product {
+pub static REGISTRY: &[Product] = &[
+Product {
     slug: "banking",
     about: "Gateway Bancário — cobranças, pagamentos, transferências (API v1 e v2)",
     hosts: Hosts {
@@ -106,7 +159,29 @@ pub static REGISTRY: &[Product] = &[Product {
             layout: Layout::SplitTopLevel,
         },
     ],
-}];
+    client_cert_env: None,
+},
+Product {
+    slug: "inbox",
+    about: "Inbox Autônomo — caixas de entrada, agentes, e-mails, webhooks",
+    hosts: Hosts {
+        production: "https://api.inbox.kobana.com.br",
+        sandbox: "https://api.inbox.sandbox.kobana.com.br",
+        development: Some("http://localhost:3028/api"),
+    },
+    specs: &[SpecEntry {
+        json: INBOX_V1_SPEC,
+        version_prefix: "/v1",
+        layout: Layout::Single {
+            name: "v1",
+            about: "API v1 (workspaces, inboxes, agentes, e-mails, webhooks)",
+        },
+    }],
+    // The inbox edge terminates mTLS and forwards the certificate fingerprint
+    // to the origin, so requests must present a client certificate.
+    client_cert_env: Some("KOBANA_INBOX_CLIENT_CERT"),
+},
+];
 
 /// A product with its specs parsed and its command trees built.
 pub struct LoadedProduct {
@@ -209,7 +284,7 @@ mod tests {
     #[test]
     fn rejects_unimplemented_products() {
         // These products exist at Kobana but are not wired into the CLI yet
-        for slug in ["finance", "billing", "inbox"] {
+        for slug in ["finance", "billing"] {
             assert!(!is_product(slug), "{slug} should not be available yet");
         }
     }
@@ -261,7 +336,7 @@ mod tests {
     #[test]
     fn every_endpoint_path_exists_in_its_spec() {
         let mut spec_paths = std::collections::BTreeSet::new();
-        for entry in REGISTRY[0].specs {
+        for entry in REGISTRY.iter().flat_map(|p| p.specs) {
             let raw: serde_json::Value = serde_json::from_str(entry.json).unwrap();
             for path in raw["paths"].as_object().unwrap().keys() {
                 spec_paths.insert(path.clone());
@@ -277,13 +352,91 @@ mod tests {
 
         let products = load_all().unwrap();
         let mut templates = Vec::new();
-        for service in find(&products, "banking").unwrap().services.values() {
-            walk(&service.tree, &mut templates);
+        for loaded in &products {
+            for service in loaded.services.values() {
+                walk(&service.tree, &mut templates);
+            }
         }
 
         assert!(templates.len() > 200, "expected a full command surface, got {}", templates.len());
         for t in &templates {
             assert!(spec_paths.contains(t), "path_template {t} is not in any spec");
+        }
+    }
+
+    /// clap panics at startup if a command exposes the same subcommand name
+    /// twice, so the tree must be a valid command tree for every product: no
+    /// repeated method on a node, and no method colliding with a child node.
+    /// This is what `/v1/inboxes/{id}/recipients` (POST + DELETE) used to break.
+    #[test]
+    fn no_node_exposes_a_duplicate_subcommand_name() {
+        fn check(node: &CommandNode, path: &str) {
+            let mut seen = std::collections::BTreeSet::new();
+            for e in &node.endpoints {
+                assert!(
+                    seen.insert(e.cli_method.as_str()),
+                    "{path} exposes method '{}' twice",
+                    e.cli_method
+                );
+                assert!(
+                    !node.children.contains_key(&e.cli_method),
+                    "{path} exposes '{}' as both a method and a resource",
+                    e.cli_method
+                );
+            }
+            for (name, child) in &node.children {
+                check(child, &format!("{path} {name}"));
+            }
+        }
+
+        for loaded in &load_all().unwrap() {
+            for (name, service) in &loaded.services {
+                check(&service.tree, &format!("{} {name}", loaded.product.slug));
+            }
+        }
+    }
+
+    #[test]
+    fn inbox_is_registered_with_its_resources() {
+        let products = load_all().unwrap();
+        let inbox = find(&products, "inbox").expect("inbox must load");
+        let v1 = &inbox.service("v1").expect("inbox v1").tree;
+
+        for resource in [
+            "workspaces",
+            "inboxes",
+            "emails",
+            "agents",
+            "agent-runs",
+            "webhooks",
+            "system-events",
+        ] {
+            assert!(v1.children.contains_key(resource), "missing {resource}");
+        }
+
+        // Multi-verb action paths become resource nodes
+        let recipients = v1.children["inboxes"]
+            .children
+            .get("recipients")
+            .expect("inboxes recipients");
+        let mut methods: Vec<&str> =
+            recipients.endpoints.iter().map(|e| e.cli_method.as_str()).collect();
+        methods.sort();
+        assert_eq!(methods, vec!["create", "delete"]);
+
+        assert_eq!(
+            inbox.product.base_url(&Environment::Production),
+            "https://api.inbox.kobana.com.br"
+        );
+    }
+
+    #[test]
+    fn only_inbox_requires_a_client_certificate() {
+        for p in REGISTRY {
+            match p.slug {
+                "inbox" => assert_eq!(p.client_cert_env, Some("KOBANA_INBOX_CLIENT_CERT")),
+                _ => assert_eq!(p.client_cert_env, None, "{} should not need mTLS", p.slug),
+            }
         }
     }
 
@@ -304,6 +457,7 @@ mod tests {
                 development: None,
             },
             specs: &[],
+            client_cert_env: None,
         };
         assert_eq!(no_dev.base_url(&Environment::Development), "https://prod");
     }

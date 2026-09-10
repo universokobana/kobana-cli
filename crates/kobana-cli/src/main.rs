@@ -82,8 +82,7 @@ async fn run() -> Result<(), KobanaError> {
                 let banking = product::find(&products, "banking").ok_or_else(|| {
                     KobanaError::Internal("banking product is not registered".into())
                 })?;
-                let client =
-                    kobana::client::KobanaClient::new(banking.product.base_url(&env), &token)?;
+                let client = product::client_for(banking.product, &env, &token, helper_dry_run)?;
                 return helper.execute(&client, sub_matches).await;
             }
         }
@@ -108,8 +107,8 @@ async fn run() -> Result<(), KobanaError> {
         auth::resolve_token()?
     };
 
-    // Create client — each product has its own API host
-    let client = kobana::client::KobanaClient::new(loaded_product.product.base_url(&env), &token)?;
+    // Create client — each product has its own API host and TLS requirements
+    let client = product::client_for(loaded_product.product, &env, &token, dry_run)?;
 
     // Execute
     executor::execute(&client, endpoint, &method_matches, &matches).await

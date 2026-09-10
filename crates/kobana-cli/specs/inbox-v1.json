@@ -1,0 +1,4928 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Kobana Autonomous Inbox API",
+    "version": "1.1.0",
+    "description": "API REST pública do Inbox Autônomo Kobana.\n\nAutenticação: Bearer JWT (HS512, `iss=kobana`, `aud=inbox/<env>`) somado a mTLS terminado no CloudFront (repassado como o header `cloudfront-viewer-mtls-client-cert-fingerprint`). O `sub` do JWT resolve o workspace do chamador via `external_id`.\n\nOs endpoints de recurso `{id}` (workspaces, inboxes, agents, webhooks) aceitam tanto o UUID interno quanto o `external_id` do recurso. Endpoints POST que possuem `external_id` o aceitam como campo opcional, usando por padrão o `id` interno gerado quando omitido. O campo `deleted_at` nunca é retornado nas respostas nem nos payloads de webhook; registros com soft-delete são filtrados em vez disso.\n\nTodas as chaves nas respostas e nos payloads de webhook estão em `snake_case`. As entregas de webhook compartilham o serializador da API: o envelope traz `event` (`slug`, `id`), `delivered_at` e `workspace`; `data` aninha snapshots dos recursos (`organization`, `agent`, `inbox`, `email`, `agent_run`) mais as chaves específicas do evento."
+  },
+  "servers": [
+    {
+      "url": "https://api.inbox.kobana.com.br",
+      "description": "Produção"
+    },
+    {
+      "url": "https://api.inbox.sandbox.kobana.com.br",
+      "description": "Sandbox"
+    },
+    {
+      "url": "https://api.inbox.staging.kobana.com.br",
+      "description": "Staging"
+    },
+    {
+      "url": "http://localhost:3028/api",
+      "description": "Desenvolvimento local"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Workspaces"
+    },
+    {
+      "name": "Inboxes"
+    },
+    {
+      "name": "Emails"
+    },
+    {
+      "name": "Agents"
+    },
+    {
+      "name": "Agent runs"
+    },
+    {
+      "name": "Webhooks"
+    },
+    {
+      "name": "Webhook deliveries"
+    },
+    {
+      "name": "System events"
+    }
+  ],
+  "paths": {
+    "/v1/workspaces": {
+      "get": {
+        "summary": "Listar workspaces",
+        "tags": [
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.workspaces"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Cursor opaco retornado em `next_cursor` da página anterior.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de resultados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Workspace"
+                      }
+                    },
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "list-workspaces"
+      },
+      "post": {
+        "summary": "Criar workspace",
+        "tags": [
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.workspaces"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkspaceCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Workspace"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "O corpo falhou na validação Zod. `error.details` carrega `formErrors`/`fieldErrors`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Restrição de unicidade violada (ex.: `external_id` ou `email` da inbox já em uso).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validação do corpo que requer contexto do lado do servidor (ex.: domínio da inbox incompatível).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "create-workspace"
+      }
+    },
+    "/v1/workspaces/{id}": {
+      "get": {
+        "summary": "Obter workspace",
+        "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+        "tags": [
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.workspaces"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Workspace"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get-workspace"
+      },
+      "patch": {
+        "summary": "Atualizar workspace",
+        "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+        "tags": [
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.workspaces"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkspaceUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Workspace"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "O corpo falhou na validação Zod. `error.details` carrega `formErrors`/`fieldErrors`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Restrição de unicidade violada (ex.: `external_id` ou `email` da inbox já em uso).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validação do corpo que requer contexto do lado do servidor (ex.: domínio da inbox incompatível).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "update-workspace"
+      },
+      "delete": {
+        "summary": "Excluir workspace",
+        "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+        "tags": [
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.workspaces"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sem conteúdo."
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "delete-workspace"
+      }
+    },
+    "/v1/inboxes": {
+      "get": {
+        "summary": "Listar inboxes",
+        "tags": [
+          "Inboxes"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.inboxes"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Cursor opaco retornado em `next_cursor` da página anterior.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de resultados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Inbox"
+                      }
+                    },
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "list-inboxes"
+      },
+      "post": {
+        "summary": "Criar inbox",
+        "tags": [
+          "Inboxes"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.inboxes"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InboxCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Inbox"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "O corpo falhou na validação Zod. `error.details` carrega `formErrors`/`fieldErrors`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Restrição de unicidade violada (ex.: `external_id` ou `email` da inbox já em uso).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validação do corpo que requer contexto do lado do servidor (ex.: domínio da inbox incompatível).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "create-inbox"
+      }
+    },
+    "/v1/inboxes/{id}": {
+      "get": {
+        "summary": "Obter inbox",
+        "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+        "tags": [
+          "Inboxes"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.inboxes"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Inbox"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get-inbox"
+      },
+      "patch": {
+        "summary": "Atualizar inbox",
+        "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+        "tags": [
+          "Inboxes"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.inboxes"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InboxUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Inbox"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "O corpo falhou na validação Zod. `error.details` carrega `formErrors`/`fieldErrors`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Restrição de unicidade violada (ex.: `external_id` ou `email` da inbox já em uso).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validação do corpo que requer contexto do lado do servidor (ex.: domínio da inbox incompatível).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "update-inbox"
+      },
+      "delete": {
+        "summary": "Excluir inbox",
+        "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+        "tags": [
+          "Inboxes"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.inboxes"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sem conteúdo."
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "delete-inbox"
+      }
+    },
+    "/v1/agents": {
+      "get": {
+        "summary": "Listar agents",
+        "tags": [
+          "Agents"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.agents"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Cursor opaco retornado em `next_cursor` da página anterior.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de resultados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Agent"
+                      }
+                    },
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "list-agents"
+      },
+      "post": {
+        "summary": "Criar agent",
+        "tags": [
+          "Agents"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.agents"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Agent"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "O corpo falhou na validação Zod. `error.details` carrega `formErrors`/`fieldErrors`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Restrição de unicidade violada (ex.: `external_id` ou `email` da inbox já em uso).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validação do corpo que requer contexto do lado do servidor (ex.: domínio da inbox incompatível).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "create-agent"
+      }
+    },
+    "/v1/agents/{id}": {
+      "get": {
+        "summary": "Obter agent",
+        "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+        "tags": [
+          "Agents"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.agents"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Agent"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get-agent"
+      },
+      "patch": {
+        "summary": "Atualizar agent",
+        "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+        "tags": [
+          "Agents"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.agents"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Agent"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "O corpo falhou na validação Zod. `error.details` carrega `formErrors`/`fieldErrors`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Restrição de unicidade violada (ex.: `external_id` ou `email` da inbox já em uso).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validação do corpo que requer contexto do lado do servidor (ex.: domínio da inbox incompatível).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "update-agent"
+      },
+      "delete": {
+        "summary": "Excluir agent",
+        "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+        "tags": [
+          "Agents"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.agents"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sem conteúdo."
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "delete-agent"
+      }
+    },
+    "/v1/webhooks": {
+      "get": {
+        "summary": "Listar webhooks",
+        "tags": [
+          "Webhooks"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.webhooks"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Cursor opaco retornado em `next_cursor` da página anterior.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de resultados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Webhook"
+                      }
+                    },
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "list-webhooks"
+      },
+      "post": {
+        "summary": "Criar webhook",
+        "tags": [
+          "Webhooks"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.webhooks"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Webhook"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "O corpo falhou na validação Zod. `error.details` carrega `formErrors`/`fieldErrors`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Restrição de unicidade violada (ex.: `external_id` ou `email` da inbox já em uso).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validação do corpo que requer contexto do lado do servidor (ex.: domínio da inbox incompatível).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "create-webhook"
+      }
+    },
+    "/v1/webhooks/{id}": {
+      "get": {
+        "summary": "Obter webhook",
+        "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+        "tags": [
+          "Webhooks"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.webhooks"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Webhook"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get-webhook"
+      },
+      "patch": {
+        "summary": "Atualizar webhook",
+        "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+        "tags": [
+          "Webhooks"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.webhooks"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Webhook"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "O corpo falhou na validação Zod. `error.details` carrega `formErrors`/`fieldErrors`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Restrição de unicidade violada (ex.: `external_id` ou `email` da inbox já em uso).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validação do corpo que requer contexto do lado do servidor (ex.: domínio da inbox incompatível).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "update-webhook"
+      },
+      "delete": {
+        "summary": "Excluir webhook",
+        "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+        "tags": [
+          "Webhooks"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.webhooks"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sem conteúdo."
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "delete-webhook"
+      }
+    },
+    "/v1/emails": {
+      "get": {
+        "summary": "Listar emails",
+        "tags": [
+          "Emails"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.emails"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Cursor opaco retornado em `next_cursor` da página anterior.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de resultados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Email"
+                      }
+                    },
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "list-emails"
+      }
+    },
+    "/v1/emails/{id}": {
+      "get": {
+        "summary": "Obter email",
+        "tags": [
+          "Emails"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.emails"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Email"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get-email"
+      }
+    },
+    "/v1/emails/{id}/eml": {
+      "get": {
+        "summary": "Baixar o .eml original",
+        "tags": [
+          "Emails"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.emails"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fluxo bruto da mensagem no formato RFC 5322.",
+            "content": {
+              "message/rfc822": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "download-original-eml"
+      }
+    },
+    "/v1/emails/{id}/reprocess": {
+      "post": {
+        "summary": "Reprocessar email",
+        "description": "Reenfileira o processamento do email independentemente do status atual.",
+        "tags": [
+          "Emails"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.emails"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Sem conteúdo."
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "reprocess-email"
+      }
+    },
+    "/v1/agent-runs": {
+      "get": {
+        "summary": "Listar agent runs",
+        "tags": [
+          "Agent runs"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.agent_runs"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Cursor opaco retornado em `next_cursor` da página anterior.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "agent_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "email_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "inbox_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de resultados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AgentRun"
+                      }
+                    },
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "list-agent-runs"
+      }
+    },
+    "/v1/agent-runs/{id}": {
+      "get": {
+        "summary": "Obter agent run",
+        "tags": [
+          "Agent runs"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.agent_runs"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AgentRun"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get-agent-run"
+      }
+    },
+    "/v1/inboxes/{id}/recipients": {
+      "post": {
+        "summary": "Adicionar destinatário permitido",
+        "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso. Adiciona um email a `allowed_recipients`. Idempotente — retorna 200 com a lista atual quando o item já está presente.",
+        "tags": [
+          "Inboxes"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.inboxes"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Destinatário já presente (nenhuma ação realizada).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "allowed_recipients": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "format": "email"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Destinatário adicionado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "allowed_recipients": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "format": "email"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "add-allowed-recipient"
+      },
+      "delete": {
+        "summary": "Remover destinatário permitido",
+        "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso. Remove um email de `allowed_recipients`. Aceita o email no corpo JSON ou como o parâmetro de query `email`.",
+        "tags": [
+          "Inboxes"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.inboxes"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Destinatário removido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "allowed_recipients": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "format": "email"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "remove-allowed-recipient"
+      }
+    },
+    "/v1/webhooks/{id}/test": {
+      "post": {
+        "summary": "Enviar um evento webhook.test",
+        "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+        "tags": [
+          "Webhooks"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.webhooks"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/SystemEvent"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "send-a-webhook-test-event"
+      }
+    },
+    "/v1/webhooks/{id}/regenerate-secret": {
+      "post": {
+        "summary": "Regenerar o segredo de assinatura",
+        "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+        "tags": [
+          "Webhooks"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.webhooks"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Novo segredo de assinatura.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "signing_secret"
+                  ],
+                  "properties": {
+                    "signing_secret": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "regenerate-the-signing-secret"
+      }
+    },
+    "/v1/webhooks/{id}/deliveries": {
+      "get": {
+        "summary": "Listar entregas de webhook",
+        "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+        "tags": [
+          "Webhook deliveries"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.webhooks"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Cursor opaco retornado em `next_cursor` da página anterior.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de resultados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/WebhookDelivery"
+                      }
+                    },
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "list-webhook-deliveries"
+      }
+    },
+    "/v1/webhooks/{id}/deliveries/{deliveryId}": {
+      "get": {
+        "summary": "Obter entrega de webhook",
+        "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+        "tags": [
+          "Webhook deliveries"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.webhooks"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "deliveryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/WebhookDelivery"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get-webhook-delivery"
+      }
+    },
+    "/v1/webhooks/{id}/deliveries/{deliveryId}/replay": {
+      "post": {
+        "summary": "Reenviar (replay) uma entrega de webhook",
+        "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+        "tags": [
+          "Webhook deliveries"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.webhooks"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "deliveryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Sem conteúdo."
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "replay-a-webhook-delivery"
+      }
+    },
+    "/v1/system-events": {
+      "get": {
+        "summary": "Listar system events",
+        "tags": [
+          "System events"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.system_events"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Cursor opaco retornado em `next_cursor` da página anterior.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "slug",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "email_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de resultados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SystemEvent"
+                      }
+                    },
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "list-system-events"
+      }
+    },
+    "/v1/system-events/{id}": {
+      "get": {
+        "summary": "Obter system event",
+        "tags": [
+          "System events"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox.system_events"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/SystemEvent"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get-system-event"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "example": "validation_failed"
+              },
+              "message": {
+                "type": "string"
+              },
+              "details": {}
+            }
+          }
+        }
+      },
+      "Workspace": {
+        "type": "object",
+        "description": "Workspace conforme retornado pela API. `deleted_at` é omitido das respostas.",
+        "required": [
+          "id",
+          "external_id",
+          "source",
+          "label",
+          "email_prefix"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "external_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "source": {
+            "$ref": "#/components/schemas/WorkspaceSource"
+          },
+          "label": {
+            "type": "string"
+          },
+          "email_prefix": {
+            "type": "string",
+            "description": "Prefixo adicionado no início de todo endereço de inbox gerado automaticamente (ex.: \"{email_prefix}-{inbox-slug}-{token}@inbox.kobana.com.br\"). Usa por padrão o label convertido em formato com hífens."
+          },
+          "monthly_cost_limit": {
+            "type": "number",
+            "nullable": true
+          },
+          "monthly_cost_used": {
+            "type": "number"
+          },
+          "monthly_emails_limit": {
+            "type": "integer",
+            "nullable": true
+          },
+          "monthly_emails_used": {
+            "type": "integer"
+          },
+          "custom_metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "WorkspaceSource": {
+        "type": "string",
+        "enum": [
+          "kobana_app",
+          "kobana_billing",
+          "kobana_autonomous_inbox",
+          "kobana_agent",
+          "kobana_finance",
+          "kobana_legal",
+          "kobana_team"
+        ]
+      },
+      "WorkspaceCreate": {
+        "type": "object",
+        "required": [
+          "source",
+          "label"
+        ],
+        "properties": {
+          "external_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Opcional. Quando omitido, o servidor usa por padrão o `id` interno gerado como `external_id`."
+          },
+          "source": {
+            "$ref": "#/components/schemas/WorkspaceSource"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "email_prefix": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60,
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "Opcional. Prefixo em minúsculas com hífens usado nos emails de inbox gerados automaticamente. Quando omitido, o servidor o deriva a partir do `label` convertido em formato com hífens."
+          },
+          "monthly_cost_limit": {
+            "type": "number",
+            "nullable": true,
+            "exclusiveMinimum": 0
+          },
+          "monthly_emails_limit": {
+            "type": "integer",
+            "nullable": true,
+            "exclusiveMinimum": 0
+          },
+          "custom_metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "WorkspaceUpdate": {
+        "type": "object",
+        "required": [],
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "email_prefix": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60,
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "monthly_cost_limit": {
+            "type": "number",
+            "nullable": true,
+            "exclusiveMinimum": 0
+          },
+          "monthly_emails_limit": {
+            "type": "integer",
+            "nullable": true,
+            "exclusiveMinimum": 0
+          },
+          "custom_metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "Inbox": {
+        "type": "object",
+        "required": [
+          "id",
+          "external_id",
+          "workspace_id",
+          "label",
+          "email",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "external_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "label": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive"
+            ]
+          },
+          "allowed_recipients": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "email"
+            }
+          },
+          "filters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "attachments_allow": {
+            "type": "boolean"
+          },
+          "attachments_max_file_number": {
+            "type": "integer"
+          },
+          "attachments_max_file_size": {
+            "type": "integer"
+          },
+          "attachments_max_total_size": {
+            "type": "integer"
+          },
+          "custom_metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "InboxCreate": {
+        "type": "object",
+        "required": [
+          "label"
+        ],
+        "properties": {
+          "external_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Opcional. Usa por padrão o `id` interno gerado."
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Opcional. Deve usar o domínio de inbox configurado (`SES_DOMAIN`); caso contrário retorna 422. Endereços duplicados retornam 409. Quando omitido, o servidor gera uma parte local baseada em slug."
+          },
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "allowed_recipients": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "email"
+            }
+          },
+          "filters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "attachments_allow": {
+            "type": "boolean"
+          },
+          "attachments_max_file_number": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "attachments_max_file_size": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "attachments_max_total_size": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          }
+        }
+      },
+      "InboxUpdate": {
+        "type": "object",
+        "required": [],
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive"
+            ]
+          },
+          "allowed_recipients": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "email"
+            }
+          },
+          "filters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "attachments_allow": {
+            "type": "boolean"
+          },
+          "attachments_max_file_number": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "attachments_max_file_size": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "attachments_max_total_size": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          }
+        }
+      },
+      "EmailBody": {
+        "type": "object",
+        "required": [
+          "text",
+          "html"
+        ],
+        "properties": {
+          "text": {
+            "type": "string",
+            "nullable": true,
+            "description": "Corpo em texto simples decodificado da mensagem, ou null quando ausente/não interpretável."
+          },
+          "html": {
+            "type": "string",
+            "nullable": true,
+            "description": "Corpo HTML decodificado. Não sanitizado — os consumidores devem sanitizar antes de renderizar."
+          }
+        }
+      },
+      "Email": {
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "inbox_id",
+          "message_id",
+          "from",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "inbox_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "message_id": {
+            "type": "string"
+          },
+          "raw_s3_key": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string",
+            "nullable": true
+          },
+          "from": {
+            "type": "string",
+            "format": "email"
+          },
+          "to": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "email"
+            },
+            "description": "Destinatários do envelope (RCPT TO) conforme entregue pelo SES. Quando a mensagem foi encaminhada automaticamente, este é o endereço da inbox, não o endereço originalmente digitado pelo remetente."
+          },
+          "cc": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "email"
+            }
+          },
+          "bcc": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "email"
+            }
+          },
+          "header_to": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "email"
+            },
+            "description": "Valores do header `To:` interpretados literalmente. Difere de `to` quando a mensagem foi encaminhada."
+          },
+          "forwarded": {
+            "type": "boolean",
+            "description": "True quando o destinatário do envelope difere do header `To:`, ou quando um header de encaminhamento (Delivered-To, X-Forwarded-To, X-Original-To, Resent-To) está presente."
+          },
+          "forwarded_for": {
+            "type": "string",
+            "format": "email",
+            "nullable": true,
+            "description": "Primeiro endereço do header `To:` que não está no envelope — ou seja, o endereço voltado ao cliente que encaminhou para a inbox."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "received",
+              "approved",
+              "rejected",
+              "processing",
+              "processed",
+              "failed"
+            ]
+          },
+          "rejection_reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "spam_verdict": {
+            "type": "string",
+            "nullable": true
+          },
+          "virus_verdict": {
+            "type": "string",
+            "nullable": true
+          },
+          "aws_ses_metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "custom_metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "agent_metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "sent_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "processed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "body": {
+            "$ref": "#/components/schemas/EmailBody"
+          }
+        }
+      },
+      "Agent": {
+        "type": "object",
+        "required": [
+          "id",
+          "external_id",
+          "workspace_id",
+          "label",
+          "llm_model",
+          "system_message"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "external_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "label": {
+            "type": "string"
+          },
+          "llm_model": {
+            "type": "string"
+          },
+          "system_message": {
+            "type": "string"
+          },
+          "skills_repo": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AgentCreate": {
+        "type": "object",
+        "required": [
+          "label",
+          "llm_model",
+          "system_message"
+        ],
+        "properties": {
+          "external_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Opcional. Usa por padrão o `id` interno gerado."
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "llm_model": {
+            "type": "string",
+            "minLength": 1
+          },
+          "system_message": {
+            "type": "string",
+            "minLength": 1
+          },
+          "skills_repo": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          }
+        }
+      },
+      "AgentUpdate": {
+        "type": "object",
+        "required": [],
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "llm_model": {
+            "type": "string",
+            "minLength": 1
+          },
+          "system_message": {
+            "type": "string"
+          },
+          "skills_repo": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          }
+        }
+      },
+      "AgentRun": {
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "inbox_id",
+          "agent_id",
+          "email_id",
+          "llm_model",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "inbox_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "agent_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "llm_model": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "running",
+              "success",
+              "failed"
+            ]
+          },
+          "error": {
+            "type": "string",
+            "nullable": true
+          },
+          "input_tokens": {
+            "type": "integer"
+          },
+          "output_tokens": {
+            "type": "integer"
+          },
+          "cache_read": {
+            "type": "integer"
+          },
+          "cache_write": {
+            "type": "integer"
+          },
+          "cost_per_token": {
+            "type": "number"
+          },
+          "total_cost": {
+            "type": "number"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "nullable": true
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "finished_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Webhook": {
+        "type": "object",
+        "description": "Registro de webhook. Campos sensíveis (`signing_secret`, credenciais de autenticação) são removidos das respostas de list/get.",
+        "required": [
+          "id",
+          "external_id",
+          "workspace_id",
+          "label",
+          "url",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "external_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "inbox_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "auth": {
+            "type": "string",
+            "enum": [
+              "none",
+              "basic",
+              "bearer",
+              "header"
+            ]
+          },
+          "subscribed_events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "consecutive_failures": {
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "WebhookCreate": {
+        "type": "object",
+        "required": [
+          "label",
+          "url"
+        ],
+        "properties": {
+          "external_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Opcional. Usa por padrão o `id` interno gerado."
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "inbox_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "subscribed_events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "auth": {
+            "type": "string",
+            "enum": [
+              "none",
+              "basic",
+              "bearer",
+              "header"
+            ],
+            "default": "none"
+          },
+          "auth_basic_user": {
+            "type": "string"
+          },
+          "auth_basic_password": {
+            "type": "string"
+          },
+          "auth_bearer_token": {
+            "type": "string"
+          },
+          "auth_header_key": {
+            "type": "string"
+          },
+          "auth_header_value": {
+            "type": "string"
+          }
+        }
+      },
+      "WebhookUpdate": {
+        "type": "object",
+        "required": [],
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "inbox_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "subscribed_events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive"
+            ]
+          }
+        }
+      },
+      "WebhookDelivery": {
+        "type": "object",
+        "required": [
+          "id",
+          "webhook_id",
+          "system_event_id",
+          "attempt",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "webhook_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "system_event_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attempt": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "success",
+              "failed"
+            ]
+          },
+          "request_headers": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "request_body": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "response_status": {
+            "type": "integer",
+            "nullable": true
+          },
+          "response_headers": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true
+          },
+          "response_body": {
+            "type": "string",
+            "nullable": true
+          },
+          "error": {
+            "type": "string",
+            "nullable": true
+          },
+          "duration_ms": {
+            "type": "integer",
+            "nullable": true
+          },
+          "delivered_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "next_retry_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SystemEvent": {
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "slug",
+          "payload",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "inbox_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "email_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "slug": {
+            "type": "string"
+          },
+          "payload": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT HS512 assinado com `JWT_SHARED_SECRET`. Claims: `iss=kobana`, `aud=inbox/<env>`, `sub=<workspace.external_id>`, `scope` (lista separada por espaços — ex.: `inbox.workspaces inbox.inboxes`), e `src` opcional (`user`|`system`)."
+      }
+    }
+  }
+}

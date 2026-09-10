@@ -45,6 +45,11 @@ The CLI uses a **two-phase argument parsing** strategy:
 1. Load `product::REGISTRY` — parse each product's embedded specs and build their command trees
 2. Build the dynamic `clap::Command` tree from those products, then parse argv against it
 
+> [!IMPORTANT]
+> clap panics at startup if a node exposes the same subcommand name twice, which
+> a malformed tree can cause from spec data alone. `no_node_exposes_a_duplicate_subcommand_name`
+> in `product.rs` guards every registered product against this — keep it passing.
+
 ### Workspace Layout
 
 The repository is a Cargo workspace with two crates:
@@ -71,10 +76,12 @@ the request URL keeps it:
 
 | Product | `Hosts::production` | Spec paths | `version_prefix` |
 |---------|---------------------|------------|------------------|
-| `banking` | `https://api.kobana.com.br` | `/v1/bank_billets`, `/v2/charge/pix` | `/v1`, `/v2` |
+| `banking` ✅ | `https://api.kobana.com.br` | `/v1/bank_billets`, `/v2/charge/pix` | `/v1`, `/v2` |
+| `inbox` ✅ | `https://api.inbox.kobana.com.br` | `/v1/workspaces` | `/v1` |
 | `billing` | `https://api.billing.kobana.com.br` | `/v1/subscriptions` | `/v1` |
-| `inbox` | `https://api.inbox.kobana.com.br` | `/v1/workspaces` | `/v1` |
 | `finance` | `https://api.finance.kobana.com.br` | `/v1/financial-accounts` | `/v1` |
+
+✅ = registered in `REGISTRY` today.
 
 > [!NOTE]
 > The published finance spec still shows `servers: https://api.finance.kobana.com.br/v1`
@@ -96,9 +103,14 @@ the request URL keeps it:
 Sandbox hosts follow `api.<product>.sandbox.kobana.com.br`, except banking,
 which predates the convention (`api-sandbox.kobana.com.br`).
 
-Only `banking` is registered today. Note that `inbox` additionally requires
-mTLS plus a JWT audience, which the current `KobanaClient` does not support —
-registering its spec is necessary but not sufficient.
+`Product::client_cert_env` names the env var holding a PEM client certificate,
+for products whose edge terminates mTLS. `inbox` sets it; `banking` does not.
+`product::client_for()` loads it and is the only place clients are built —
+never call `KobanaClient::new` directly from a command.
+
+`billing` and `finance` are not registered yet. Their specs are published at
+`docs.<product>.kobana.com.br/pt/api/overview/openapi.md` as YAML and must be
+converted to JSON before being embedded.
 
 #### Library (`crates/kobana/src/`)
 
@@ -236,6 +248,13 @@ Current helpers:
 | `KOBANA_CREDENTIALS_FILE` | Path to OAuth credentials JSON file |
 | `KOBANA_CLIENT_ID` | OAuth client ID (for `kobana auth login`) |
 | `KOBANA_CLIENT_SECRET` | OAuth client secret |
+| `KOBANA_INBOX_CLIENT_CERT` | Path to a PEM client certificate (chain + private key) for the `inbox` product, which sits behind mTLS |
+
+> [!NOTE]
+> Products do not share credentials. `KOBANA_TOKEN` holds a banking OAuth token
+> **or** an inbox JWT (`iss=kobana`, `aud=inbox/<env>`, `sub=<workspace.external_id>`),
+> depending on which product you are calling. `kobana auth login` only produces
+> banking credentials.
 
 ### Configuration
 

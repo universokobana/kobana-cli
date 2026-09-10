@@ -136,10 +136,13 @@ Produtos disponíveis:
 | Produto | Descrição |
 |---------|-----------|
 | `banking` | Gateway Bancário — cobranças, pagamentos, transferências (API v1 e v2) |
+| `inbox` | Inbox Autônomo — caixas de entrada, agentes, e-mails, webhooks (API v1) |
 
-> Os demais produtos Kobana — Financeiro Inteligente (`finance`), Faturamento
-> Automático (`billing`) e Inbox Autônomo (`inbox`) — ainda não estão
-> disponíveis no CLI.
+> Financeiro Inteligente (`finance`) e Faturamento Automático (`billing`) ainda
+> não estão disponíveis no CLI.
+
+O produto `inbox` tem API, credenciais e requisitos próprios — veja
+[Inbox Autônomo](#inbox-autônomo) abaixo.
 
 Serviços do produto `banking`:
 
@@ -154,6 +157,29 @@ Serviços do produto `banking`:
 | `mailbox` | Caixa postal — EDI, arquivos |
 | `data` | Consultas — boletos, QR codes Pix |
 | `security` | Tokens de acesso |
+
+Serviços do produto `inbox`:
+
+| Comando | Descrição |
+|---------|-----------|
+| `v1` | API v1 — workspaces, inboxes, e-mails, agentes, webhooks |
+
+### Inbox Autônomo
+
+O Inbox não compartilha credenciais com o Gateway Bancário:
+
+- `KOBANA_TOKEN` precisa ser um **JWT** (HS512) com `iss=kobana`,
+  `aud=inbox/<env>` e `sub=<workspace.external_id>`. `kobana auth login` é do
+  produto `banking` e não gera esse token.
+- `KOBANA_INBOX_CLIENT_CERT` precisa apontar para um arquivo PEM com a cadeia
+  de certificado do cliente e sua chave privada — a API fica atrás de mTLS. Sem
+  ele o CLI avisa em stderr e as requisições são recusadas.
+
+```bash
+kobana inbox v1 emails list --fields "id,subject,received_at"
+kobana inbox v1 webhooks deliveries replay \
+  --params '{"id": "WEBHOOK_ID", "deliveryId": "DELIVERY_ID"}'
+```
 
 ### Exemplos
 

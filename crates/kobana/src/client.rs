@@ -30,8 +30,35 @@ pub struct ApiResponse {
 
 impl KobanaClient {
     pub fn new(base_url: &str, token: &str) -> Result<Self, KobanaError> {
-        let client = reqwest::Client::builder()
-            .timeout(Duration::from_secs(30))
+        Self::build(base_url, token, None)
+    }
+
+    /// Client that presents a certificate during the TLS handshake.
+    ///
+    /// `pem` must hold the certificate chain and its private key. Products
+    /// behind mTLS (inbox) require this; the fingerprint of the presented
+    /// certificate is what their edge forwards to the origin.
+    pub fn with_client_cert(base_url: &str, token: &str, pem: &[u8]) -> Result<Self, KobanaError> {
+        let identity = reqwest::Identity::from_pem(pem).map_err(|e| {
+            KobanaError::Auth(format!(
+                "invalid client certificate: {e}. Expected PEM with the certificate chain and its private key."
+            ))
+        })?;
+        Self::build(base_url, token, Some(identity))
+    }
+
+    fn build(
+        base_url: &str,
+        token: &str,
+        identity: Option<reqwest::Identity>,
+    ) -> Result<Self, KobanaError> {
+        let mut builder = reqwest::Client::builder().timeout(Duration::from_secs(30));
+
+        if let Some(identity) = identity {
+            builder = builder.identity(identity);
+        }
+
+        let client = builder
             .build()
             .map_err(|e| KobanaError::Internal(format!("failed to create HTTP client: {e}")))?;
 
