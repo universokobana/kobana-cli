@@ -1,0 +1,58 @@
+skills/kobana-inbox/SKILL.md
+  s_31ca264e3312b4::t_504b4944209baa 11,19,68-69,72-73,77,83-84
+crates/kobana-cli/src/commands.rs
+  s_31ca264e3312b4::t_0c77015b48033d 45-47,54-63,73,183,190,272
+README.md
+  s_31ca264e3312b4::t_504b4944209baa 8,131,179-180,188,208,211,217,220,248
+  s_31ca264e3312b4::t_bc9219ddd6a648 147-148,160,162-163,165
+CONTEXT.md
+  s_31ca264e3312b4::t_8e72e641e9b1be 7,30
+  s_31ca264e3312b4::t_504b4944209baa 14,31,51,68,82,90
+crates/kobana-cli/src/product.rs
+  s_31ca264e3312b4::t_85c5ceddb4e60e 212-217,230-232
+  s_31ca264e3312b4::t_d0e52f4a82a3ce 395-433
+  s_31ca264e3312b4::t_97f9620f32a4c7 162,165-166,169,175,179-193,197-199
+  s_31ca264e3312b4::t_7821e0adb2afb3 2-6
+  s_31ca264e3312b4::t_811cd0abc06e3e 261,265-273,281-285,291,322,357,365
+docs/demo.tape
+  s_31ca264e3312b4::t_504b4944209baa 39
+skills/kobana-shared/SKILL.md
+  s_31ca264e3312b4::t_504b4944209baa 52
+AGENTS.md
+  s_31ca264e3312b4::t_bc9219ddd6a648 95-99
+  s_31ca264e3312b4::t_504b4944209baa 64
+docs/cli-spec.md
+  s_31ca264e3312b4::t_504b4944209baa 14,232,296,301,312,315
+  s_31ca264e3312b4::t_4e19cfb733813c 169
+  s_31ca264e3312b4::t_8e72e641e9b1be 234,237,284,405
+  s_31ca264e3312b4::t_bc9219ddd6a648 18-20
+skills/kobana-v1/SKILL.md
+  s_31ca264e3312b4::t_504b4944209baa 11,19,161-163
+  s_31ca264e3312b4::t_4e19cfb733813c 3,14,22-24
+  s_31ca264e3312b4::t_711101b7ee2fe0 25
+CHANGELOG.md
+  s_31ca264e3312b4::t_4e19cfb733813c 23-24
+crates/kobana-cli/src/schema.rs
+  s_31ca264e3312b4::t_0c77015b48033d 34,86,90,94-95,115
+  s_31ca264e3312b4::t_77211faa902ffe 100-111,131-134
+  s_31ca264e3312b4::t_d0e52f4a82a3ce 135,171-194
+  s_31ca264e3312b4::t_d668eef842bcd0 99,136
+docs/design-principles.md
+  s_31ca264e3312b4::t_504b4944209baa 39,50,53,98,109
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "96cd2f548df4c4b8f53742452d0a09579508ba90",
+  "prompts": {},
+  "sessions": {
+    "s_31ca264e3312b4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "492b3c1e-a2c4-496e-84e3-f30f6ae5c5df",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Rafael Lima <contato@rafael.adm.br>"
+    }
+  }
+}
