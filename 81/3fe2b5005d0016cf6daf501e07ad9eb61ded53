@@ -1,0 +1,26 @@
+AGENTS.md
+  s_31ca264e3312b4::t_f2c4cecb13e7b2 5
+README.md
+  s_31ca264e3312b4::t_a2c0d1cc8344d6 100-101,206-207,209,211-225
+  s_31ca264e3312b4::t_1a3f73c02cf7ef 3-4,6-7,15-99
+  s_31ca264e3312b4::t_e89867af167119 144-157,165,191-205,208,210,236-244,246-250
+  s_31ca264e3312b4::t_1e3388eff520d8 280-284,286-288,290,292-295,297,300-302
+  s_31ca264e3312b4::t_27658bf37adb1f 307-308,346-395,398,416,421-423,426-428,451-452,454-455,457,538-540
+  s_31ca264e3312b4::t_c065d8a3be210c 102
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "813fe2b5005d0016cf6daf501e07ad9eb61ded53",
+  "prompts": {},
+  "sessions": {
+    "s_31ca264e3312b4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "492b3c1e-a2c4-496e-84e3-f30f6ae5c5df",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Rafael Lima <contato@rafael.adm.br>"
+    }
+  }
+}
