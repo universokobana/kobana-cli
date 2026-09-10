@@ -166,11 +166,18 @@ impl ApiSpec {
 
             // Determine if the last segment is an "action" (appears after a param)
             // e.g., /pix/{uid}/cancel → last_is_action = true, action = "cancel"
-            let last_is_action = raw_segments.len() >= 2 && {
+            let is_action_path = raw_segments.len() >= 2 && {
                 let last = raw_segments.last().unwrap();
                 let second_last = raw_segments[raw_segments.len() - 2];
                 !last.starts_with('{') && second_last.starts_with('{')
             };
+
+            // An action becomes the command name itself (`pix {uid} cancel` →
+            // `cancel`), but only when it has a single operation. Paths like
+            // `/inboxes/{id}/recipients` (POST + DELETE) would otherwise emit
+            // the same command name twice, so the action becomes a resource
+            // node and each verb gets its own inferred method underneath it.
+            let last_is_action = is_action_path && path_item.operations.len() == 1;
 
             // Build endpoints for each HTTP method
             for (http_method, operation) in &path_item.operations {
@@ -202,8 +209,10 @@ impl ApiSpec {
                     node = node.children.entry(seg.clone()).or_default();
                 }
 
-                // Deduplicate: don't add if same cli_method already exists
-                if !node.endpoints.iter().any(|e| e.cli_method == cli_method && e.http_method == *http_method) {
+                // Deduplicate by command name: a node cannot expose the same
+                // subcommand twice, whatever the HTTP method behind it (PUT and
+                // PATCH both infer `update`, for instance).
+                if !node.endpoints.iter().any(|e| e.cli_method == cli_method) {
                     node.endpoints.push(endpoint);
                 }
             }
@@ -374,6 +383,50 @@ mod tests {
 
         // Nothing is stripped, so `v1` shows up as a node instead
         assert!(tree.children.contains_key("v1"));
+    }
+
+    /// `/resource/{id}/action` with one verb: the action IS the command.
+    /// With several verbs it becomes a node, or clap would see the same
+    /// subcommand name twice and panic at startup.
+    const ACTION_SPEC: &str = r#"{
+        "info": {"version": "1.0"},
+        "paths": {
+            "/v1/webhooks/{id}/test": {"post": {"responses": {}}},
+            "/v1/inboxes/{id}/recipients": {"post": {"responses": {}}, "delete": {"responses": {}}}
+        }
+    }"#;
+
+    #[test]
+    fn single_verb_action_becomes_the_command_name() {
+        let tree = ApiSpec::parse(ACTION_SPEC)
+            .unwrap()
+            .build_command_tree("/v1");
+
+        let webhooks = &tree.children["webhooks"];
+        let methods: Vec<&str> = webhooks.endpoints.iter().map(|e| e.cli_method.as_str()).collect();
+        assert_eq!(methods, vec!["test"]);
+        assert!(!webhooks.children.contains_key("test"));
+    }
+
+    #[test]
+    fn multi_verb_action_becomes_a_resource_node() {
+        let tree = ApiSpec::parse(ACTION_SPEC)
+            .unwrap()
+            .build_command_tree("/v1");
+
+        let inboxes = &tree.children["inboxes"];
+        // The action must not sit on the parent twice
+        assert!(inboxes.endpoints.is_empty());
+
+        let recipients = inboxes.children.get("recipients").expect("recipients node");
+        let mut methods: Vec<&str> =
+            recipients.endpoints.iter().map(|e| e.cli_method.as_str()).collect();
+        methods.sort();
+        assert_eq!(methods, vec!["create", "delete"]);
+        assert!(recipients
+            .endpoints
+            .iter()
+            .all(|e| e.path_template == "/v1/inboxes/{id}/recipients"));
     }
 
     #[test]
