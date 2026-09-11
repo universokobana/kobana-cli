@@ -1,0 +1,25 @@
+crates/kobana-cli/src/commands.rs
+  s_31ca264e3312b4::t_49e84f0b23b89e 115
+docs/demo.tape
+  s_31ca264e3312b4::t_bdf350388ad9a8 3-6,21,29,41,47,53,59
+  s_31ca264e3312b4::t_d4a131fa9f98ad 13,15,18,24,28,30-40,42,44,46,48-50,54-56
+  s_31ca264e3312b4::t_2453e0ff82a585 14
+AGENTS.md
+  s_31ca264e3312b4::t_9b33d88fe68d73 162-171,173-185,188-190,199-204
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f6c2c1c755af87cc18e35b3b954d5d8c69d3f955",
+  "prompts": {},
+  "sessions": {
+    "s_31ca264e3312b4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "492b3c1e-a2c4-496e-84e3-f30f6ae5c5df",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Rafael Lima <contato@rafael.adm.br>"
+    }
+  }
+}
