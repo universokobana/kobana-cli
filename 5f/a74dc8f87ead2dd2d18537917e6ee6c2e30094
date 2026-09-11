@@ -1,0 +1,21 @@
+.github/workflows/ci.yml
+  s_2d0f664888e0c1::t_051af91c0b8675 14
+AGENTS.md
+  s_2d0f664888e0c1::t_4ae2d73a5f22c7 22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "5fa74dc8f87ead2dd2d18537917e6ee6c2e30094",
+  "prompts": {},
+  "sessions": {
+    "s_2d0f664888e0c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "790a1211-62d1-4fc2-a28f-5c4d85602aff",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Rafael Lima <contato@rafael.adm.br>"
+    }
+  }
+}
