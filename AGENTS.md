@@ -159,13 +159,34 @@ finance, and they mean different things.
 
 Demo recordings are generated with [VHS](https://github.com/charmbracelet/vhs) (`.tape` files).
 
-```bash
-# Install VHS (macOS)
-brew install charmbracelet/tap/vhs
+> [!IMPORTANT]
+> **Do not use VHS v0.12.0 — it silently produces nothing.** It starts ttyd and
+> the browser, prints `Creating docs/demo.gif...`, captures zero frames, writes
+> no file and still **exits 0**. Verified across the host install and the
+> official Docker image, on the canonical `vhs new` example tape, so it is not a
+> tape or environment problem. `brew install charmbracelet/tap/vhs` currently
+> installs exactly this version. Use the pinned Docker image below instead.
+>
+> The official image also ships **without ffmpeg**, which is a separate defect —
+> it does not matter for v0.10.0, which bundles a working encoder path.
 
-# Record a demo
-vhs docs/demo.tape
+Render with the pinned image. The tape runs `kobana` inside the container, so it
+needs a **Linux** binary — build one in Docker rather than reusing `target/release`,
+which is a macOS binary:
+
+```bash
+# 1. Build a Linux binary (kept out of the repo's target/)
+docker run --rm -v "$PWD":/w -w /w -v /tmp/kobana-linux:/target \
+  -e CARGO_TARGET_DIR=/target rust:1-slim-bookworm cargo build --release
+
+# 2. Render the demo
+docker run --rm --shm-size=1g -v "$PWD":/vhs \
+  -v /tmp/kobana-linux/release/kobana:/usr/local/bin/kobana:ro \
+  ghcr.io/charmbracelet/vhs:v0.10.0 docs/demo.tape
 ```
+
+Re-test the plain `vhs docs/demo.tape` path when a version above v0.12.0 ships;
+if it works, drop the Docker indirection.
 
 ### VHS quoting rules
 
@@ -175,6 +196,12 @@ vhs docs/demo.tape
   Type `kobana banking charge pix list --params '{"per_page": 5}'` Enter
   ```
   `\"` escapes inside double-quoted `Type` strings are **not supported** by VHS and will cause parse errors.
+- **Keep `Type` text ASCII-only.** VHS drops non-ASCII characters from typed
+  input: `"binário"` renders as `bin rio` and `"é"` disappears entirely. Write
+  narration comments without diacritics (`"# Primeiro segmento do comando: o produto"`).
+  This affects only `Type`; accented characters in **command output** render fine.
+- Check the rendered width. `kobana --help` reaches ~173 columns, so the tape
+  sets `Set Width 1500`; narrower values wrap the `--env` line.
 
 ### Creating a new demo
 

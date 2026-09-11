@@ -1,62 +1,60 @@
 # Kobana CLI Demo
 # Run: vhs docs/demo.tape
+#
+# Comentarios digitados ficam em ASCII puro de proposito: o Type do VHS
+# descarta caracteres acentuados ("binario" sai como "bin rio").
+# A saida dos comandos aceita acentos normalmente.
 
 Output docs/demo.gif
 
 Require kobana
 
 Set Shell "bash"
-Set FontSize 16
-Set Width 1200
-Set Height 700
+Set FontSize 14
+Set Width 1500
+Set Height 750
 Set Padding 20
 Set Theme "Catppuccin Mocha"
-Set TypingSpeed 40ms
+Set TypingSpeed 30ms
 
 # ── Intro ──
-Type "# Kobana CLI — acesso completo à API Kobana v1 e v2" Enter
+Type "# Kobana CLI: as APIs dos quatro produtos Kobana" Enter
 Sleep 1.5s
 
-# ── Help ──
+# ── Produtos ──
 Type "kobana --help" Enter
 Sleep 4s
 
-# ── Listar serviços via Schema ──
-Type "# Introspecção de schema" Enter
-Sleep 1s
-Type "kobana schema banking.charge.pix.create" Enter
-Sleep 4s
+# ── Um comando por produto ──
+Type "# Primeiro segmento do comando: o produto" Enter
+Sleep 1.2s
+Type "kobana banking bank-billets list --dry-run" Enter
+Sleep 2.5s
+Type "kobana finance payables list --dry-run" Enter
+Sleep 2.5s
+Type "kobana billing subscriptions list --dry-run" Enter
+Sleep 2.5s
+Type "kobana inbox emails list --dry-run" Enter
+Sleep 2.5s
 
-# ── Dry-run: criar cobrança Pix ──
-Type "# Dry-run: validar requisição sem executar" Enter
-Sleep 1s
+# ── Dry-run com corpo ──
+Type "# Dry-run: mostra o request sem executar" Enter
+Sleep 1.2s
 Type `kobana banking charge pix create --dry-run --json '{"amount": 99.90, "pix_account_uid": "abc-123"}'` Enter
-Sleep 4s
+Sleep 3.5s
 
-# ── Dry-run: criar boleto ──
-Type "# Dry-run: emitir boleto via API v1" Enter
-Sleep 1s
-Type `kobana banking bank-billets create --dry-run --json '{"amount": 150.50, "expire_at": "2026-05-01", "customer_person_name": "Maria Silva", "customer_cnpj_cpf": "012.345.678-90", "bank_billet_account_id": 1}'` Enter
-Sleep 4s
-
-# ── Helper: +cobrar ──
-Type "# Helpers: atalhos para operações comuns" Enter
-Sleep 1s
-Type "kobana +cobrar --dry-run --valor 250.00 --conta-pix abc-123 --nome João --cpf-cnpj 012.345.678-90" Enter
-Sleep 4s
+# ── Schema ──
+Type "# Schema de qualquer endpoint, de qualquer produto" Enter
+Sleep 1.2s
+Type "kobana schema inbox.emails.reprocess | head -14" Enter
+Sleep 3.5s
 
 # ── Help contextual ──
-Type "# Help contextual em qualquer nível" Enter
-Sleep 1s
-Type "kobana banking charge pix --help" Enter
-Sleep 4s
-
-# ── Auth status ──
-Type "# Status de autenticação" Enter
-Sleep 1s
-Type "kobana auth status" Enter
-Sleep 3s
+Type "# Help contextual em qualquer ponto" Enter
+Sleep 1.2s
+Type "kobana finance payables --help" Enter
+Sleep 3.5s
 
 # ── Fim ──
-Type "# Pronto! kobana --help para mais informações" Enter
+Type "# Comece por: kobana --help" Enter
 Sleep 2s

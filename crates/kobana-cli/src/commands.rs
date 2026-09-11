@@ -112,7 +112,7 @@ pub fn build_root_command(products: &[LoadedProduct]) -> Command {
                     "development",
                 ]))
                 .help(
-                    "API environment: production (default), sandbox, or development (localhost:5005). \
+                    "API environment (each product has its own hosts). \
                      Can also be set via KOBANA_ENVIRONMENT.",
                 ),
         )
