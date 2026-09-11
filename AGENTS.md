@@ -19,7 +19,7 @@ cargo test           # Run tests
 
 CI runs on every push and PR to `main` via GitHub Actions (`.github/workflows/ci.yml`):
 
-1. **Test** — `cargo test --all` + `cargo clippy -- -D warnings` on Ubuntu
+1. **Tests** — `cargo test --all` + `cargo clippy -- -D warnings` on Ubuntu
 2. **Build** — cross-platform matrix: Linux (amd64/arm64), macOS (amd64/arm64), Windows (amd64)
 3. **Release** — triggered when a commit on `main` starts with `release:`. Creates a GitHub Release with binaries for all 5 targets.
 
