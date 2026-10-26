@@ -20,13 +20,16 @@ kobana billing <resource> <method> [flags]
 ```
 
 Billing is its own API (`api.billing.kobana.com.br`) and does not share
-credentials with the banking product. `KOBANA_TOKEN` must hold a billing token.
+credentials with the banking product. `KOBANA_TOKEN` must hold an RS256 access
+token issued by the Kobana Authorization Server (`account.kobana.com.br`) with
+`aud=https://api.billing.kobana.com.br`. `GET` needs the `read`, `write` or `all`
+scope; every other method needs `write` or `all`.
 
 ## API Resources
 
 ### Recurring billing
 - `subscriptions` — `list`, `create`, `get`, `update`, `delete`, plus `activate`,
-  `pause`, `resume`, `cancel`, `change-plan`, `create-invoice`, `items`,
+  `pause`, `resume`, `cancel`, `change-plan`, `change-anniversary`, `create-invoice`, `items`,
   `revert-to-confirmed`, `sync-plan-items`
 - `subscription-changes config`, `subscription-item-changes list|get`
 - `plans` — CRUD plus `duplicate`, `items`, `bulk-archive`, `bulk-delete`, `bulk-move-group`
@@ -48,6 +51,9 @@ credentials with the banking product. `KOBANA_TOKEN` must hold a billing token.
 - `payments` — `list`, `create`, `get`, `delete`, plus `cancel`, `refund`,
   `retry`, `change-card`, `change-due-date`, `send-email`, `sync`
 - `payment-methods` — CRUD plus `set-default`
+- `late-fee-policies` — CRUD plus `default`, `simulate create`
+- `bank-accounts`, `pix-keys` — CRUD; `banks list`
+- `holidays` — CRUD plus `sync create`
 
 ### Accounts & customers
 - `billing-accounts` — CRUD plus `close`, `suspend`, `reactivate`, `credits`,
@@ -55,7 +61,8 @@ credentials with the banking product. `KOBANA_TOKEN` must hold a billing token.
 - `customers` — CRUD plus `recalculate-mrr`, `statement`, `users`
 - `companies` — CRUD plus `deactivate`, `reactivate`, `set-default`, `fiscal`,
   `fiscal-profile`, `matriz`
-- `organization list|update`, `dashboard-users`, `team-roles`
+- `organization list|update`, `dashboard-users`, `team-roles`, `portal-users list`
+- `me list` — the organization and scopes behind the token
 
 ### Proposals, credits and taxes
 - `proposals` — CRUD plus `send`, `accept`, `undo-accept`, `publish`,
@@ -63,7 +70,7 @@ credentials with the banking product. `KOBANA_TOKEN` must hold a billing token.
 - `proposal-templates` — CRUD plus `activate`, `deactivate`, `duplicate`, `set-default`
 - `coupons` — CRUD plus `deactivate`, `redemptions`
 - `credits`, `withholdings` (`convert-to-credits`), `tax-rules`, `tax-periods`
-- `certificates`, `usage` (`summary`, `snapshots`)
+- `certificates`, `usage` (`summary`, `snapshots`, `credits`), `credit-purchases create`
 
 ## Examples
 

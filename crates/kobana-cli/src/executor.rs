@@ -1,6 +1,6 @@
 use kobana::client::{ApiRequest, KobanaClient};
 use kobana::error::KobanaError;
-use kobana::spec::{HttpMethod, ResolvedEndpoint};
+use kobana::spec::{HttpMethod, ParameterLocation, ResolvedEndpoint};
 use kobana::validate::validate_identifier;
 
 use crate::formatter::{filter_fields, format_output};
@@ -56,6 +56,10 @@ pub async fn execute(
     // Resolve path parameters from --params
     let path = resolve_path_template(&endpoint.path_template, &params_json)?;
 
+    // Header parameters travel in --params too; move them out of the query
+    let mut params_json = params_json;
+    let headers = take_header_params(endpoint, &mut params_json)?;
+
     // Handle auto-pagination (skip if dry-run)
     if page_all && !dry_run && endpoint.http_method == HttpMethod::Get {
         // Strip path params from query params
@@ -73,6 +77,7 @@ pub async fn execute(
             endpoint,
             &path,
             &query_params,
+            &headers,
             page_limit,
             page_delay,
             &fields,
@@ -117,6 +122,7 @@ pub async fn execute(
         query_params,
         body: body_json,
         idempotency_key,
+        headers,
     };
 
     // Dry run: show the request without executing
@@ -128,6 +134,11 @@ pub async fn execute(
             "query_params": api_request.query_params,
             "body": api_request.body,
             "idempotency_key": api_request.idempotency_key,
+            "headers": client
+                .request_headers(&api_request)
+                .into_iter()
+                .map(|(name, value)| (name, serde_json::Value::String(value)))
+                .collect::<serde_json::Map<_, _>>(),
         });
         println!("{}", serde_json::to_string_pretty(&dry_run_output)?);
         return Ok(());
@@ -175,6 +186,46 @@ pub async fn execute(
     }
 
     Ok(())
+}
+
+/// Headers the client always sets itself; a spec declaring them as parameters
+/// must not make the CLI send them twice.
+pub(crate) const CLIENT_MANAGED_HEADERS: &[&str] = &["user-agent", "x-idempotency-key", "authorization"];
+
+/// Remove the endpoint's header parameters from `--params` and return them as
+/// headers. Names match case-insensitively, as HTTP header names do.
+fn take_header_params(
+    endpoint: &ResolvedEndpoint,
+    params: &mut Option<serde_json::Value>,
+) -> Result<Vec<(String, String)>, KobanaError> {
+    let Some(obj) = params.as_mut().and_then(|p| p.as_object_mut()) else {
+        return Ok(Vec::new());
+    };
+
+    let mut headers = Vec::new();
+    for param in &endpoint.operation.parameters {
+        if param.location != ParameterLocation::Header
+            || CLIENT_MANAGED_HEADERS.contains(&param.name.to_ascii_lowercase().as_str())
+        {
+            continue;
+        }
+        let Some(key) = obj.keys().find(|k| k.eq_ignore_ascii_case(&param.name)).cloned() else {
+            continue;
+        };
+        let value = match obj.remove(&key) {
+            Some(serde_json::Value::String(s)) => s,
+            Some(other) => other.to_string(),
+            None => continue,
+        };
+        if value.chars().any(char::is_control) {
+            return Err(KobanaError::Validation(format!(
+                "header parameter '{}' contains control characters",
+                param.name
+            )));
+        }
+        headers.push((param.name.clone(), value));
+    }
+    Ok(headers)
 }
 
 /// Replace path template parameters with values from --params
@@ -228,4 +279,83 @@ fn resolve_path_template(
     }
 
     Ok(path)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use kobana::spec::ApiSpec;
+
+    fn endpoint() -> ResolvedEndpoint {
+        const SPEC: &str = r#"{
+            "info": {"version": "1.0"},
+            "paths": {
+                "/v1/payables": {"get": {
+                    "parameters": [
+                        {"name": "X-Workspace-Id", "in": "header", "required": true},
+                        {"name": "X-Idempotency-Key", "in": "header"},
+                        {"name": "status", "in": "query"}
+                    ],
+                    "responses": {}
+                }}
+            }
+        }"#;
+        let tree = ApiSpec::parse(SPEC).unwrap().build_command_tree("/v1");
+        tree.children["payables"].endpoints[0].clone()
+    }
+
+    #[test]
+    fn header_params_leave_the_query_and_become_headers() {
+        let mut params = Some(serde_json::json!({
+            "x-workspace-id": "ws-1",
+            "status": "pending"
+        }));
+        let headers = take_header_params(&endpoint(), &mut params).unwrap();
+
+        // Named as the spec declares it, matched case-insensitively
+        assert_eq!(headers, vec![("X-Workspace-Id".to_string(), "ws-1".to_string())]);
+        assert_eq!(params, Some(serde_json::json!({"status": "pending"})));
+    }
+
+    #[test]
+    fn client_managed_headers_are_not_taken_from_params() {
+        let mut params = Some(serde_json::json!({"X-Idempotency-Key": "k"}));
+        let headers = take_header_params(&endpoint(), &mut params).unwrap();
+
+        assert!(headers.is_empty());
+        assert_eq!(params, Some(serde_json::json!({"X-Idempotency-Key": "k"})));
+    }
+
+    #[test]
+    fn rejects_header_values_with_control_characters() {
+        let mut params = Some(serde_json::json!({"X-Workspace-Id": "ws\r\nX-Evil: 1"}));
+        let err = take_header_params(&endpoint(), &mut params).unwrap_err();
+        assert!(matches!(err, KobanaError::Validation(_)));
+    }
+
+    #[test]
+    fn request_headers_override_client_defaults() {
+        let client = KobanaClient::new("https://api.example", "t")
+            .unwrap()
+            .with_default_headers(vec![
+                ("X-Workspace-Id".to_string(), "from-env".to_string()),
+                ("X-Other".to_string(), "kept".to_string()),
+            ]);
+        let request = ApiRequest {
+            method: HttpMethod::Get,
+            path: "/v1/payables".to_string(),
+            query_params: None,
+            body: None,
+            idempotency_key: None,
+            headers: vec![("x-workspace-id".to_string(), "from-params".to_string())],
+        };
+
+        assert_eq!(
+            client.request_headers(&request),
+            vec![
+                ("x-workspace-id".to_string(), "from-params".to_string()),
+                ("X-Other".to_string(), "kept".to_string()),
+            ]
+        );
+    }
 }

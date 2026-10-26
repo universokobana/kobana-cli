@@ -23,14 +23,17 @@ kobana inbox <resource> <method> [flags]
 
 The Inbox API is **not** the banking API and does not share its credentials:
 
-- `KOBANA_TOKEN` must hold a **JWT** (HS512) with `iss=kobana`, `aud=inbox/<env>`
-  and `sub=<workspace.external_id>`. Scopes are per resource
-  (`inbox.workspaces`, `inbox.emails`, …).
+- `KOBANA_TOKEN` must hold an **RS256 JWT** issued by the Kobana Authorization
+  Server (`iss=https://account[.<env>].kobana.com.br`) with
+  `aud=https://api.inbox[.<env>].kobana.com.br`. Scopes have two axes: a
+  resource prefixed by the app (`inbox/emails`) and a global verb (`write`).
+  A resource alone reads; writing needs both (`inbox/emails write`), or the
+  granular form `inbox/emails:write`. `inbox/all` reads every resource.
 - `KOBANA_INBOX_CLIENT_CERT` must point at a PEM file holding a client
   certificate chain and its private key — the API sits behind mTLS. Without it
   the CLI warns and requests are rejected.
 
-`kobana auth login` is for the banking product and does not produce an inbox JWT.
+`kobana auth login` is for the banking product and does not produce an inbox token.
 
 ## API Resources
 
@@ -48,6 +51,18 @@ The Inbox API is **not** the banking API and does not share its credentials:
 
 ### agents
 - `list`, `create`, `get`, `update`, `delete`
+- `versions` — the agent's version history
+
+### workflow-runs
+- `list`, `get`
+
+### secrets
+- `list`, `create`, `get`, `update`, `delete`
+
+### models, usage, me
+- `models list` — models available to agents
+- `usage cost list`, `usage summary list`
+- `me list` — the workspace and scopes behind the token
 
 ### agent-runs
 - `list`, `get`

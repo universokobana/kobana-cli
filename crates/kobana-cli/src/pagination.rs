@@ -13,6 +13,7 @@ pub async fn paginate_all(
     endpoint: &ResolvedEndpoint,
     base_path: &str,
     base_params: &Option<serde_json::Value>,
+    headers: &[(String, String)],
     page_limit: usize,
     page_delay_ms: u64,
     fields: &Option<String>,
@@ -48,6 +49,7 @@ pub async fn paginate_all(
             query_params: Some(params),
             body: None,
             idempotency_key: None,
+            headers: headers.to_vec(),
         };
 
         if verbose {

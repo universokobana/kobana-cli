@@ -10,6 +10,8 @@ pub struct KobanaClient {
     inner: reqwest::Client,
     base_url: String,
     token: String,
+    /// Headers sent on every request unless the request sets the same name
+    default_headers: Vec<(String, String)>,
 }
 
 #[derive(Debug, Clone)]
@@ -19,6 +21,8 @@ pub struct ApiRequest {
     pub query_params: Option<serde_json::Value>,
     pub body: Option<serde_json::Value>,
     pub idempotency_key: Option<String>,
+    /// Header parameters declared by the endpoint (e.g. `X-Workspace-Id`)
+    pub headers: Vec<(String, String)>,
 }
 
 #[derive(Debug, Clone)]
@@ -66,11 +70,30 @@ impl KobanaClient {
             inner: client,
             base_url: base_url.trim_end_matches('/').to_string(),
             token: token.to_string(),
+            default_headers: Vec::new(),
         })
+    }
+
+    /// Send these headers on every request that does not set them itself.
+    pub fn with_default_headers(mut self, headers: Vec<(String, String)>) -> Self {
+        self.default_headers = headers;
+        self
     }
 
     pub fn base_url(&self) -> &str {
         &self.base_url
+    }
+
+    /// The headers a request will carry besides auth, content type and user
+    /// agent: its own header parameters, then any default it does not override.
+    pub fn request_headers(&self, req: &ApiRequest) -> Vec<(String, String)> {
+        let mut headers = req.headers.clone();
+        for (name, value) in &self.default_headers {
+            if !headers.iter().any(|(n, _)| n.eq_ignore_ascii_case(name)) {
+                headers.push((name.clone(), value.clone()));
+            }
+        }
+        headers
     }
 
     pub async fn execute(&self, req: &ApiRequest) -> Result<ApiResponse, KobanaError> {
@@ -94,6 +117,10 @@ impl KobanaClient {
         // Add idempotency key for mutations
         if let Some(key) = &req.idempotency_key {
             builder = builder.header("X-Idempotency-Key", key.as_str());
+        }
+
+        for (name, value) in self.request_headers(req) {
+            builder = builder.header(name, value);
         }
 
         // Add query parameters

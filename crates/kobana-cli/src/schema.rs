@@ -153,6 +153,25 @@ fn print_endpoint(
         })
         .collect();
 
+    // Sent as headers, but passed in --params like any other parameter
+    let header_params: Vec<serde_json::Value> = endpoint
+        .operation
+        .parameters
+        .iter()
+        .filter(|p| {
+            p.location == ParameterLocation::Header
+                && !crate::executor::CLIENT_MANAGED_HEADERS
+                    .contains(&p.name.to_ascii_lowercase().as_str())
+        })
+        .map(|p| {
+            serde_json::json!({
+                "name": p.name,
+                "required": p.required,
+                "description": p.description,
+            })
+        })
+        .collect();
+
     let schema_output = serde_json::json!({
         "product": loaded.product.slug,
         "method": endpoint.http_method.as_str(),
@@ -161,6 +180,7 @@ fn print_endpoint(
         "summary": endpoint.operation.summary,
         "description": endpoint.operation.description,
         "parameters": query_params,
+        "header_params": header_params,
         "request_body": endpoint.operation.request_body,
         "responses": endpoint.operation.responses,
     });

@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-`kobana` is a Rust CLI tool for interacting with the APIs of all four Kobana products — Gateway Bancário (`banking`), Financeiro Inteligente (`finance`), Faturamento Automático (`billing`) and Inbox Autônomo (`inbox`). Each is an independent API with its own hosts and credentials. The CLI dynamically generates its command surface at startup by parsing OpenAPI 3.1 specs embedded in the binary.
+`kobana` is a Rust CLI tool for interacting with the APIs of all six Kobana products — Gateway Bancário (`banking`), Financeiro Inteligente (`finance`), Faturamento Automático (`billing`), Inbox Autônomo (`inbox`), Régua de Cobrança (`dunning`) and Dashboard Mágico (`dashboards`). Each is an independent API with its own hosts and credentials. The CLI dynamically generates its command surface at startup by parsing OpenAPI 3.1 specs embedded in the binary.
 
 > [!IMPORTANT]
 > **Dynamic Commands**: This project does NOT hardcode API endpoints as Rust structs. Instead, it embeds OpenAPI JSON specs and builds `clap` commands dynamically via two-phase parsing. When updating the API surface, replace the spec files in `crates/kobana-cli/specs/` (named `<product>-<version>.json`) and rebuild. Do NOT add new crates or modules per endpoint.
@@ -80,8 +80,10 @@ the request URL keeps it:
 | `inbox` | `https://api.inbox.kobana.com.br` | `/v1/workspaces` | `/v1` |
 | `billing` | `https://api.billing.kobana.com.br` | `/v1/subscriptions` | `/v1` |
 | `finance` | `https://api.finance.kobana.com.br` | `/v1/financial-accounts` | `/v1` |
+| `dunning` | `https://api.dunning.kobana.com.br` | `/v1/charges` | `/v1` |
+| `dashboards` | `https://api.dashboards.kobana.com.br` | `/v1/data_sources` | `/v1` |
 
-All four are registered.
+All six are registered.
 
 > [!IMPORTANT]
 > **The published finance spec does not match that table yet.** It still ships
@@ -111,13 +113,34 @@ for products whose edge terminates mTLS. `inbox` sets it; `banking` does not.
 `product::client_for()` loads it and is the only place clients are built —
 never call `KobanaClient::new` directly from a command.
 
-Specs are published at `docs.<product>.kobana.com.br/pt/api/overview/openapi.md`
-as YAML and must be converted to JSON before being embedded. macOS ships Ruby,
-which needs no extra dependency:
+`Product::header_env` fills spec-declared header parameters from env vars when
+`--params` does not carry them. `finance` (where `X-Workspace-Id` is required on
+every route) and `dashboards` (optional) map it to `KOBANA_WORKSPACE_ID`.
+`header_env_names_a_header_parameter_of_the_spec` keeps the mapping honest.
+
+#### Updating specs
+
+Embed the **Portuguese** spec — help text and `kobana schema` output are in
+Portuguese. Sources, taken from each repo's `main` (not a working tree, which may
+hold someone's uncommitted edits):
+
+| Spec | Source |
+|------|--------|
+| `banking-v1.json`, `banking-v2.json` | `kobana-api-specs`: `swagger/v{1,2}_0/kobana-api-v{1,2}_0-openapi-3_1.json` (already JSON) |
+| `billing`, `inbox`, `dunning`, `dashboards` | `<app>/user-docs/openapi/openapi-v1-pt.yaml` |
+| `finance` | `kobana-finance/user-docs/static/openapi/openapi-v1-pt.yaml` (then normalize, see above) |
+
+The same specs are published at `docs.<product>.kobana.com.br/pt/api/overview/openapi.md`.
+YAML must be converted to JSON before being embedded. macOS ships Ruby, which
+needs no extra dependency — but the system Ruby (2.6) predates
+`YAML.unsafe_load_file`, where `YAML.load_file` is already unsafe:
 
 ```bash
-ruby -ryaml -rjson -e "File.write('out.json', JSON.pretty_generate(YAML.unsafe_load_file('in.yaml')))"
+ruby -ryaml -rjson -e "y = YAML.respond_to?(:unsafe_load_file) ? YAML.unsafe_load_file('in.yaml') : YAML.load_file('in.yaml'); File.write('out.json', JSON.pretty_generate(y))"
 ```
+
+After replacing specs, run `cargo test` — the tree, path and duplicate-name
+guards catch most spec shapes the CLI cannot serve.
 
 `resource_about()` is keyed by `(product, resource)`, not by resource name
 alone: `payments` exists in banking and billing, `transfers` in banking and
@@ -287,19 +310,21 @@ Current helpers:
 | `KOBANA_CLIENT_ID` | OAuth client ID (for `kobana auth login`) |
 | `KOBANA_CLIENT_SECRET` | OAuth client secret |
 | `KOBANA_INBOX_CLIENT_CERT` | Path to a PEM client certificate (chain + private key) for the `inbox` product, which sits behind mTLS |
+| `KOBANA_WORKSPACE_ID` | Workspace sent as `X-Workspace-Id` by `finance` (required) and `dashboards` (optional). A value in `--params` wins |
 
 > [!NOTE]
 > Products do not share credentials. `KOBANA_TOKEN` holds a banking OAuth token
-> **or** an inbox JWT (`iss=kobana`, `aud=inbox/<env>`, `sub=<workspace.external_id>`),
-> depending on which product you are calling. `kobana auth login` only produces
-> banking credentials.
+> **or**, for every other product, an RS256 access token issued by the Kobana
+> Authorization Server (`account.kobana.com.br`) whose `aud` is that product's
+> API URL — so one token still serves one product. `kobana auth login` only
+> produces banking credentials.
 
 ### Configuration
 
 | Variable | Description |
 |----------|-------------|
 | `KOBANA_CONFIG_DIR` | Override the config directory (default: `~/.config/kobana`) |
-| `KOBANA_ENVIRONMENT` | `sandbox` (default) or `production` |
+| `KOBANA_ENVIRONMENT` | `production` (default), `sandbox` or `development` |
 
 ### Logging
 

@@ -1,6 +1,6 @@
 # Kobana CLI
 
-CLI para as APIs da [Kobana](https://kobana.com.br) — os quatro produtos em um
+CLI para as APIs da [Kobana](https://kobana.com.br) — os seis produtos em um
 único binário, direto do terminal.
 
 Projetado para humanos e agentes de IA, com saída JSON estruturada, introspecção
@@ -24,6 +24,8 @@ o primeiro segmento do comando.
 | Financeiro Inteligente | `finance` | `api.finance.kobana.com.br` | [docs.finance.kobana.com.br](https://docs.finance.kobana.com.br) |
 | Faturamento Automático | `billing` | `api.billing.kobana.com.br` | [docs.billing.kobana.com.br](https://docs.billing.kobana.com.br) |
 | Inbox Autônomo | `inbox` | `api.inbox.kobana.com.br` | [docs.inbox.kobana.com.br](https://docs.inbox.kobana.com.br) |
+| Régua de Cobrança | `dunning` | `api.dunning.kobana.com.br` | [docs.dunning.kobana.com.br](https://docs.dunning.kobana.com.br) |
+| Dashboard Mágico | `dashboards` | `api.dashboards.kobana.com.br` | [docs.dashboards.kobana.com.br](https://docs.dashboards.kobana.com.br) |
 
 > [!IMPORTANT]
 > Produtos não compartilham credenciais. Um token do Gateway Bancário não
@@ -54,10 +56,14 @@ Back-office financeiro: contas a pagar, contas a receber, conciliação bancári
 multi-empresa em uma plataforma. É onde o dinheiro é classificado e explicado,
 não movimentado — para movimentar, use o `banking`.
 
-Recursos: `financial-accounts`, `financial-transactions`, `payables`,
-`receivables`, `cash-flow`, `reconciliations`, `categories`,
-`classification-centers`, `automatic-rules`, `people`, `companies`, `taxes`,
-`attachments`, `banks`, `receipts`, `transfers`.
+Recursos: `financial-accounts` (com `balances`), `financial-transactions`,
+`payables`, `receivables`, `cash-flow`, `reconciliations`, `categories`,
+`classification-centers`, `custom-classifiers`, `automatic-rules`, `people`,
+`companies`, `taxes`, `attachments`, `banks`, `receipts`, `transfers`,
+`fiscal-documents`, `me`.
+
+Toda rota age sobre um espaço de trabalho, informado no cabeçalho
+`X-Workspace-Id` — veja [Espaço de trabalho](#espaço-de-trabalho-x-workspace-id).
 
 ```bash
 kobana finance payables list --params '{"status": "pending"}'
@@ -76,7 +82,8 @@ a liquidação bancária em si acontece no `banking`.
 
 Recursos principais: `subscriptions`, `plans`, `plan-groups`, `products`,
 `invoices`, `nfes`, `payments`, `payment-methods`, `proposals`, `coupons`,
-`credits`, `billing-accounts`, `customers`, `companies`, `tax-rules`.
+`credits`, `billing-accounts`, `customers`, `companies`, `tax-rules`,
+`late-fee-policies`, `bank-accounts`, `pix-keys`, `holidays`, `usage`.
 
 ```bash
 kobana billing subscriptions list --params '{"status": "active"}'
@@ -89,7 +96,8 @@ Caixas de entrada com agentes. Recebe e-mails em endereços dedicados
 (`inboxes`), processa cada mensagem com agentes (`agents`, `agent-runs`) e
 entrega o resultado via webhooks com replay de entregas.
 
-Recursos: `workspaces`, `inboxes`, `emails`, `agents`, `agent-runs`,
+Recursos: `workspaces`, `inboxes`, `emails`, `agents` (com `versions`),
+`agent-runs`, `workflow-runs`, `secrets`, `models`, `usage`,
 `webhooks` (com `deliveries`), `system-events`.
 
 ```bash
@@ -99,6 +107,36 @@ kobana inbox emails reprocess --params '{"id": "EMAIL_ID"}'
 
 Este produto exige mTLS além do token — veja
 [mTLS no Inbox Autônomo](#mtls-no-inbox-autônomo).
+
+### Régua de Cobrança — `dunning`
+
+Recuperação de inadimplência: clientes devedores, cobranças, réguas de
+comunicação, acordos de parcelamento, disputas, negativações e protestos.
+
+Recursos: `people`, `charges`, `collection-rules` (com `steps`), `templates`,
+`notifications`, `notification-channels`, `agreements`, `disputes`,
+`negativations`, `protests`, `tasks`, `interactions`, `classifications`,
+`negotiation-campaigns`, `imports`, `exports`, `metrics`, `webhook-endpoints`.
+
+```bash
+kobana dunning charges list --params '{"status": "overdue"}'
+kobana dunning metrics recovery list
+```
+
+### Dashboard Mágico — `dashboards`
+
+Dashboards e portais do cliente montados sobre fontes de dados conectadas.
+Sincroniza dados de ERPs e APIs (`data-sources`), modela entidades
+(`entities`), publica um portal com usuários próprios e edita as páginas pelo
+`builder`.
+
+Recursos principais: `data-sources`, `entities`, `workspaces`, `portal-users`,
+`portal-settings`, `builder`, `assets`, `webhooks`, `backups`, `api-keys`.
+
+```bash
+kobana dashboards data-sources list --fields "id,name,status"
+kobana dashboards data-sources sync --dry-run --params '{"id": "DATA_SOURCE_ID"}'
+```
 
 ## Instalação
 
@@ -148,9 +186,11 @@ obtê-lo muda:
 | Produto | Credencial | Como obter |
 |---------|-----------|------------|
 | `banking` | Token de API ou OAuth | Interface da Kobana ou `kobana auth login` |
-| `finance` | JWT (HS512) | Emitido pelo Financeiro Inteligente |
-| `billing` | JWT (HS512) | Emitido pelo Faturamento Automático |
-| `inbox` | JWT (HS512) + certificado mTLS | Emitido pelo Inbox Autônomo |
+| `finance` | JWT (RS256) + `X-Workspace-Id` | Conta Kobana (`account.kobana.com.br`) |
+| `billing` | JWT (RS256) | Conta Kobana (`account.kobana.com.br`) |
+| `inbox` | JWT (RS256) + certificado mTLS | Conta Kobana (`account.kobana.com.br`) |
+| `dunning` | JWT (RS256) | Conta Kobana (`account.kobana.com.br`) |
+| `dashboards` | JWT (RS256), `X-Workspace-Id` opcional | Conta Kobana (`account.kobana.com.br`) |
 
 ### Gateway Bancário
 
@@ -189,22 +229,44 @@ kobana auth logout
 Credenciais salvas são criptografadas com AES-256-GCM. A chave fica no keyring do OS (macOS Keychain, etc.) com fallback para arquivo.
 
 > [!NOTE]
-> `kobana auth login` é do Gateway Bancário. Ele não emite tokens para
-> `finance`, `billing` ou `inbox`.
+> `kobana auth login` é do Gateway Bancário. Ele não emite tokens para os
+> demais produtos.
 
-### Financeiro, Faturamento e Inbox
+### Demais produtos
 
-Essas três APIs usam **JWT assinado em HS512**, enviado como
-`Authorization: Bearer <jwt>`. Coloque o JWT do produto em `KOBANA_TOKEN` antes
-de chamar aquele produto:
+`finance`, `billing`, `inbox`, `dunning` e `dashboards` só **verificam** tokens:
+todos aceitam um access token **RS256 emitido pelo Authorization Server da
+Kobana** (`account.kobana.com.br`), enviado como `Authorization: Bearer <jwt>`.
+O `aud` do token é a URL da API do produto (`https://api.billing.kobana.com.br`,
+…), então um token continua valendo para um produto só. Coloque o token do
+produto em `KOBANA_TOKEN` antes de chamá-lo:
 
 ```bash
-KOBANA_TOKEN=$JWT_FINANCE kobana finance payables list
-KOBANA_TOKEN=$JWT_BILLING kobana billing subscriptions list
+KOBANA_TOKEN=$TOKEN_FINANCE kobana finance payables list
+KOBANA_TOKEN=$TOKEN_BILLING kobana billing subscriptions list
 ```
 
 Como a variável é a mesma para todos os produtos, exporte-a por comando (ou use
 um `.env` por projeto) se você alterna entre produtos na mesma sessão.
+
+#### Espaço de trabalho (`X-Workspace-Id`)
+
+No `finance`, toda rota age sobre **um** espaço de trabalho da organização do
+token, escolhido pelo cabeçalho `X-Workspace-Id` — sem ele a API responde
+`400 WORKSPACE_REQUIRED`. No `dashboards` o cabeçalho é opcional enquanto a
+organização tem um único workspace.
+
+O CLI preenche o cabeçalho a partir de `KOBANA_WORKSPACE_ID`. Para trocar de
+espaço em uma chamada só, passe-o em `--params`, que tem precedência:
+
+```bash
+export KOBANA_WORKSPACE_ID=uuid-do-espaco
+kobana finance payables list
+kobana finance payables list --params '{"X-Workspace-Id": "outro-uuid"}'
+```
+
+O `--dry-run` mostra os cabeçalhos enviados (sem o token), e
+`kobana schema` lista os cabeçalhos de cada endpoint em `header_params`.
 
 #### mTLS no Inbox Autônomo
 
@@ -219,9 +281,9 @@ kobana inbox emails list
 ```
 
 Sem essa variável o CLI avisa em stderr e segue — desenvolvimento local não usa
-mTLS, e em produção a API responde `401` explicando. O JWT do Inbox usa
-`iss=kobana`, `aud=inbox/<ambiente>` e `sub=<workspace.external_id>`, com escopos
-por recurso (`inbox.emails`, `inbox.webhooks`, …).
+mTLS, e em produção a API responde `401` explicando. Os escopos do Inbox têm
+dois eixos: o recurso, prefixado pelo app (`inbox/emails`), e o verbo global
+(`write`) — escrever exige os dois.
 
 ### Prioridade de resolução
 
@@ -242,6 +304,8 @@ próprios hosts:
 | `finance` | `api.finance.kobana.com.br` | `api.finance.sandbox.kobana.com.br` | — |
 | `billing` | `api.billing.kobana.com.br` | `api.billing.sandbox.kobana.com.br` | — |
 | `inbox` | `api.inbox.kobana.com.br` | `api.inbox.sandbox.kobana.com.br` | `localhost:3028/api` |
+| `dunning` | `api.dunning.kobana.com.br` | `api.dunning.sandbox.kobana.com.br` | — |
+| `dashboards` | `api.dashboards.kobana.com.br` | `api.dashboards.sandbox.kobana.com.br` | — |
 
 Produtos sem host de desenvolvimento próprio caem em produção quando você passa
 `--env development`.
@@ -277,7 +341,8 @@ Os tokens são **diferentes entre ambientes** — um token de sandbox não funci
 kobana <produto> <recurso> <metodo> [flags]
 ```
 
-- **`<produto>`** — `banking`, `finance`, `billing` ou `inbox` (veja [Produtos](#produtos))
+- **`<produto>`** — `banking`, `finance`, `billing`, `inbox`, `dunning` ou
+  `dashboards` (veja [Produtos](#produtos))
 - **`<recurso>`** — pode ser aninhado: `bank-billets`, `charge pix`,
   `webhooks deliveries`
 - **`<metodo>`** — a ação: `list`, `get`, `create`, `update`, `delete`, ou uma
@@ -287,7 +352,7 @@ A versão da API nunca entra no comando. `kobana banking bank-billets list` vai
 para `/v1/bank_billets` e `kobana banking charge pix list` vai para
 `/v2/charge/pix` — o CLI resolve isso a partir da spec OpenAPI.
 
-Parâmetros de URL e query vão em `--params`, corpo de requisição em `--json`:
+Parâmetros de URL, query e cabeçalho vão em `--params`, corpo de requisição em `--json`:
 
 ```bash
 kobana billing subscriptions pause --params '{"id": "SUBSCRIPTION_ID"}'
@@ -393,6 +458,32 @@ kobana inbox webhooks deliveries replay \
   --params '{"id": "WEBHOOK_ID", "deliveryId": "DELIVERY_ID"}'
 ```
 
+#### Régua de Cobrança
+
+```bash
+# Cobranças vencidas
+kobana dunning charges list \
+  --params '{"status": "overdue"}' \
+  --fields "id,person_id,current_amount,due_date"
+
+# Notificar o devedor de uma cobrança
+kobana dunning charges notify --dry-run --params '{"id": "CHARGE_ID"}'
+
+# Aceitar um acordo de parcelamento
+kobana dunning agreements accept --dry-run --params '{"id": "AGREEMENT_ID"}'
+```
+
+#### Dashboard Mágico
+
+```bash
+# Fontes de dados e sincronização
+kobana dashboards data-sources list --fields "id,name,status"
+kobana dashboards data-sources sync --dry-run --params '{"id": "DATA_SOURCE_ID"}'
+
+# Registros de uma entidade
+kobana dashboards entities records get --params '{"id": "ENTITY_ID"}'
+```
+
 ### Helpers
 
 Atalhos para operações comuns do **Gateway Bancário**:
@@ -421,6 +512,8 @@ kobana schema banking.charge.pix.create
 kobana schema finance.payables.create
 kobana schema billing.subscriptions.create
 kobana schema inbox.emails.list
+kobana schema dunning.charges.create
+kobana schema dashboards.data-sources.sync
 ```
 
 Retorna parâmetros, campos obrigatórios, tipos e respostas — tudo derivado dos
@@ -431,7 +524,7 @@ OpenAPI specs embutidos. O caminho segue a mesma forma do comando:
 
 | Flag | Descrição |
 |------|-----------|
-| `--params '<JSON>'` | Parâmetros de query/URL (id, page, filtros) |
+| `--params '<JSON>'` | Parâmetros de query/URL/cabeçalho (id, page, filtros, `X-Workspace-Id`) |
 | `--json '<JSON>'` | Corpo da requisição (POST/PUT/PATCH) |
 | `--fields '<CAMPOS>'` | Limita campos na resposta |
 | `--dry-run` | Mostra a requisição sem executar |
@@ -450,6 +543,7 @@ OpenAPI specs embutidos. O caminho segue a mesma forma do comando:
 |----------|-----------|
 | `KOBANA_TOKEN` | Token do produto que você vai chamar (Bearer). Não é compartilhado entre produtos |
 | `KOBANA_INBOX_CLIENT_CERT` | Caminho para o PEM (certificado + chave) usado no mTLS do `inbox` |
+| `KOBANA_WORKSPACE_ID` | Espaço de trabalho enviado em `X-Workspace-Id` pelo `finance` (obrigatório) e pelo `dashboards` |
 | `KOBANA_CREDENTIALS_FILE` | Caminho para arquivo JSON de credenciais |
 | `KOBANA_CLIENT_ID` | OAuth client ID (Gateway Bancário) |
 | `KOBANA_CLIENT_SECRET` | OAuth client secret (Gateway Bancário) |
@@ -535,7 +629,7 @@ kobana-cli/
 └── docs/                # Especificações e documentação de design
 ```
 
-Comandos são gerados **dinamicamente** a partir dos OpenAPI specs dos quatro
+Comandos são gerados **dinamicamente** a partir dos OpenAPI specs dos seis
 produtos, embutidos no binário. Atualizar a API = atualizar o spec + rebuild;
 adicionar um produto = um spec novo mais uma entrada no registro de produtos.
 

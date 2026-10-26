@@ -15,12 +15,15 @@ kobana <produto> <recurso> <metodo> [flags]
 ```
 
 Produtos disponíveis: `banking` (Gateway Bancário), `inbox` (Inbox Autônomo),
-`billing` (Faturamento Automático) e `finance` (Financeiro Inteligente).
+`billing` (Faturamento Automático), `finance` (Financeiro Inteligente),
+`dunning` (Régua de Cobrança) e `dashboards` (Dashboard Mágico).
 
 Cada produto é uma API separada com host e credenciais próprios — um
 `KOBANA_TOKEN` do banking não vale para os outros. O `inbox` ainda exige
 `KOBANA_INBOX_CLIENT_CERT` apontando para um PEM de certificado de cliente
-(a API fica atrás de mTLS).
+(a API fica atrás de mTLS). O `finance` exige o espaço de trabalho em
+`X-Workspace-Id` — exporte `KOBANA_WORKSPACE_ID` ou passe
+`{"X-Workspace-Id": "..."}` em `--params`; no `dashboards` ele é opcional.
 
 Use `--help` para obter ajuda sobre os comandos disponíveis.
 
@@ -33,7 +36,7 @@ kobana <produto> <recurso> <metodo> --help
 
 ### Key Flags
 
--   `--params '<JSON>'`: Parâmetros de query/URL (e.g., `id`, `uid`, `page`, `per_page`, filtros).
+-   `--params '<JSON>'`: Parâmetros de query/URL/cabeçalho (e.g., `id`, `uid`, `page`, `per_page`, filtros, `X-Workspace-Id`).
 -   `--json '<JSON>'`: Corpo da requisição para POST/PUT/PATCH.
 -   `--page-all`: Auto-paginação com saída NDJSON (um JSON por linha).
 -   `--fields '<CAMPOS>'`: Limita campos na resposta (crítico para eficiência de context window de IA).

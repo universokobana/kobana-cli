@@ -52,14 +52,16 @@ kobana auth login
 kobana <product> <resource> <method> [flags]
 ```
 
-`<product>` is the Kobana product. Only `banking` (Gateway Bancário) is
-currently available in the CLI.
+`<product>` is the Kobana product: `banking` (Gateway Bancário), `inbox`
+(Inbox Autônomo), `billing` (Faturamento Automático), `finance` (Financeiro
+Inteligente), `dunning` (Régua de Cobrança) or `dashboards` (Dashboard Mágico).
+Each is its own API with its own credentials — see that product's skill.
 
 ### Method Flags
 
 | Flag | Description |
 |------|-------------|
-| `--params '{"key": "val"}'` | URL/query parameters (id, uid, page, filters) |
+| `--params '{"key": "val"}'` | URL/query/header parameters (id, uid, page, filters, `X-Workspace-Id`) |
 | `--json '{"key": "val"}'` | Request body for POST/PUT/PATCH |
 | `--output <PATH>` | Save response to file |
 | `--page-all` | Auto-paginate (NDJSON output) |
@@ -90,7 +92,8 @@ kobana banking charge pix list --params '{"per_page": 5}'
 | `KOBANA_CREDENTIALS_FILE` | Path to OAuth credentials JSON file |
 | `KOBANA_CLIENT_ID` | OAuth client ID |
 | `KOBANA_CLIENT_SECRET` | OAuth client secret |
-| `KOBANA_ENVIRONMENT` | `sandbox` (default) or `production` |
+| `KOBANA_WORKSPACE_ID` | Workspace sent as `X-Workspace-Id` by `finance` (required) and `dashboards` |
+| `KOBANA_ENVIRONMENT` | `production` (default), `sandbox` or `development` |
 | `KOBANA_CONFIG_DIR` | Override config directory (default: `~/.config/kobana`) |
 
 ## Community & Feedback

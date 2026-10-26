@@ -9,12 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Produto `dunning` (Régua de Cobrança)** — `kobana dunning <recurso> <metodo>`, com clientes, cobranças, réguas, templates, notificações, acordos, disputas, negativações, protestos, tarefas, importações/exportações e webhooks. Spec OpenAPI v1 embutida (67 paths)
+- **Produto `dashboards` (Dashboard Mágico)** — `kobana dashboards <recurso> <metodo>`, com fontes de dados, entidades, workspaces, portal do cliente, builder de páginas, backups e webhooks. Spec OpenAPI v1 embutida (153 paths)
+- Skills `kobana-dunning` e `kobana-dashboards`
+- **Parâmetros de cabeçalho** — cabeçalhos declarados na spec (como `X-Workspace-Id`) são passados em `--params` e enviados como cabeçalho, fora da query string. `KOBANA_WORKSPACE_ID` preenche o `X-Workspace-Id` do `finance` (obrigatório) e do `dashboards`. O `--dry-run` passa a mostrar os cabeçalhos e `kobana schema` os lista em `header_params`
+
 - **Produto `billing` (Faturamento Automático)** — `kobana billing <recurso> <metodo>`, com assinaturas, planos, produtos, faturas, NF-e, propostas, cupons, pagamentos e contas de faturamento. Spec OpenAPI v1 embutida (173 paths)
 - **Produto `finance` (Financeiro Inteligente)** — `kobana finance <recurso> <metodo>`, com contas financeiras, lançamentos, contas a pagar e receber, fluxo de caixa, conciliação e classificação. Spec OpenAPI v1 embutida (45 paths)
 - Skills `kobana-billing` e `kobana-finance`
 - **Produto `inbox` (Inbox Autônomo)** — `kobana inbox v1 <recurso> <metodo>`, com workspaces, inboxes, e-mails, agentes, agent runs, webhooks (incluindo entregas e replay) e system events. Spec OpenAPI v1 embutida
 - **Suporte a mTLS** — `KobanaClient::with_client_cert` apresenta um certificado de cliente no handshake TLS. A API do Inbox fica atrás de mTLS terminado no edge; aponte `KOBANA_INBOX_CLIENT_CERT` para um PEM com a cadeia e a chave privada. Sem ele o CLI avisa em stderr e segue (o dry-run não avisa, já que não faz requisição)
 - Skill `kobana-inbox` documentando os recursos e as credenciais próprias do produto
+
+### Changed
+
+- **Specs atualizadas para as versões atuais das APIs** — `banking` v1 (67 paths) e v2 (158; novos `admin certificates`, `admin commands`, `data people`, `financial companies`, `financial statement-categories`, sincronização e resumo de extrato), `billing` (190; `late-fee-policies`, `bank-accounts`, `pix-keys`, `holidays`, `banks`, `credit-purchases`, `usage credits`, `me`), `finance` (55; `custom-classifiers`, `fiscal-documents`, `financial-accounts balances`, `me`) e `inbox` (31; `workflow-runs`, `secrets`, `models`, `usage`, `agents versions`, `me`). Os produtos fora do `banking` agora autenticam com token RS256 emitido pela Conta Kobana (`account.kobana.com.br`)
+- **BREAKING (`finance`):** toda rota exige o cabeçalho `X-Workspace-Id` — defina `KOBANA_WORKSPACE_ID`
+- **BREAKING (`banking`):** parâmetros de path renomeados na v2 — `entry_id` → `entry_uid` em `mailbox entries`, `id` → `uid` em `financial accounts` e nos `commands` de Pix e contas. `entry_uid` ainda aceita `uid`/`id` pelo alias; nos demais, passe `uid` em vez de `id`
+- **Removido (`billing`):** `proposal-templates set-default`, que saiu da API
 
 ### Fixed
 

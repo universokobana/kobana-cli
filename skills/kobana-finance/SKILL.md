@@ -19,13 +19,23 @@ metadata:
 kobana finance <resource> <method> [flags]
 ```
 
+## Authentication
+
 Finance is its own API (`api.finance.kobana.com.br`) and does not share
-credentials with the banking product. `KOBANA_TOKEN` must hold a finance token.
+credentials with the banking product. Every request needs **two** things:
+
+- `KOBANA_TOKEN` — an RS256 access token issued by the Kobana Authorization
+  Server. Its `org` claim is the tenant; scopes look like
+  `finance.payables finance.people.write` (`.write` also grants read).
+- `X-Workspace-Id` — the workspace inside that organization. **Required on every
+  route** (`400 WORKSPACE_REQUIRED` without it). Set `KOBANA_WORKSPACE_ID`, or
+  pass `"X-Workspace-Id"` in `--params` to override it for one call.
 
 ## API Resources
 
 ### Accounts and transactions
-- `financial-accounts` — `list`, `create`, `get`, `update`, `delete`, `adjust-balance`
+- `financial-accounts` — `list`, `create`, `get`, `update`, `delete`, `adjust-balance`,
+  `balances get|create|delete`, `balances latest get`
 - `financial-transactions` — CRUD plus `aggregates`, `ids`
 - `banks list`, `cash-flow list`
 
@@ -38,12 +48,19 @@ credentials with the banking product. `KOBANA_TOKEN` must hold a finance token.
 
 ### Classification
 - `categories`, `classification-centers`, `people`, `companies`, `taxes` — CRUD
+- `custom-classifiers` — CRUD plus `values create|update|delete`
 - `automatic-rules` — CRUD plus `reorder`
 - `attachments` — `list`, `create`, `get`, `delete`, plus `download`, `links`
+
+### Fiscal and identity
+- `fiscal-documents` — `list`, `get` (received fiscal documents)
+- `me list` — the organization, person and scopes behind the token
 
 ## Examples
 
 ```bash
+export KOBANA_WORKSPACE_ID=WORKSPACE_ID
+
 kobana finance financial-accounts list --fields "id,name,balance"
 kobana finance cash-flow list --params '{"start_date": "2026-01-01", "end_date": "2026-01-31"}'
 
@@ -53,6 +70,10 @@ kobana finance payables aggregates --params '{"group_by": "category"}'
 # Mutations: always dry-run first
 kobana finance payables send-to-bank --dry-run --params '{"id": "PAYABLE_ID"}'
 ```
+
+Listings use **cursor pagination** (`limit`, then `meta.next_cursor` as
+`cursor`). `--page-all` walks `page`/`per_page` and does not follow cursors, so
+page finance listings by hand.
 
 ## Discovering Commands
 

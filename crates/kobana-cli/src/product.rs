@@ -21,6 +21,8 @@ const BANKING_V2_SPEC: &str = include_str!("../specs/banking-v2.json");
 const INBOX_V1_SPEC: &str = include_str!("../specs/inbox-v1.json");
 const BILLING_V1_SPEC: &str = include_str!("../specs/billing-v1.json");
 const FINANCE_V1_SPEC: &str = include_str!("../specs/finance-v1.json");
+const DUNNING_V1_SPEC: &str = include_str!("../specs/dunning-v1.json");
+const DASHBOARDS_V1_SPEC: &str = include_str!("../specs/dashboards-v1.json");
 
 /// A Kobana product exposed as the first CLI segment.
 pub struct Product {
@@ -35,6 +37,9 @@ pub struct Product {
     /// Env var holding the path to a PEM client certificate, for products
     /// whose edge requires mTLS. `None` when the product does not use it.
     pub client_cert_env: Option<&'static str>,
+    /// Header parameters filled from an env var when `--params` omits them,
+    /// as `(header, env var)` — e.g. the workspace a token acts on.
+    pub header_env: &'static [(&'static str, &'static str)],
 }
 
 /// API hosts for a product, per environment. Never include a version prefix —
@@ -83,12 +88,20 @@ pub fn client_for(
     dry_run: bool,
 ) -> Result<KobanaClient, KobanaError> {
     let base_url = product.base_url(env);
+    let default_headers = product
+        .header_env
+        .iter()
+        .filter_map(|(header, var)| match std::env::var(var) {
+            Ok(value) if !value.is_empty() => Some((header.to_string(), value)),
+            _ => None,
+        })
+        .collect();
 
     let Some(var) = product.client_cert_env else {
-        return KobanaClient::new(base_url, token);
+        return Ok(KobanaClient::new(base_url, token)?.with_default_headers(default_headers));
     };
 
-    match std::env::var(var) {
+    let client = match std::env::var(var) {
         Ok(path) if !path.is_empty() => {
             let pem = std::fs::read(&path).map_err(|e| {
                 KobanaError::Auth(format!("could not read {var} ({path}): {e}"))
@@ -105,7 +118,8 @@ pub fn client_for(
             }
             KobanaClient::new(base_url, token)
         }
-    }
+    }?;
+    Ok(client.with_default_headers(default_headers))
 }
 
 fn warn(msg: &str) {
@@ -118,10 +132,9 @@ fn warn(msg: &str) {
 
 /// Every product wired into the CLI.
 ///
-/// Only `banking` is served today. The other Kobana products have public APIs
-/// documented at `docs.<product>.kobana.com.br` and their hosts follow the same
-/// `api.<product>[.sandbox].kobana.com.br` shape, but their specs are not
-/// embedded yet — see the notes in AGENTS.md before adding one.
+/// Every product except banking follows the
+/// `api.<product>[.sandbox].kobana.com.br` host shape — see the notes in
+/// AGENTS.md before adding one.
 pub static REGISTRY: &[Product] = &[
 Product {
     slug: "banking",
@@ -142,6 +155,7 @@ Product {
         },
     ],
     client_cert_env: None,
+    header_env: &[],
 },
 Product {
     slug: "inbox",
@@ -158,6 +172,7 @@ Product {
     // The inbox edge terminates mTLS and forwards the certificate fingerprint
     // to the origin, so requests must present a client certificate.
     client_cert_env: Some("KOBANA_INBOX_CLIENT_CERT"),
+    header_env: &[],
 },
 Product {
     slug: "billing",
@@ -172,6 +187,7 @@ Product {
         version_prefix: "/v1",
     }],
     client_cert_env: None,
+    header_env: &[],
 },
 Product {
     slug: "finance",
@@ -186,6 +202,39 @@ Product {
         version_prefix: "/v1",
     }],
     client_cert_env: None,
+    // Every finance route acts on one workspace of the token's organization
+    header_env: &[("X-Workspace-Id", "KOBANA_WORKSPACE_ID")],
+},
+Product {
+    slug: "dunning",
+    about: "Régua de Cobrança — clientes, cobranças, réguas, acordos, negativações",
+    hosts: Hosts {
+        production: "https://api.dunning.kobana.com.br",
+        sandbox: "https://api.dunning.sandbox.kobana.com.br",
+        development: None,
+    },
+    specs: &[SpecEntry {
+        json: DUNNING_V1_SPEC,
+        version_prefix: "/v1",
+    }],
+    client_cert_env: None,
+    header_env: &[],
+},
+Product {
+    slug: "dashboards",
+    about: "Dashboard Mágico — fontes de dados, entidades, portal, workspaces",
+    hosts: Hosts {
+        production: "https://api.dashboards.kobana.com.br",
+        sandbox: "https://api.dashboards.sandbox.kobana.com.br",
+        development: None,
+    },
+    specs: &[SpecEntry {
+        json: DASHBOARDS_V1_SPEC,
+        version_prefix: "/v1",
+    }],
+    client_cert_env: None,
+    // Optional while the organization has a single workspace
+    header_env: &[("X-Workspace-Id", "KOBANA_WORKSPACE_ID")],
 },
 ];
 
@@ -272,7 +321,10 @@ mod tests {
     #[test]
     fn every_kobana_product_is_registered() {
         let slugs: Vec<&str> = REGISTRY.iter().map(|p| p.slug).collect();
-        assert_eq!(slugs, ["banking", "inbox", "billing", "finance"]);
+        assert_eq!(
+            slugs,
+            ["banking", "inbox", "billing", "finance", "dunning", "dashboards"]
+        );
     }
 
     #[test]
@@ -519,6 +571,29 @@ mod tests {
             .any(|e| e.path_template == "/v1/financial-accounts"));
     }
 
+    #[test]
+    fn dunning_and_dashboards_are_registered_with_their_resources() {
+        let products = load_all().unwrap();
+
+        let dunning = find(&products, "dunning").expect("dunning must load");
+        for resource in ["people", "charges", "agreements", "collection-rules", "negativations"] {
+            assert!(dunning.tree.children.contains_key(resource), "dunning {resource}");
+        }
+        assert_eq!(
+            dunning.product.base_url(&Environment::Production),
+            "https://api.dunning.kobana.com.br"
+        );
+
+        let dashboards = find(&products, "dashboards").expect("dashboards must load");
+        for resource in ["data-sources", "entities", "workspaces", "portal-users"] {
+            assert!(dashboards.tree.children.contains_key(resource), "dashboards {resource}");
+        }
+        assert_eq!(
+            dashboards.product.base_url(&Environment::Sandbox),
+            "https://api.dashboards.sandbox.kobana.com.br"
+        );
+    }
+
     /// Resource names repeat across products with different meanings, so the
     /// help text must never leak from one product to another.
     #[test]
@@ -535,6 +610,30 @@ mod tests {
             match p.slug {
                 "inbox" => assert_eq!(p.client_cert_env, Some("KOBANA_INBOX_CLIENT_CERT")),
                 _ => assert_eq!(p.client_cert_env, None, "{} should not need mTLS", p.slug),
+            }
+        }
+    }
+
+    /// Every header filled from an env var must be a header parameter the
+    /// product's spec declares — otherwise it is sent where nothing reads it.
+    #[test]
+    fn header_env_names_a_header_parameter_of_the_spec() {
+        for p in REGISTRY {
+            for (header, _) in p.header_env {
+                let declared = p.specs.iter().any(|entry| {
+                    let raw: serde_json::Value = serde_json::from_str(entry.json).unwrap();
+                    raw["paths"].as_object().unwrap().values().any(|item| {
+                        item.as_object().unwrap().values().any(|op| {
+                            op["parameters"].as_array().is_some_and(|params| {
+                                params.iter().any(|param| {
+                                    param["in"] == "header"
+                                        && param["name"].as_str().is_some_and(|n| n.eq_ignore_ascii_case(header))
+                                })
+                            })
+                        })
+                    })
+                });
+                assert!(declared, "{} fills {header}, which its spec never declares", p.slug);
             }
         }
     }
@@ -557,6 +656,7 @@ mod tests {
             },
             specs: &[],
             client_cert_env: None,
+            header_env: &[],
         };
         assert_eq!(no_dev.base_url(&Environment::Development), "https://prod");
     }

@@ -80,6 +80,7 @@ impl Helper for EmitirBoleto {
                 query_params: None,
                 body: Some(body),
                 idempotency_key: Some(uuid::Uuid::new_v4().to_string()),
+                headers: Vec::new(),
             };
 
             let response = client.execute(&request).await?;
@@ -138,6 +139,7 @@ impl Helper for CancelarLoteBoletos {
                     query_params: None,
                     body: None,
                     idempotency_key: None,
+                    headers: Vec::new(),
                 };
 
                 match client.execute(&request).await {
