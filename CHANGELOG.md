@@ -7,17 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-26
+
+Seis produtos no mesmo binário: Gateway Bancário (`banking`), Inbox Autônomo (`inbox`), Faturamento Automático (`billing`), Financeiro Inteligente (`finance`), Régua de Cobrança (`dunning`) e Dashboard Mágico (`dashboards`).
+
 ### Added
 
 - **Produto `dunning` (Régua de Cobrança)** — `kobana dunning <recurso> <metodo>`, com clientes, cobranças, réguas, templates, notificações, acordos, disputas, negativações, protestos, tarefas, importações/exportações e webhooks. Spec OpenAPI v1 embutida (67 paths)
 - **Produto `dashboards` (Dashboard Mágico)** — `kobana dashboards <recurso> <metodo>`, com fontes de dados, entidades, workspaces, portal do cliente, builder de páginas, backups e webhooks. Spec OpenAPI v1 embutida (153 paths)
 - Skills `kobana-dunning` e `kobana-dashboards`
 - **Parâmetros de cabeçalho** — cabeçalhos declarados na spec (como `X-Workspace-Id`) são passados em `--params` e enviados como cabeçalho, fora da query string. `KOBANA_WORKSPACE_ID` preenche o `X-Workspace-Id` do `finance` (obrigatório) e do `dashboards`. O `--dry-run` passa a mostrar os cabeçalhos e `kobana schema` os lista em `header_params`
-
 - **Produto `billing` (Faturamento Automático)** — `kobana billing <recurso> <metodo>`, com assinaturas, planos, produtos, faturas, NF-e, propostas, cupons, pagamentos e contas de faturamento. Spec OpenAPI v1 embutida (173 paths)
 - **Produto `finance` (Financeiro Inteligente)** — `kobana finance <recurso> <metodo>`, com contas financeiras, lançamentos, contas a pagar e receber, fluxo de caixa, conciliação e classificação. Spec OpenAPI v1 embutida (45 paths)
 - Skills `kobana-billing` e `kobana-finance`
-- **Produto `inbox` (Inbox Autônomo)** — `kobana inbox v1 <recurso> <metodo>`, com workspaces, inboxes, e-mails, agentes, agent runs, webhooks (incluindo entregas e replay) e system events. Spec OpenAPI v1 embutida
+- **Produto `inbox` (Inbox Autônomo)** — `kobana inbox <recurso> <metodo>`, com workspaces, inboxes, e-mails, agentes, agent runs, webhooks (incluindo entregas e replay) e system events. Spec OpenAPI v1 embutida
 - **Suporte a mTLS** — `KobanaClient::with_client_cert` apresenta um certificado de cliente no handshake TLS. A API do Inbox fica atrás de mTLS terminado no edge; aponte `KOBANA_INBOX_CLIENT_CERT` para um PEM com a cadeia e a chave privada. Sem ele o CLI avisa em stderr e segue (o dry-run não avisa, já que não faz requisição)
 - Skill `kobana-inbox` documentando os recursos e as credenciais próprias do produto
 
@@ -27,21 +30,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING (`finance`):** toda rota exige o cabeçalho `X-Workspace-Id` — defina `KOBANA_WORKSPACE_ID`
 - **BREAKING (`banking`):** parâmetros de path renomeados na v2 — `entry_id` → `entry_uid` em `mailbox entries`, `id` → `uid` em `financial accounts` e nos `commands` de Pix e contas. `entry_uid` ainda aceita `uid`/`id` pelo alias; nos demais, passe `uid` em vez de `id`
 - **Removido (`billing`):** `proposal-templates set-default`, que saiu da API
+- **BREAKING: comandos agora exigem o produto** — a sintaxe mudou de `kobana <servico> <recurso> <metodo>` para `kobana <produto> <servico> <recurso> <metodo>`. A API original da Kobana passou a ser o produto Gateway Bancário (`banking`), então `kobana charge pix list` vira `kobana banking charge pix list` e `kobana v1 bank-billets list` vira `kobana banking v1 bank-billets list`
+- **BREAKING: a versão da API saiu do comando** — `kobana banking v1 bank-billets list` vira `kobana banking bank-billets list` e `kobana inbox v1 emails list` vira `kobana inbox emails list`. A versão é resolvida a partir da spec e continua na URL da requisição; os domínios do v2 (`charge`, `payment`, …) seguem inalterados, porque são domínios e não versões. As specs de um produto passam a ser mescladas em uma árvore só
+- **BREAKING: `kobana schema <endpoint>`** exige o produto e não aceita mais a versão: `kobana schema banking.charge.pix.create`, `kobana schema banking.bank-billets.list`. Caminhos com versão recebem um erro explicando a mudança e sugerindo o caminho novo. A saída de `kobana schema --list` passa a ser agrupada por produto
 
 ### Fixed
 
 - **Descrições de recursos vazando entre produtos** — o texto de ajuda era mapeado só pelo nome do recurso, então `kobana billing payments` exibia "Pagamentos (unificado)" e `kobana finance transfers` exibia "Transferências (unificado)", ambos do Gateway Bancário. Agora o mapa é chaveado por `(produto, recurso)`
-
-### Fixed
-
 - **Panic na inicialização em paths de ação com mais de um verbo HTTP** — `/v2/admin/connections/{uid}/associations` (POST+DELETE), os canais de `/v2/mailbox/entries/{entry_id}/*` e `/v1/inboxes/{id}/recipients` geravam o mesmo nome de subcomando duas vezes, e o clap aborta nesse caso. Isso quebrava `kobana completions <shell>` e o `--help` desses recursos. Agora a ação vira um nó de recurso e cada verbo recebe seu método (`inboxes recipients create` / `... delete`)
-
-### Changed
-
-- **BREAKING: comandos agora exigem o produto** — a sintaxe mudou de `kobana <servico> <recurso> <metodo>` para `kobana <produto> <servico> <recurso> <metodo>`. A API original da Kobana passou a ser o produto Gateway Bancário (`banking`), então `kobana charge pix list` vira `kobana banking charge pix list` e `kobana v1 bank-billets list` vira `kobana banking v1 bank-billets list`
-- **BREAKING: a versão da API saiu do comando** — `kobana banking v1 bank-billets list` vira `kobana banking bank-billets list` e `kobana inbox v1 emails list` vira `kobana inbox emails list`. A versão é resolvida a partir da spec e continua na URL da requisição; os domínios do v2 (`charge`, `payment`, …) seguem inalterados, porque são domínios e não versões. As specs de um produto passam a ser mescladas em uma árvore só
-- **BREAKING: `kobana schema <endpoint>`** exige o produto e não aceita mais a versão: `kobana schema banking.charge.pix.create`, `kobana schema banking.bank-billets.list`. Caminhos com versão recebem um erro explicando a mudança e sugerindo o caminho novo. A saída de `kobana schema --list` passa a ser agrupada por produto
-- Apenas o produto `banking` está disponível; Financeiro Inteligente (`finance`), Faturamento Automático (`billing`) e Inbox Autônomo (`inbox`) ainda não são suportados
+- **User-Agent** — as requisições se identificavam como `kobana-cli/0.1.0` em qualquer versão; agora enviam a versão real
 
 ### Internal
 

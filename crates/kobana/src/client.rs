@@ -3,7 +3,7 @@ use crate::spec::HttpMethod;
 use reqwest::header::{HeaderMap, AUTHORIZATION, CONTENT_TYPE, USER_AGENT};
 use std::time::Duration;
 
-const USER_AGENT_VALUE: &str = "kobana-cli/0.1.0";
+const USER_AGENT_VALUE: &str = concat!("kobana-cli/", env!("CARGO_PKG_VERSION"));
 
 #[derive(Debug, Clone)]
 pub struct KobanaClient {
