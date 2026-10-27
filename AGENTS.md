@@ -178,6 +178,25 @@ finance, and they mean different things.
 | `helpers/boleto.rs`  | `+emitir` and `+cancelar-lote` helpers                         |
 | `helpers/pix.rs`     | `+cobrar` helper                                               |
 
+## Install Script
+
+`scripts/install.sh` is the `curl -fsSL .../scripts/install.sh | bash` installer.
+It is served straight from `main` (raw.githubusercontent.com), so a change ships
+on push — no release needed. It downloads the release asset for the platform into
+`~/.kobana/bin`, checks it against the SHA-256 GitHub publishes as each asset's
+`digest`, and links `~/.local/bin/kobana` to it. Output is Portuguese, with the
+ASCII banner in the brand lime (`#D3FD54`, 24-bit color; off when stdout is not a
+TTY or `NO_COLOR` is set).
+
+> [!IMPORTANT]
+> `kobana update` on a standalone install replaces `std::env::current_exe()`
+> **after `canonicalize()`**. Without it, running through the `~/.local/bin`
+> symlink would replace the link with the new binary and leave
+> `~/.kobana/bin/kobana` behind.
+
+Keep it POSIX-tool-only (curl/wget, shasum/sha256sum, awk, sed): no jq or
+python on the target machine. Run `shellcheck scripts/install.sh` after editing.
+
 ## Demo Videos
 
 Demo recordings are generated with [VHS](https://github.com/charmbracelet/vhs) (`.tape` files).

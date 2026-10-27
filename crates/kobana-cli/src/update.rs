@@ -247,7 +247,11 @@ async fn perform_self_update(version: &str) -> Result<(), KobanaError> {
         .await
         .map_err(|e| KobanaError::Internal(format!("read download body: {e}")))?;
 
+    // Resolve symlinks: install.sh links ~/.local/bin/kobana to
+    // ~/.kobana/bin/kobana, and replacing the link itself would leave the
+    // installed binary behind.
     let current_exe = std::env::current_exe()
+        .and_then(|p| p.canonicalize())
         .map_err(|e| KobanaError::Internal(format!("current exe: {e}")))?;
 
     // Write to a temp file next to the current exe (same filesystem for atomic rename).

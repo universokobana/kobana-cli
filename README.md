@@ -140,6 +140,18 @@ kobana dashboards data-sources sync --dry-run --params '{"id": "DATA_SOURCE_ID"}
 
 ## Instalação
 
+### Script de instalação (macOS e Linux)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/universokobana/kobana-cli/main/scripts/install.sh | bash
+```
+
+Baixa o binário da release mais recente para `~/.kobana/bin`, confere o SHA-256
+publicado no GitHub e cria o link `~/.local/bin/kobana`. Para uma versão
+específica, passe-a como argumento (`| bash -s -- v0.5.1`). `KOBANA_INSTALL_DIR`
+e `KOBANA_BIN_DIR` trocam as pastas. Depois, `kobana update` atualiza o próprio
+binário.
+
 ### Homebrew (macOS e Linux)
 
 ```bash
