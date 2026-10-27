@@ -6,8 +6,9 @@
 # Spanish translation. The CLI embeds these maps and swaps the text in at
 # startup, so `--help` and `kobana schema` follow the user's language.
 #
-# The translations come from each product's localized specs (the same ones its
-# user docs publish), read from the repo's `main` branch. Both specs are walked
+# The translations come from each product's spec files, one per language (the
+# same ones its user docs are generated from), read from the repo's `main`
+# branch. Both specs are walked
 # side by side: the text found at the same place in each is a pair.
 #
 #   ruby scripts/build-spec-translations.rb [path/to/sibling/repos]
@@ -26,8 +27,8 @@ LANGS = %w[en es].freeze
 
 # embedded spec => [repo, path of the localized spec, with %s for the language]
 SOURCES = {
-  "banking-v1" => ["kobana-app", "user-docs/openapi/i18n/kobana-api-v1_0.%s.json"],
-  "banking-v2" => ["kobana-app", "user-docs/openapi/i18n/kobana-api-v2_0.%s.json"],
+  "banking-v1" => ["kobana-api-specs", "swagger/v1_0/kobana-api-v1_0-openapi-3_1.%s.json"],
+  "banking-v2" => ["kobana-api-specs", "swagger/v2_0/kobana-api-v2_0-openapi-3_1.%s.json"],
   "billing-v1" => ["kobana-billing", "user-docs/openapi/openapi-v1-%s.yaml"],
   "dashboards-v1" => ["kobana-dashboards", "user-docs/openapi/openapi-v1-%s.yaml"],
   "dunning-v1" => ["kobana-dunning", "user-docs/openapi/openapi-v1-%s.yaml"],
@@ -37,8 +38,15 @@ SOURCES = {
 
 TEXT_KEYS = %w[summary description].freeze
 
+# kobana-api-specs is read from origin/main: a local checkout may lag behind
+# the translate-specs workflow, which commits there on its own
 def git_show(repo, path)
-  out, err, status = Open3.capture3("git", "-C", File.join(ROOT, repo), "show", "main:#{path}")
+  ref = "main"
+  if repo == "kobana-api-specs"
+    ref = "origin/main"
+    @fetched ||= system("git", "-C", File.join(ROOT, repo), "fetch", "-q", "origin", "main")
+  end
+  out, err, status = Open3.capture3("git", "-C", File.join(ROOT, repo), "show", "#{ref}:#{path}")
   abort "#{repo}:#{path}: #{err.strip}" unless status.success?
   out
 end

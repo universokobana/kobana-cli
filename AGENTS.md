@@ -224,8 +224,10 @@ to clap's text for the rest.
 Portuguese `summary`/`description` to its translation, and
 `SpecEntry::document` swaps them in at load time; text without a translation
 stays in Portuguese. The maps are built by `scripts/build-spec-translations.rb`
-from the localized specs each product publishes in its user docs (read from
-the repo's `main`), walking both specs side by side — paths are matched
+from each product's per-language spec files — the ones its user docs are
+generated from: `kobana-api-specs/swagger/v{1,2}_0/*.{en,es}.json` for banking
+(kept current by that repo's translate-specs workflow), `user-docs/openapi/*-{en,es}.yaml`
+for the others (read from the repo's `main`) — walking both specs side by side — paths are matched
 ignoring a `/vN` prefix and path parameter names. Finance's descriptions are in
 English even in its Portuguese spec; only its summaries get translated.
 `translated_specs_serve_the_same_commands` checks that translating never

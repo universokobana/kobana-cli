@@ -67,7 +67,7 @@
               "application/json": {
                 "example": {
                   "id": 1,
-                  "uid": "01a1749e-35fc-7eb7-ba4f-167ea848d0e0",
+                  "uid": "01a17b26-2fe2-779b-a4ab-a918abc344a2",
                   "bank_contract_slug": "bb-bs-18-19-7",
                   "financial_account": null,
                   "next_our_number": 1,
@@ -109,23 +109,23 @@
                   "custom_name": "Sicoob 01  CC: 00003666-8 0229385",
                   "kind": "cnab400",
                   "beneficiary_address_street": "Av. Presidente Vargas",
-                  "remittance_disabled_at": "2026-10-26T04:51:27+09:00",
+                  "remittance_disabled_at": "2026-10-27T03:17:42+01:00",
                   "beneficiary_address_street_number": "633",
                   "beneficiary_address_complement": "sala 1716",
                   "beneficiary_address_city": "Rio de Janeiro",
                   "beneficiary_address_neighborhood": "Centro",
                   "beneficiary_address_state": "RJ",
                   "beneficiary_address_zipcode": "20071004",
-                  "bolepix_enabled_at": "2026-10-26T04:51:28+09:00",
+                  "bolepix_enabled_at": "2026-10-27T03:17:42+01:00",
                   "bolepix": {
                     "pix_mode": 2,
                     "pix_account_id": 1,
                     "pix_account": {
                       "id": 1,
-                      "uid": "01a1749e-362f-7368-a76a-61a08d8e8242",
+                      "uid": "01a17b26-3019-73f2-9871-d4d651dd3322",
                       "custom_name": "Bancoob/BB 01  CC: 00003666-8 0229385",
                       "validated_at": null,
-                      "enabled_at": "2026-10-26T04:51:28+09:00",
+                      "enabled_at": "2026-10-27T03:17:42+01:00",
                       "financial_provider_slug": "bb",
                       "key": "pix_key@email.com",
                       "status": "pending",
@@ -145,16 +145,16 @@
                       },
                       "configuration": null,
                       "financial_account_uid": null,
-                      "created_at": "2026-10-26T04:51:28+09:00",
-                      "updated_at": "2026-10-26T04:51:28+09:00"
+                      "created_at": "2026-10-27T03:17:42+01:00",
+                      "updated_at": "2026-10-27T03:17:42+01:00"
                     },
                     "pix_billing_options": null
                   },
                   "bolepix_key": null,
                   "allow_expiration_on_weekends": false,
                   "allow_duplicate_charge_payments": false,
-                  "created_at": "2026-10-26T04:51:28+09:00",
-                  "updated_at": "2026-10-26T04:51:28+09:00"
+                  "created_at": "2026-10-27T03:17:42+01:00",
+                  "updated_at": "2026-10-27T03:17:42+01:00"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/v1_bank_billet_account_object"
@@ -316,7 +316,7 @@
                 "example": [
                   {
                     "id": 3,
-                    "uid": "01a1749e-39ad-7124-8c43-7ea66cba4593",
+                    "uid": "01a17b26-33c1-70ef-84ff-633ee0024d62",
                     "bank_contract_slug": "sicoob-01",
                     "financial_account": null,
                     "next_our_number": 1,
@@ -375,12 +375,12 @@
                     "bolepix_key": null,
                     "allow_expiration_on_weekends": false,
                     "allow_duplicate_charge_payments": false,
-                    "created_at": "2026-10-26T04:51:28+09:00",
-                    "updated_at": "2026-10-26T04:51:28+09:00"
+                    "created_at": "2026-10-27T03:17:43+01:00",
+                    "updated_at": "2026-10-27T03:17:43+01:00"
                   },
                   {
                     "id": 4,
-                    "uid": "01a1749e-39cd-749d-840b-a52a51a51a5c",
+                    "uid": "01a17b26-33e3-73a8-88d3-7fe08c756469",
                     "bank_contract_slug": "sicoob-01",
                     "financial_account": null,
                     "next_our_number": 1,
@@ -439,12 +439,12 @@
                     "bolepix_key": null,
                     "allow_expiration_on_weekends": false,
                     "allow_duplicate_charge_payments": false,
-                    "created_at": "2026-10-26T04:51:28+09:00",
-                    "updated_at": "2026-10-26T04:51:28+09:00"
+                    "created_at": "2026-10-27T03:17:43+01:00",
+                    "updated_at": "2026-10-27T03:17:43+01:00"
                   },
                   {
                     "id": 5,
-                    "uid": "01a1749e-39de-7af6-a773-c517eb7a7161",
+                    "uid": "01a17b26-33f6-78dc-b935-dc905be4c2d7",
                     "bank_contract_slug": "sicoob-01",
                     "financial_account": null,
                     "next_our_number": 1,
@@ -503,8 +503,8 @@
                     "bolepix_key": null,
                     "allow_expiration_on_weekends": false,
                     "allow_duplicate_charge_payments": false,
-                    "created_at": "2026-10-26T04:51:28+09:00",
-                    "updated_at": "2026-10-26T04:51:28+09:00"
+                    "created_at": "2026-10-27T03:17:43+01:00",
+                    "updated_at": "2026-10-27T03:17:43+01:00"
                   }
                 ],
                 "schema": {
@@ -609,7 +609,7 @@
               "application/json": {
                 "example": {
                   "id": 6,
-                  "uid": "01a1749e-3b77-7c5a-9df6-4c949c700758",
+                  "uid": "01a17b26-3593-788a-aebf-17d7b0278c45",
                   "bank_contract_slug": "sicoob-01",
                   "financial_account": null,
                   "next_our_number": 1,
@@ -658,22 +658,22 @@
                   "beneficiary_address_neighborhood": "Centro",
                   "beneficiary_address_state": "RJ",
                   "beneficiary_address_zipcode": "20071004",
-                  "bolepix_enabled_at": "2026-10-26T04:51:29+09:00",
+                  "bolepix_enabled_at": "2026-10-27T03:17:43+01:00",
                   "bolepix": {
                     "pix_mode": 2,
                     "pix_account_id": 2,
                     "pix_account": {
                       "id": 2,
-                      "uid": "01a1749e-3b4f-76ad-9188-3fe67385c675",
+                      "uid": "01a17b26-3568-706f-b02b-45f3fd85439e",
                       "custom_name": "Sicoob",
-                      "validated_at": "2026-10-26T04:51:29+09:00",
-                      "enabled_at": "2026-10-26T04:51:29+09:00",
+                      "validated_at": "2026-10-27T03:17:44+01:00",
+                      "enabled_at": "2026-10-27T03:17:44+01:00",
                       "financial_provider_slug": "sicoob",
                       "key": "+5522987654321",
                       "status": "active",
                       "default": true,
                       "beneficiary": {
-                        "document_number": "628.435.214-08",
+                        "document_number": "727.014.339-08",
                         "name": "Margret Santos Filgueiras",
                         "address": {
                           "zip_code": "24360440",
@@ -686,17 +686,17 @@
                         }
                       },
                       "configuration": null,
-                      "financial_account_uid": "01a1749e-3aeb-72db-810f-0aa4e2436606",
-                      "created_at": "2026-10-26T04:51:29+09:00",
-                      "updated_at": "2026-10-26T04:51:29+09:00"
+                      "financial_account_uid": "01a17b26-3504-7f40-8980-55f57e505e08",
+                      "created_at": "2026-10-27T03:17:44+01:00",
+                      "updated_at": "2026-10-27T03:17:44+01:00"
                     },
                     "pix_billing_options": null
                   },
                   "bolepix_key": null,
                   "allow_expiration_on_weekends": false,
                   "allow_duplicate_charge_payments": false,
-                  "created_at": "2026-10-26T04:51:29+09:00",
-                  "updated_at": "2026-10-26T04:51:29+09:00"
+                  "created_at": "2026-10-27T03:17:44+01:00",
+                  "updated_at": "2026-10-27T03:17:44+01:00"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/v1_bank_billet_account_object"
@@ -1112,7 +1112,7 @@
               "application/json": {
                 "example": {
                   "id": 16,
-                  "uid": "01a1749e-42ab-78d2-9925-4b7f99c98a87",
+                  "uid": "01a17b26-3d9d-7c2c-9c11-076d0fbbca60",
                   "bank_contract_slug": "sicoob-01",
                   "financial_account": null,
                   "next_our_number": 2,
@@ -1161,22 +1161,22 @@
                   "beneficiary_address_neighborhood": "Centro",
                   "beneficiary_address_state": "RJ",
                   "beneficiary_address_zipcode": "20071004",
-                  "bolepix_enabled_at": "2026-10-26T04:51:31+09:00",
+                  "bolepix_enabled_at": "2026-10-27T03:17:46+01:00",
                   "bolepix": {
                     "pix_mode": 2,
                     "pix_account_id": 3,
                     "pix_account": {
                       "id": 3,
-                      "uid": "01a1749e-429e-749c-b8eb-8b528841126f",
+                      "uid": "01a17b26-3d8f-7cdb-995e-f0ce1d830abd",
                       "custom_name": "Sicoob",
-                      "validated_at": "2026-10-26T04:51:31+09:00",
-                      "enabled_at": "2026-10-26T04:51:31+09:00",
+                      "validated_at": "2026-10-27T03:17:46+01:00",
+                      "enabled_at": "2026-10-27T03:17:46+01:00",
                       "financial_provider_slug": "sicoob",
                       "key": "+5522987654321",
                       "status": "active",
                       "default": true,
                       "beneficiary": {
-                        "document_number": "753.456.249-09",
+                        "document_number": "642.482.201-13",
                         "name": "Margret Santos Filgueiras",
                         "address": {
                           "zip_code": "24360440",
@@ -1189,17 +1189,17 @@
                         }
                       },
                       "configuration": null,
-                      "financial_account_uid": "01a1749e-4272-7c26-bfe0-3f2a56350389",
-                      "created_at": "2026-10-26T04:51:31+09:00",
-                      "updated_at": "2026-10-26T04:51:31+09:00"
+                      "financial_account_uid": "01a17b26-3d5f-768f-b9ba-5b3c6e8cab53",
+                      "created_at": "2026-10-27T03:17:46+01:00",
+                      "updated_at": "2026-10-27T03:17:46+01:00"
                     },
                     "pix_billing_options": null
                   },
                   "bolepix_key": null,
                   "allow_expiration_on_weekends": false,
                   "allow_duplicate_charge_payments": false,
-                  "created_at": "2026-10-26T04:51:31+09:00",
-                  "updated_at": "2026-10-26T04:51:31+09:00"
+                  "created_at": "2026-10-27T03:17:46+01:00",
+                  "updated_at": "2026-10-27T03:17:46+01:00"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/v1_bank_billet_account_object"
@@ -1508,8 +1508,8 @@
               "application/json": {
                 "example": {
                   "id": 2,
-                  "uid": "01a1749e-4709-7233-ac9c-40be09703680",
-                  "expire_at": "2026-11-05",
+                  "uid": "01a17b26-4269-7769-90f8-ec112bcd8072",
+                  "expire_at": "2026-11-06",
                   "paid_at": null,
                   "description": "Serviços prestados",
                   "status": "generating",
@@ -1562,7 +1562,7 @@
                   "interest_monthly_percentage": null,
                   "days_for_interest": 2,
                   "discount_type": 2,
-                  "discount_limit_date": "2026-11-02",
+                  "discount_limit_date": "2026-11-03",
                   "discount_value": null,
                   "discount_percentage": 10.0,
                   "days_for_revoke": 30,
@@ -1592,7 +1592,7 @@
                   "extra1_digit": null,
                   "extra2": null,
                   "extra2_digit": null,
-                  "line": "75691.43279 01022.938508 00000.240028 2 16210000003456",
+                  "line": "75691.43279 01022.938508 00000.240028 8 16220000003456",
                   "our_number": "2",
                   "customer_subscription_id": null,
                   "installment_total": null,
@@ -1600,8 +1600,8 @@
                   "installment_id": null,
                   "carne_url": null,
                   "bank_billet_layout_id": null,
-                  "created_at": "2026-10-26T04:51:32+09:00",
-                  "updated_at": "2026-10-26T04:51:32+09:00",
+                  "created_at": "2026-10-27T03:17:47+01:00",
+                  "updated_at": "2026-10-27T03:17:47+01:00",
                   "tags": [
                     "tag1",
                     "tag2",
@@ -1625,7 +1625,7 @@
                   "guarantor_zipcode": null,
                   "guarantor_address": null,
                   "guarantor_address_complement": null,
-                  "barcode": "75692162100000034561432701022938500000024002",
+                  "barcode": "75698162200000034561432701022938500000024002",
                   "registered_at": null,
                   "prevent_registration": false,
                   "customer_id": null,
@@ -1658,7 +1658,7 @@
                   "custom_data": {
                     "bank_billet_number": "123_456"
                   },
-                  "issued_at": "2026-10-26T04:51:32+09:00",
+                  "issued_at": "2026-10-27T03:17:47+01:00",
                   "shorten_url": "http://dev.bole.to:5001/2/mq",
                   "pix_enabled": false,
                   "pix_qrcode": null,
@@ -1988,10 +1988,10 @@
                 "example": [
                   {
                     "id": 5,
-                    "uid": "01a1749e-48fa-7416-ac54-51992b00626b",
-                    "expire_at": "2026-10-29",
+                    "uid": "01a17b26-44a2-719c-8601-bae931f63c59",
+                    "expire_at": "2026-10-30",
                     "paid_at": null,
-                    "description": "Serviço de criação de site\\r\\nExpira em: 29/10/2026",
+                    "description": "Serviço de criação de site\\r\\nExpira em: 30/10/2026",
                     "status": "opened",
                     "registration_status": "pending",
                     "customer_person_name": "José da Silva",
@@ -2072,7 +2072,7 @@
                     "extra1_digit": null,
                     "extra2": null,
                     "extra2_digit": null,
-                    "line": "75691.43279 01022.938508 04000.300014 3 16140000005000",
+                    "line": "75691.43279 01022.938508 04000.300014 9 16150000005000",
                     "our_number": "40003",
                     "customer_subscription_id": null,
                     "installment_total": null,
@@ -2080,8 +2080,8 @@
                     "installment_id": null,
                     "carne_url": null,
                     "bank_billet_layout_id": null,
-                    "created_at": "2026-10-26T04:51:32+09:00",
-                    "updated_at": "2026-10-26T04:51:32+09:00",
+                    "created_at": "2026-10-27T03:17:47+01:00",
+                    "updated_at": "2026-10-27T03:17:47+01:00",
                     "tags": [
                       "tag 1",
                       "tag2",
@@ -2105,7 +2105,7 @@
                     "guarantor_zipcode": null,
                     "guarantor_address": null,
                     "guarantor_address_complement": null,
-                    "barcode": "75693161400000050001432701022938500400030001",
+                    "barcode": "75699161500000050001432701022938500400030001",
                     "registered_at": null,
                     "prevent_registration": false,
                     "customer_id": 4,
@@ -2136,7 +2136,7 @@
                     "dispatch_type": 1,
                     "charge_type": 1,
                     "custom_data": null,
-                    "issued_at": "2026-10-26T04:51:32+09:00",
+                    "issued_at": "2026-10-27T03:17:47+01:00",
                     "shorten_url": "http://dev.bole.to:5001/2/qb",
                     "pix_enabled": false,
                     "pix_qrcode": null,
@@ -2169,10 +2169,10 @@
                   },
                   {
                     "id": 4,
-                    "uid": "01a1749e-48ea-7d2b-8082-8ff2e5123b25",
-                    "expire_at": "2026-10-29",
+                    "uid": "01a17b26-448f-7b56-aded-7bbe2a3304d9",
+                    "expire_at": "2026-10-30",
                     "paid_at": null,
-                    "description": "Serviço de criação de site\\r\\nExpira em: 29/10/2026",
+                    "description": "Serviço de criação de site\\r\\nExpira em: 30/10/2026",
                     "status": "opened",
                     "registration_status": "pending",
                     "customer_person_name": "José da Silva",
@@ -2253,7 +2253,7 @@
                     "extra1_digit": null,
                     "extra2": null,
                     "extra2_digit": null,
-                    "line": "75691.43279 01022.938508 04000.230013 5 16140000005000",
+                    "line": "75691.43279 01022.938508 04000.230013 1 16150000005000",
                     "our_number": "40002",
                     "customer_subscription_id": null,
                     "installment_total": null,
@@ -2261,8 +2261,8 @@
                     "installment_id": null,
                     "carne_url": null,
                     "bank_billet_layout_id": null,
-                    "created_at": "2026-10-26T04:51:32+09:00",
-                    "updated_at": "2026-10-26T04:51:32+09:00",
+                    "created_at": "2026-10-27T03:17:47+01:00",
+                    "updated_at": "2026-10-27T03:17:47+01:00",
                     "tags": [
                       "tag 1",
                       "tag2",
@@ -2286,7 +2286,7 @@
                     "guarantor_zipcode": null,
                     "guarantor_address": null,
                     "guarantor_address_complement": null,
-                    "barcode": "75695161400000050001432701022938500400023001",
+                    "barcode": "75691161500000050001432701022938500400023001",
                     "registered_at": null,
                     "prevent_registration": false,
                     "customer_id": 3,
@@ -2317,7 +2317,7 @@
                     "dispatch_type": 1,
                     "charge_type": 1,
                     "custom_data": null,
-                    "issued_at": "2026-10-26T04:51:32+09:00",
+                    "issued_at": "2026-10-27T03:17:47+01:00",
                     "shorten_url": "http://dev.bole.to:5001/2/zq",
                     "pix_enabled": false,
                     "pix_qrcode": null,
@@ -2350,10 +2350,10 @@
                   },
                   {
                     "id": 3,
-                    "uid": "01a1749e-48d9-7a82-8ec4-ed9434be3e25",
-                    "expire_at": "2026-10-29",
+                    "uid": "01a17b26-447a-7cd7-9909-ce7d9471e1f2",
+                    "expire_at": "2026-10-30",
                     "paid_at": null,
-                    "description": "Serviço de criação de site\\r\\nExpira em: 29/10/2026",
+                    "description": "Serviço de criação de site\\r\\nExpira em: 30/10/2026",
                     "status": "opened",
                     "registration_status": "pending",
                     "customer_person_name": "José da Silva",
@@ -2434,7 +2434,7 @@
                     "extra1_digit": null,
                     "extra2": null,
                     "extra2_digit": null,
-                    "line": "75691.43279 01022.938508 04000.160012 7 16140000005000",
+                    "line": "75691.43279 01022.938508 04000.160012 2 16150000005000",
                     "our_number": "40001",
                     "customer_subscription_id": null,
                     "installment_total": null,
@@ -2442,8 +2442,8 @@
                     "installment_id": null,
                     "carne_url": null,
                     "bank_billet_layout_id": null,
-                    "created_at": "2026-10-26T04:51:32+09:00",
-                    "updated_at": "2026-10-26T04:51:32+09:00",
+                    "created_at": "2026-10-27T03:17:47+01:00",
+                    "updated_at": "2026-10-27T03:17:47+01:00",
                     "tags": [
                       "tag 1",
                       "tag2",
@@ -2467,7 +2467,7 @@
                     "guarantor_zipcode": null,
                     "guarantor_address": null,
                     "guarantor_address_complement": null,
-                    "barcode": "75697161400000050001432701022938500400016001",
+                    "barcode": "75692161500000050001432701022938500400016001",
                     "registered_at": null,
                     "prevent_registration": false,
                     "customer_id": 2,
@@ -2498,7 +2498,7 @@
                     "dispatch_type": 1,
                     "charge_type": 1,
                     "custom_data": null,
-                    "issued_at": "2026-10-26T04:51:32+09:00",
+                    "issued_at": "2026-10-27T03:17:47+01:00",
                     "shorten_url": "http://dev.bole.to:5001/2/bl",
                     "pix_enabled": false,
                     "pix_qrcode": null,
@@ -2632,10 +2632,10 @@
               "application/json": {
                 "example": {
                   "id": 6,
-                  "uid": "01a1749e-49a8-7631-8246-8f956afb23cd",
-                  "expire_at": "2026-10-29",
+                  "uid": "01a17b26-456e-716f-9082-7c2634c8cbc4",
+                  "expire_at": "2026-10-30",
                   "paid_at": null,
-                  "description": "Serviço de criação de site\\r\\nExpira em: 29/10/2026",
+                  "description": "Serviço de criação de site\\r\\nExpira em: 30/10/2026",
                   "status": "opened",
                   "registration_status": "pending",
                   "customer_person_name": "José da Silva",
@@ -2716,7 +2716,7 @@
                   "extra1_digit": null,
                   "extra2": null,
                   "extra2_digit": null,
-                  "line": "75691.43279 01022.938508 04000.480014 1 16140000005000",
+                  "line": "75691.43279 01022.938508 04000.480014 7 16150000005000",
                   "our_number": "40004",
                   "customer_subscription_id": null,
                   "installment_total": null,
@@ -2724,8 +2724,8 @@
                   "installment_id": null,
                   "carne_url": null,
                   "bank_billet_layout_id": null,
-                  "created_at": "2026-10-26T04:51:33+09:00",
-                  "updated_at": "2026-10-26T04:51:33+09:00",
+                  "created_at": "2026-10-27T03:17:48+01:00",
+                  "updated_at": "2026-10-27T03:17:48+01:00",
                   "tags": [
                     "tag 1",
                     "tag2",
@@ -2749,7 +2749,7 @@
                   "guarantor_zipcode": null,
                   "guarantor_address": null,
                   "guarantor_address_complement": null,
-                  "barcode": "75691161400000050001432701022938500400048001",
+                  "barcode": "75697161500000050001432701022938500400048001",
                   "registered_at": null,
                   "prevent_registration": false,
                   "customer_id": 5,
@@ -2780,7 +2780,7 @@
                   "dispatch_type": 1,
                   "charge_type": 1,
                   "custom_data": null,
-                  "issued_at": "2026-10-26T04:51:33+09:00",
+                  "issued_at": "2026-10-27T03:17:48+01:00",
                   "shorten_url": "http://dev.bole.to:5001/2/xr",
                   "pix_enabled": false,
                   "pix_qrcode": null,
@@ -3172,7 +3172,7 @@
               "application/json": {
                 "example": {
                   "id": 12,
-                  "uid": "01a1749e-4d61-74a7-93e1-c4e0532860aa",
+                  "uid": "01a17b26-493a-7638-b230-292d67eb24a8",
                   "expire_at": "2026-11-03",
                   "paid_at": null,
                   "description": "Serviço de criação de site\\r\\nExpira em: 03/11/2026",
@@ -3264,8 +3264,8 @@
                   "installment_id": null,
                   "carne_url": null,
                   "bank_billet_layout_id": null,
-                  "created_at": "2026-10-26T04:51:33+09:00",
-                  "updated_at": "2026-10-26T04:51:33+09:00",
+                  "created_at": "2026-10-27T03:17:49+01:00",
+                  "updated_at": "2026-10-27T03:17:49+01:00",
                   "tags": [
                     "tag 1",
                     "tag2",
@@ -3320,7 +3320,7 @@
                   "dispatch_type": 1,
                   "charge_type": 1,
                   "custom_data": null,
-                  "issued_at": "2026-10-26T04:51:33+09:00",
+                  "issued_at": "2026-10-27T03:17:49+01:00",
                   "shorten_url": "http://dev.bole.to:5001/2/gr",
                   "pix_enabled": false,
                   "pix_qrcode": null,
@@ -3849,10 +3849,10 @@
               "application/json": {
                 "example": {
                   "id": 1,
-                  "uid": "01a1749e-53a2-7b58-896a-d02ee78a1a5f",
+                  "uid": "01a17b26-50b3-7ebe-86db-0930000f288d",
                   "amount": 34.56,
                   "cycle": "monthly",
-                  "next_billing": "2026-11-26",
+                  "next_billing": "2026-11-27",
                   "end_at": null,
                   "instructions": null,
                   "customer_id": 27,
@@ -3875,8 +3875,8 @@
                   "customer_nickname": "Zezin La da Rua",
                   "customer_notes": "Informação sobre o cliente",
                   "description": "Serviços prestados",
-                  "created_at": "2026-10-26T04:51:35+09:00",
-                  "updated_at": "2026-10-26T04:51:35+09:00",
+                  "created_at": "2026-10-27T03:17:51+01:00",
+                  "updated_at": "2026-10-27T03:17:51+01:00",
                   "created_via_api": true,
                   "days_in_advance": 7,
                   "bank_billet_account_id": 47,
@@ -4129,15 +4129,15 @@
                 "example": [
                   {
                     "id": 2,
-                    "uid": "01a1749e-54b9-79d3-b3cd-467c72029ce0",
+                    "uid": "01a17b26-51fd-7ead-84ce-a23599cc828b",
                     "amount": 150.0,
                     "cycle": "monthly",
-                    "next_billing": "2026-11-26",
+                    "next_billing": "2026-11-27",
                     "end_at": null,
                     "instructions": "Não receber após o vencimento",
                     "customer_id": 28,
                     "customer_person_name": "Margret Santos Filgueiras",
-                    "customer_cnpj_cpf": "667.171.835-00",
+                    "customer_cnpj_cpf": "276.531.683-02",
                     "customer_address": "Av. Burkhard Hehn Simões",
                     "customer_state": "RJ",
                     "customer_neighborhood": "São Francisco",
@@ -4145,7 +4145,7 @@
                     "customer_address_number": "120",
                     "customer_address_complement": "709",
                     "customer_phone_number": "2199999999",
-                    "customer_email": "mack@davis.example",
+                    "customer_email": "cameron@stoltenberg.test",
                     "customer_city_name": "Rio de Janeiro",
                     "customer_email_cc": "john_cc@example.com",
                     "customer_ignore_email": null,
@@ -4155,8 +4155,8 @@
                     "customer_nickname": null,
                     "customer_notes": null,
                     "description": "Cliente especial",
-                    "created_at": "2026-10-26T04:51:35+09:00",
-                    "updated_at": "2026-10-26T04:51:35+09:00",
+                    "created_at": "2026-10-27T03:17:51+01:00",
+                    "updated_at": "2026-10-27T03:17:51+01:00",
                     "created_via_api": false,
                     "days_in_advance": 7,
                     "bank_billet_account_id": 49,
@@ -4224,15 +4224,15 @@
                   },
                   {
                     "id": 3,
-                    "uid": "01a1749e-54ca-7d3e-9cfb-1189cd39656e",
+                    "uid": "01a17b26-5211-7342-b453-12f7c387f276",
                     "amount": 150.0,
                     "cycle": "monthly",
-                    "next_billing": "2026-11-26",
+                    "next_billing": "2026-11-27",
                     "end_at": null,
                     "instructions": "Não receber após o vencimento",
                     "customer_id": 29,
                     "customer_person_name": "Margret Santos Filgueiras",
-                    "customer_cnpj_cpf": "791.825.267-53",
+                    "customer_cnpj_cpf": "640.127.738-60",
                     "customer_address": "Av. Burkhard Hehn Simões",
                     "customer_state": "RJ",
                     "customer_neighborhood": "São Francisco",
@@ -4240,7 +4240,7 @@
                     "customer_address_number": "120",
                     "customer_address_complement": "709",
                     "customer_phone_number": "2199999999",
-                    "customer_email": "josefina.sanford@kihn.example",
+                    "customer_email": "reggie_jerde@erdman.test",
                     "customer_city_name": "Rio de Janeiro",
                     "customer_email_cc": "john_cc@example.com",
                     "customer_ignore_email": null,
@@ -4250,8 +4250,8 @@
                     "customer_nickname": null,
                     "customer_notes": null,
                     "description": "Cliente especial",
-                    "created_at": "2026-10-26T04:51:35+09:00",
-                    "updated_at": "2026-10-26T04:51:35+09:00",
+                    "created_at": "2026-10-27T03:17:51+01:00",
+                    "updated_at": "2026-10-27T03:17:51+01:00",
                     "created_via_api": false,
                     "days_in_advance": 7,
                     "bank_billet_account_id": 49,
@@ -4319,15 +4319,15 @@
                   },
                   {
                     "id": 4,
-                    "uid": "01a1749e-54dc-7c07-bf0b-9e62802adc11",
+                    "uid": "01a17b26-5227-7652-95e7-4f29c614fc9f",
                     "amount": 150.0,
                     "cycle": "monthly",
-                    "next_billing": "2026-11-26",
+                    "next_billing": "2026-11-27",
                     "end_at": null,
                     "instructions": "Não receber após o vencimento",
                     "customer_id": 30,
                     "customer_person_name": "Margret Santos Filgueiras",
-                    "customer_cnpj_cpf": "318.056.140-88",
+                    "customer_cnpj_cpf": "997.829.106-78",
                     "customer_address": "Av. Burkhard Hehn Simões",
                     "customer_state": "RJ",
                     "customer_neighborhood": "São Francisco",
@@ -4335,7 +4335,7 @@
                     "customer_address_number": "120",
                     "customer_address_complement": "709",
                     "customer_phone_number": "2199999999",
-                    "customer_email": "richie@stanton.example",
+                    "customer_email": "vernon_hayes@mann.example",
                     "customer_city_name": "Rio de Janeiro",
                     "customer_email_cc": "john_cc@example.com",
                     "customer_ignore_email": null,
@@ -4345,8 +4345,8 @@
                     "customer_nickname": null,
                     "customer_notes": null,
                     "description": "Cliente especial",
-                    "created_at": "2026-10-26T04:51:35+09:00",
-                    "updated_at": "2026-10-26T04:51:35+09:00",
+                    "created_at": "2026-10-27T03:17:51+01:00",
+                    "updated_at": "2026-10-27T03:17:51+01:00",
                     "created_via_api": false,
                     "days_in_advance": 7,
                     "bank_billet_account_id": 49,
@@ -4515,15 +4515,15 @@
               "application/json": {
                 "example": {
                   "id": 5,
-                  "uid": "01a1749e-5567-729a-a356-94a8657640dd",
+                  "uid": "01a17b26-52c2-7c73-a517-cab4d1460dce",
                   "amount": 150.0,
                   "cycle": "monthly",
-                  "next_billing": "2026-11-26",
+                  "next_billing": "2026-11-27",
                   "end_at": null,
                   "instructions": "Não receber após o vencimento",
                   "customer_id": 31,
                   "customer_person_name": "Margret Santos Filgueiras",
-                  "customer_cnpj_cpf": "576.457.168-51",
+                  "customer_cnpj_cpf": "579.315.550-31",
                   "customer_address": "Av. Burkhard Hehn Simões",
                   "customer_state": "RJ",
                   "customer_neighborhood": "São Francisco",
@@ -4531,7 +4531,7 @@
                   "customer_address_number": "120",
                   "customer_address_complement": "709",
                   "customer_phone_number": "2199999999",
-                  "customer_email": "shaquita.tillman@morar.example",
+                  "customer_email": "al.lindgren@stanton.test",
                   "customer_city_name": "Rio de Janeiro",
                   "customer_email_cc": "john_cc@example.com",
                   "customer_ignore_email": null,
@@ -4541,8 +4541,8 @@
                   "customer_nickname": null,
                   "customer_notes": null,
                   "description": "Cliente especial",
-                  "created_at": "2026-10-26T04:51:36+09:00",
-                  "updated_at": "2026-10-26T04:51:36+09:00",
+                  "created_at": "2026-10-27T03:17:51+01:00",
+                  "updated_at": "2026-10-27T03:17:51+01:00",
                   "created_via_api": false,
                   "days_in_advance": 7,
                   "bank_billet_account_id": 50,
@@ -4954,15 +4954,15 @@
               "application/json": {
                 "example": {
                   "id": 8,
-                  "uid": "01a1749e-57ea-74bf-aa19-c08e2c31de95",
+                  "uid": "01a17b26-5706-709b-b579-950d5b842e32",
                   "amount": 150.0,
                   "cycle": "monthly",
-                  "next_billing": "2026-12-26",
+                  "next_billing": "2026-12-27",
                   "end_at": null,
                   "instructions": "Não receber após o vencimento",
                   "customer_id": 34,
                   "customer_person_name": "Margret Santos Filgueiras",
-                  "customer_cnpj_cpf": "675.943.331-95",
+                  "customer_cnpj_cpf": "061.208.228-87",
                   "customer_address": "Av. Burkhard Hehn Simões",
                   "customer_state": "RJ",
                   "customer_neighborhood": "São Francisco",
@@ -4970,7 +4970,7 @@
                   "customer_address_number": "120",
                   "customer_address_complement": "709",
                   "customer_phone_number": "2199999999",
-                  "customer_email": "drew_kihn@flatley.test",
+                  "customer_email": "isidro@cremin.example",
                   "customer_city_name": "Rio de Janeiro",
                   "customer_email_cc": "john_cc@example.com",
                   "customer_ignore_email": null,
@@ -4980,8 +4980,8 @@
                   "customer_nickname": null,
                   "customer_notes": null,
                   "description": "Cliente especial",
-                  "created_at": "2026-10-26T04:51:36+09:00",
-                  "updated_at": "2026-10-26T04:51:36+09:00",
+                  "created_at": "2026-10-27T03:17:52+01:00",
+                  "updated_at": "2026-10-27T03:17:52+01:00",
                   "created_via_api": false,
                   "days_in_advance": 7,
                   "bank_billet_account_id": 53,
@@ -5158,7 +5158,7 @@
               "application/json": {
                 "example": {
                   "id": 35,
-                  "uid": "01a1749e-58b6-7576-a57d-b8753b0dfc19",
+                  "uid": "01a17b26-583a-7b37-9231-49c2379aae3b",
                   "city_name": "Minas Gerais",
                   "person_name": "Jonh Doe",
                   "nickname": null,
@@ -5175,8 +5175,8 @@
                   "notes": "Observações",
                   "state": "MG",
                   "created_via_api": true,
-                  "created_at": "2026-10-26T04:51:36+09:00",
-                  "updated_at": "2026-10-26T04:51:36+09:00",
+                  "created_at": "2026-10-27T03:17:52+01:00",
+                  "updated_at": "2026-10-27T03:17:52+01:00",
                   "ignore_email": null,
                   "ignore_sms": false,
                   "ignore_whatsapp": false,
@@ -5187,7 +5187,7 @@
                   "tags": [],
                   "tag_list": null,
                   "custom_data": null,
-                  "portal_password": "kCDqpWil",
+                  "portal_password": "tdYbQkRy",
                   "birthday": "1978-06-12",
                   "ignore_credit_restriction": false,
                   "credit_restriction_status": 0,
@@ -5320,7 +5320,7 @@
                 "example": [
                   {
                     "id": 37,
-                    "uid": "01a1749e-598d-75c2-b992-0dac90c8ccbe",
+                    "uid": "01a17b26-5935-779e-bd3c-a619757f83eb",
                     "city_name": "Rio de Janeiro",
                     "person_name": "Margret Santos Filgueiras",
                     "nickname": null,
@@ -5328,8 +5328,8 @@
                     "address_complement": "709",
                     "address_number": "120",
                     "mobile_number": null,
-                    "cnpj_cpf": "014.128.572-95",
-                    "email": "cathy.kemmer@cruickshank-douglas.example",
+                    "cnpj_cpf": "228.591.189-00",
+                    "email": "sanjuana_von@mcglynn-yost.test",
                     "neighborhood": "São Francisco",
                     "phone_number": "2199999999",
                     "zipcode": "24360440",
@@ -5337,8 +5337,8 @@
                     "notes": null,
                     "state": "RJ",
                     "created_via_api": false,
-                    "created_at": "2026-10-26T04:51:37+09:00",
-                    "updated_at": "2026-10-26T04:51:37+09:00",
+                    "created_at": "2026-10-27T03:17:53+01:00",
+                    "updated_at": "2026-10-27T03:17:53+01:00",
                     "ignore_email": null,
                     "ignore_sms": false,
                     "ignore_whatsapp": false,
@@ -5347,15 +5347,14 @@
                     "truncated_address": "Av. Burkhard Hehn Simões, 120",
                     "external_code": null,
                     "tags": [
-                      "qui",
-                      "harum",
-                      "explicabo"
+                      "et",
+                      "tenetur"
                     ],
-                    "tag_list": "qui,harum,explicabo",
+                    "tag_list": "et,tenetur",
                     "custom_data": {
                       "numero_cliente": 63126
                     },
-                    "portal_password": "d2GvzinN",
+                    "portal_password": "I5YFmeoa",
                     "birthday": "1978-06-12",
                     "ignore_credit_restriction": false,
                     "credit_restriction_status": 0,
@@ -5366,7 +5365,7 @@
                   },
                   {
                     "id": 38,
-                    "uid": "01a1749e-5991-7af5-8c58-703255bb798f",
+                    "uid": "01a17b26-593a-744a-a524-afd67f64d1b5",
                     "city_name": "Rio de Janeiro",
                     "person_name": "Margret Santos Filgueiras",
                     "nickname": null,
@@ -5374,8 +5373,8 @@
                     "address_complement": "709",
                     "address_number": "120",
                     "mobile_number": null,
-                    "cnpj_cpf": "655.416.990-37",
-                    "email": "larhonda@fahey.example",
+                    "cnpj_cpf": "077.340.991-22",
+                    "email": "craig.harris@kub.example",
                     "neighborhood": "São Francisco",
                     "phone_number": "2199999999",
                     "zipcode": "24360440",
@@ -5383,8 +5382,8 @@
                     "notes": null,
                     "state": "RJ",
                     "created_via_api": false,
-                    "created_at": "2026-10-26T04:51:37+09:00",
-                    "updated_at": "2026-10-26T04:51:37+09:00",
+                    "created_at": "2026-10-27T03:17:53+01:00",
+                    "updated_at": "2026-10-27T03:17:53+01:00",
                     "ignore_email": null,
                     "ignore_sms": false,
                     "ignore_whatsapp": false,
@@ -5393,15 +5392,15 @@
                     "truncated_address": "Av. Burkhard Hehn Simões, 120",
                     "external_code": null,
                     "tags": [
-                      "nulla",
-                      "nemo",
-                      "aut"
+                      "earum",
+                      "omnis",
+                      "aliquid"
                     ],
-                    "tag_list": "nulla,nemo,aut",
+                    "tag_list": "earum,omnis,aliquid",
                     "custom_data": {
                       "numero_cliente": 63126
                     },
-                    "portal_password": "Rsf5oyQz",
+                    "portal_password": "j64aWyjz",
                     "birthday": "1978-06-12",
                     "ignore_credit_restriction": false,
                     "credit_restriction_status": 0,
@@ -5412,7 +5411,7 @@
                   },
                   {
                     "id": 39,
-                    "uid": "01a1749e-5995-7f31-8b44-f76a5c67626d",
+                    "uid": "01a17b26-593e-7fcd-bba2-18acb5700761",
                     "city_name": "Rio de Janeiro",
                     "person_name": "Margret Santos Filgueiras",
                     "nickname": null,
@@ -5420,8 +5419,8 @@
                     "address_complement": "709",
                     "address_number": "120",
                     "mobile_number": null,
-                    "cnpj_cpf": "687.148.363-27",
-                    "email": "bella@grant.test",
+                    "cnpj_cpf": "751.662.123-47",
+                    "email": "denae@hagenes-daugherty.test",
                     "neighborhood": "São Francisco",
                     "phone_number": "2199999999",
                     "zipcode": "24360440",
@@ -5429,8 +5428,8 @@
                     "notes": null,
                     "state": "RJ",
                     "created_via_api": false,
-                    "created_at": "2026-10-26T04:51:37+09:00",
-                    "updated_at": "2026-10-26T04:51:37+09:00",
+                    "created_at": "2026-10-27T03:17:53+01:00",
+                    "updated_at": "2026-10-27T03:17:53+01:00",
                     "ignore_email": null,
                     "ignore_sms": false,
                     "ignore_whatsapp": false,
@@ -5439,15 +5438,15 @@
                     "truncated_address": "Av. Burkhard Hehn Simões, 120",
                     "external_code": null,
                     "tags": [
-                      "in",
-                      "debitis",
-                      "rerum"
+                      "voluptate",
+                      "officia",
+                      "repellat"
                     ],
-                    "tag_list": "in,debitis,rerum",
+                    "tag_list": "voluptate,officia,repellat",
                     "custom_data": {
                       "numero_cliente": 63126
                     },
-                    "portal_password": "WlPdPFUF",
+                    "portal_password": "LgUjF8Fs",
                     "birthday": "1978-06-12",
                     "ignore_credit_restriction": false,
                     "credit_restriction_status": 0,
@@ -5549,7 +5548,7 @@
               "application/json": {
                 "example": {
                   "id": 40,
-                  "uid": "01a1749e-59fa-7d3e-8f48-e8b7592527ed",
+                  "uid": "01a17b26-59b2-7114-9f22-b64b5012e2ce",
                   "city_name": "Rio de Janeiro",
                   "person_name": "Margret Santos Filgueiras",
                   "nickname": null,
@@ -5557,8 +5556,8 @@
                   "address_complement": "709",
                   "address_number": "120",
                   "mobile_number": null,
-                  "cnpj_cpf": "464.809.827-70",
-                  "email": "porter@wintheiser-harber.example",
+                  "cnpj_cpf": "964.976.678-22",
+                  "email": "cathryn@weissnat-berge.test",
                   "neighborhood": "São Francisco",
                   "phone_number": "2199999999",
                   "zipcode": "24360440",
@@ -5566,8 +5565,8 @@
                   "notes": null,
                   "state": "RJ",
                   "created_via_api": false,
-                  "created_at": "2026-10-26T04:51:37+09:00",
-                  "updated_at": "2026-10-26T04:51:37+09:00",
+                  "created_at": "2026-10-27T03:17:53+01:00",
+                  "updated_at": "2026-10-27T03:17:53+01:00",
                   "ignore_email": null,
                   "ignore_sms": false,
                   "ignore_whatsapp": false,
@@ -5576,15 +5575,15 @@
                   "truncated_address": "Av. Burkhard Hehn Simões, 120",
                   "external_code": null,
                   "tags": [
-                    "maxime",
-                    "doloremque",
-                    "commodi"
+                    "aut",
+                    "molestiae",
+                    "corporis"
                   ],
-                  "tag_list": "maxime,doloremque,commodi",
+                  "tag_list": "aut,molestiae,corporis",
                   "custom_data": {
                     "numero_cliente": 63126
                   },
-                  "portal_password": "IGjKVdJJ",
+                  "portal_password": "tSYGvNTy",
                   "birthday": "1978-06-12",
                   "ignore_credit_restriction": false,
                   "credit_restriction_status": 0,
@@ -5940,7 +5939,7 @@
               "application/json": {
                 "example": {
                   "id": 42,
-                  "uid": "01a1749e-5d09-7c73-9b87-572e7c138ad6",
+                  "uid": "01a17b26-5d2e-75df-81fd-369e00bbbb1e",
                   "city_name": "Rio de Janeiro",
                   "person_name": "Margret Santos Filgueiras",
                   "nickname": null,
@@ -5949,7 +5948,7 @@
                   "address_number": "120",
                   "mobile_number": null,
                   "cnpj_cpf": "399.881.072-26",
-                  "email": "shaunna.langosh@weissnat-wintheiser.test",
+                  "email": "amalia@goodwin-rutherford.test",
                   "neighborhood": "São Francisco",
                   "phone_number": "2199999999",
                   "zipcode": "24360440",
@@ -5957,8 +5956,8 @@
                   "notes": null,
                   "state": "RJ",
                   "created_via_api": false,
-                  "created_at": "2026-10-26T04:51:37+09:00",
-                  "updated_at": "2026-10-26T04:51:37+09:00",
+                  "created_at": "2026-10-27T03:17:54+01:00",
+                  "updated_at": "2026-10-27T03:17:54+01:00",
                   "ignore_email": null,
                   "ignore_sms": false,
                   "ignore_whatsapp": false,
@@ -5967,15 +5966,15 @@
                   "truncated_address": "Av. Burkhard Hehn Simões, 120",
                   "external_code": null,
                   "tags": [
-                    "aut",
-                    "rem",
-                    "dolor"
+                    "impedit",
+                    "aspernatur",
+                    "rem"
                   ],
-                  "tag_list": "aut,rem,dolor",
+                  "tag_list": "impedit,aspernatur,rem",
                   "custom_data": {
                     "numero_cliente": 63126
                   },
-                  "portal_password": "1YYMCRHu",
+                  "portal_password": "ezKGlkpc",
                   "birthday": "1978-06-12",
                   "ignore_credit_restriction": false,
                   "credit_restriction_status": 0,
@@ -6092,7 +6091,7 @@
               "application/json": {
                 "example": {
                   "id": 43,
-                  "uid": "01a1749e-5dce-7a2e-a79b-681cfc831b33",
+                  "uid": "01a17b26-5e0b-77ab-93f4-c9dea16ff1aa",
                   "city_name": "Rio de Janeiro",
                   "person_name": "Margret Santos Filgueiras",
                   "nickname": null,
@@ -6100,7 +6099,7 @@
                   "address_complement": "709",
                   "address_number": "120",
                   "mobile_number": null,
-                  "cnpj_cpf": "888.433.707-07",
+                  "cnpj_cpf": "880.847.523-91",
                   "email": "search@example.com",
                   "neighborhood": "São Francisco",
                   "phone_number": "2199999999",
@@ -6109,8 +6108,8 @@
                   "notes": null,
                   "state": "RJ",
                   "created_via_api": false,
-                  "created_at": "2026-10-26T04:51:38+09:00",
-                  "updated_at": "2026-10-26T04:51:38+09:00",
+                  "created_at": "2026-10-27T03:17:54+01:00",
+                  "updated_at": "2026-10-27T03:17:54+01:00",
                   "ignore_email": null,
                   "ignore_sms": false,
                   "ignore_whatsapp": false,
@@ -6119,15 +6118,15 @@
                   "truncated_address": "Av. Burkhard Hehn Simões, 120",
                   "external_code": null,
                   "tags": [
-                    "nulla",
-                    "laboriosam",
-                    "ex"
+                    "deserunt",
+                    "asperiores",
+                    "laudantium"
                   ],
-                  "tag_list": "nulla,laboriosam,ex",
+                  "tag_list": "deserunt,asperiores,laudantium",
                   "custom_data": {
                     "numero_cliente": 63126
                   },
-                  "portal_password": "IdFKZ83h",
+                  "portal_password": "RGQ6Pe18",
                   "birthday": "1978-06-12",
                   "ignore_credit_restriction": false,
                   "credit_restriction_status": 0,
@@ -6256,18 +6255,18 @@
                 "example": [
                   {
                     "id": 5,
-                    "uid": "01a1749e-5f56-7fe0-a831-604cf3126d95",
+                    "uid": "01a17b26-5f7c-7094-8bee-fc750c1ab220",
                     "amount": 133.54,
                     "cycle": "monthly",
-                    "start_at": "2026-10-26",
-                    "end_at": "2027-09-26",
+                    "start_at": "2026-10-27",
+                    "end_at": "2027-09-27",
                     "instructions": null,
                     "customer_id": 48,
                     "description": "Cliente especial",
-                    "created_at": "2026-10-26T04:51:38+09:00",
-                    "updated_at": "2026-10-26T04:51:38+09:00",
+                    "created_at": "2026-10-27T03:17:54+01:00",
+                    "updated_at": "2026-10-27T03:17:54+01:00",
                     "customer_person_name": "Margret Santos Filgueiras",
-                    "customer_cnpj_cpf": "843.207.115-30",
+                    "customer_cnpj_cpf": "275.536.535-86",
                     "customer_address": "Av. Burkhard Hehn Simões",
                     "customer_state": "RJ",
                     "customer_neighborhood": "São Francisco",
@@ -6275,7 +6274,7 @@
                     "customer_address_number": "120",
                     "customer_address_complement": "709",
                     "customer_phone_number": "2199999999",
-                    "customer_email": "hipolito@sawayn-bruen.example",
+                    "customer_email": "jerrold@schmitt-kozey.example",
                     "customer_city_name": "Rio de Janeiro",
                     "customer_email_cc": "john_cc@example.com",
                     "customer_ignore_email": null,
@@ -6356,18 +6355,18 @@
                   },
                   {
                     "id": 4,
-                    "uid": "01a1749e-5f45-7008-8a57-94dc10846f3e",
+                    "uid": "01a17b26-5f69-7e20-9b82-ef4b5ed40772",
                     "amount": 133.54,
                     "cycle": "monthly",
-                    "start_at": "2026-10-26",
-                    "end_at": "2027-09-26",
+                    "start_at": "2026-10-27",
+                    "end_at": "2027-09-27",
                     "instructions": null,
                     "customer_id": 47,
                     "description": "Cliente especial",
-                    "created_at": "2026-10-26T04:51:38+09:00",
-                    "updated_at": "2026-10-26T04:51:38+09:00",
+                    "created_at": "2026-10-27T03:17:54+01:00",
+                    "updated_at": "2026-10-27T03:17:54+01:00",
                     "customer_person_name": "Margret Santos Filgueiras",
-                    "customer_cnpj_cpf": "729.202.849-75",
+                    "customer_cnpj_cpf": "022.210.020-67",
                     "customer_address": "Av. Burkhard Hehn Simões",
                     "customer_state": "RJ",
                     "customer_neighborhood": "São Francisco",
@@ -6375,7 +6374,7 @@
                     "customer_address_number": "120",
                     "customer_address_complement": "709",
                     "customer_phone_number": "2199999999",
-                    "customer_email": "sherlyn@kihn.example",
+                    "customer_email": "cletus_sporer@anderson-feeney.example",
                     "customer_city_name": "Rio de Janeiro",
                     "customer_email_cc": "john_cc@example.com",
                     "customer_ignore_email": null,
@@ -6456,18 +6455,18 @@
                   },
                   {
                     "id": 3,
-                    "uid": "01a1749e-5f33-7aca-9981-c8b47f714633",
+                    "uid": "01a17b26-5f56-7e04-813e-aeca2b3bcbca",
                     "amount": 133.54,
                     "cycle": "monthly",
-                    "start_at": "2026-10-26",
-                    "end_at": "2027-09-26",
+                    "start_at": "2026-10-27",
+                    "end_at": "2027-09-27",
                     "instructions": null,
                     "customer_id": 46,
                     "description": "Cliente especial",
-                    "created_at": "2026-10-26T04:51:38+09:00",
-                    "updated_at": "2026-10-26T04:51:38+09:00",
+                    "created_at": "2026-10-27T03:17:54+01:00",
+                    "updated_at": "2026-10-27T03:17:54+01:00",
                     "customer_person_name": "Margret Santos Filgueiras",
-                    "customer_cnpj_cpf": "619.967.328-03",
+                    "customer_cnpj_cpf": "256.154.248-34",
                     "customer_address": "Av. Burkhard Hehn Simões",
                     "customer_state": "RJ",
                     "customer_neighborhood": "São Francisco",
@@ -6475,7 +6474,7 @@
                     "customer_address_number": "120",
                     "customer_address_complement": "709",
                     "customer_phone_number": "2199999999",
-                    "customer_email": "pablo.gulgowski@dickens.example",
+                    "customer_email": "opal.wehner@bartell-smitham.test",
                     "customer_city_name": "Rio de Janeiro",
                     "customer_email_cc": "john_cc@example.com",
                     "customer_ignore_email": null,
@@ -6556,18 +6555,18 @@
                   },
                   {
                     "id": 2,
-                    "uid": "01a1749e-5f21-7f1a-9e3d-655d54c1f766",
+                    "uid": "01a17b26-5f42-779b-9986-d12a514d0d51",
                     "amount": 133.54,
                     "cycle": "monthly",
-                    "start_at": "2026-10-26",
-                    "end_at": "2027-09-26",
+                    "start_at": "2026-10-27",
+                    "end_at": "2027-09-27",
                     "instructions": null,
                     "customer_id": 45,
                     "description": "Cliente especial",
-                    "created_at": "2026-10-26T04:51:38+09:00",
-                    "updated_at": "2026-10-26T04:51:38+09:00",
+                    "created_at": "2026-10-27T03:17:54+01:00",
+                    "updated_at": "2026-10-27T03:17:54+01:00",
                     "customer_person_name": "Margret Santos Filgueiras",
-                    "customer_cnpj_cpf": "002.118.924-24",
+                    "customer_cnpj_cpf": "322.185.762-44",
                     "customer_address": "Av. Burkhard Hehn Simões",
                     "customer_state": "RJ",
                     "customer_neighborhood": "São Francisco",
@@ -6575,7 +6574,7 @@
                     "customer_address_number": "120",
                     "customer_address_complement": "709",
                     "customer_phone_number": "2199999999",
-                    "customer_email": "ahmad@ortiz-wisozk.test",
+                    "customer_email": "bruce@lehner-maggio.test",
                     "customer_city_name": "Rio de Janeiro",
                     "customer_email_cc": "john_cc@example.com",
                     "customer_ignore_email": null,
@@ -6656,18 +6655,18 @@
                   },
                   {
                     "id": 1,
-                    "uid": "01a1749e-5f0a-79fd-9c6c-c6eb80ad9f20",
+                    "uid": "01a17b26-5f29-7752-aa25-1938a7ac3950",
                     "amount": 133.54,
                     "cycle": "monthly",
-                    "start_at": "2026-10-26",
-                    "end_at": "2027-09-26",
+                    "start_at": "2026-10-27",
+                    "end_at": "2027-09-27",
                     "instructions": null,
                     "customer_id": 44,
                     "description": "Cliente especial",
-                    "created_at": "2026-10-26T04:51:38+09:00",
-                    "updated_at": "2026-10-26T04:51:38+09:00",
+                    "created_at": "2026-10-27T03:17:54+01:00",
+                    "updated_at": "2026-10-27T03:17:54+01:00",
                     "customer_person_name": "Margret Santos Filgueiras",
-                    "customer_cnpj_cpf": "715.622.651-72",
+                    "customer_cnpj_cpf": "451.306.948-13",
                     "customer_address": "Av. Burkhard Hehn Simões",
                     "customer_state": "RJ",
                     "customer_neighborhood": "São Francisco",
@@ -6675,7 +6674,7 @@
                     "customer_address_number": "120",
                     "customer_address_complement": "709",
                     "customer_phone_number": "2199999999",
-                    "customer_email": "vance.schiller@metz.test",
+                    "customer_email": "scot_quitzon@gerhold.test",
                     "customer_city_name": "Rio de Janeiro",
                     "customer_email_cc": "john_cc@example.com",
                     "customer_ignore_email": null,
@@ -6845,16 +6844,16 @@
               "application/json": {
                 "example": {
                   "id": 6,
-                  "uid": "01a1749e-5ffc-7fe7-b2ed-3fd96e5a2363",
+                  "uid": "01a17b26-602e-7145-961a-3eb34c819411",
                   "amount": 133.54,
                   "cycle": "biweekly",
-                  "start_at": "2026-10-30",
-                  "end_at": "2027-04-13",
+                  "start_at": "2026-10-31",
+                  "end_at": "2027-04-14",
                   "instructions": null,
                   "customer_id": null,
                   "description": "Serviços prestados",
-                  "created_at": "2026-10-26T04:51:38+09:00",
-                  "updated_at": "2026-10-26T04:51:38+09:00",
+                  "created_at": "2026-10-27T03:17:55+01:00",
+                  "updated_at": "2026-10-27T03:17:55+01:00",
                   "customer_person_name": "Leofutol Bezerra",
                   "customer_cnpj_cpf": "337.539.339-37",
                   "customer_address": "Av. Presidente Vargas",
@@ -7091,18 +7090,18 @@
               "application/json": {
                 "example": {
                   "id": 7,
-                  "uid": "01a1749e-60ff-7e28-83b4-4996a0484606",
+                  "uid": "01a17b26-6188-75e8-b91e-43ac343c875e",
                   "amount": 133.54,
                   "cycle": "monthly",
-                  "start_at": "2026-10-26",
-                  "end_at": "2027-09-26",
+                  "start_at": "2026-10-27",
+                  "end_at": "2027-09-27",
                   "instructions": null,
                   "customer_id": 49,
                   "description": "Cliente especial",
-                  "created_at": "2026-10-26T04:51:39+09:00",
-                  "updated_at": "2026-10-26T04:51:39+09:00",
+                  "created_at": "2026-10-27T03:17:55+01:00",
+                  "updated_at": "2026-10-27T03:17:55+01:00",
                   "customer_person_name": "Margret Santos Filgueiras",
-                  "customer_cnpj_cpf": "067.045.182-74",
+                  "customer_cnpj_cpf": "079.431.056-72",
                   "customer_address": "Av. Burkhard Hehn Simões",
                   "customer_state": "RJ",
                   "customer_neighborhood": "São Francisco",
@@ -7110,7 +7109,7 @@
                   "customer_address_number": "120",
                   "customer_address_complement": "709",
                   "customer_phone_number": "2199999999",
-                  "customer_email": "eulah@senger.example",
+                  "customer_email": "robt@stracke-feil.test",
                   "customer_city_name": "Rio de Janeiro",
                   "customer_email_cc": "john_cc@example.com",
                   "customer_ignore_email": null,
@@ -8257,7 +8256,7 @@
                 "example": [
                   {
                     "id": 6,
-                    "uid": "01a1749e-6354-7366-abb6-57ad408f6dfc",
+                    "uid": "01a17b26-645b-70b1-8a65-892f571e12eb",
                     "event_code": "bank_billet.created",
                     "sent_error": null,
                     "delivered_at": null,
@@ -8273,7 +8272,7 @@
                     "click_count": 0,
                     "read_at": null,
                     "read_count": 0,
-                    "to": "cliente@example.com,bernardina.donnelly@bogisich-orn.test",
+                    "to": "cliente@example.com,vicente.maggio@jacobi-casper.test",
                     "subject": "Assunto de email",
                     "email_account_id": 7,
                     "email_template_id": 10,
@@ -8284,20 +8283,20 @@
                     "reply_to_address": null,
                     "customer_id": null,
                     "customer_external_code": null,
-                    "created_at": "2026-10-26T04:51:39+09:00",
-                    "updated_at": "2026-10-26T04:51:39+09:00",
+                    "created_at": "2026-10-27T03:17:56+01:00",
+                    "updated_at": "2026-10-27T03:17:56+01:00",
                     "resource_owner": {
-                      "uid": "01a1749e-6376-70f0-932b-044779e68284",
+                      "uid": "01a17b26-6485-7ae5-bb2a-57186e22cdea",
                       "type": "bank_billet"
                     },
                     "resource_base": {
-                      "uid": "01a1749e-6376-70f0-932b-044779e68284",
+                      "uid": "01a17b26-6485-7ae5-bb2a-57186e22cdea",
                       "type": "bank_billet"
                     }
                   },
                   {
                     "id": 5,
-                    "uid": "01a1749e-631c-7a8c-9afa-32bed8a97303",
+                    "uid": "01a17b26-6418-7b7e-a6f8-f16c026930b4",
                     "event_code": "bank_billet.created",
                     "sent_error": null,
                     "delivered_at": null,
@@ -8313,7 +8312,7 @@
                     "click_count": 0,
                     "read_at": null,
                     "read_count": 0,
-                    "to": "cliente@example.com,lucas.schuppe@fisher-kassulke.example",
+                    "to": "cliente@example.com,clare.walter@bruen.example",
                     "subject": "Assunto de email",
                     "email_account_id": 6,
                     "email_template_id": 8,
@@ -8324,20 +8323,20 @@
                     "reply_to_address": null,
                     "customer_id": null,
                     "customer_external_code": null,
-                    "created_at": "2026-10-26T04:51:39+09:00",
-                    "updated_at": "2026-10-26T04:51:39+09:00",
+                    "created_at": "2026-10-27T03:17:56+01:00",
+                    "updated_at": "2026-10-27T03:17:56+01:00",
                     "resource_owner": {
-                      "uid": "01a1749e-633d-7917-903e-8f0c7c2206c4",
+                      "uid": "01a17b26-6440-7947-b1e3-a4f89ba3cafe",
                       "type": "bank_billet"
                     },
                     "resource_base": {
-                      "uid": "01a1749e-633d-7917-903e-8f0c7c2206c4",
+                      "uid": "01a17b26-6440-7947-b1e3-a4f89ba3cafe",
                       "type": "bank_billet"
                     }
                   },
                   {
                     "id": 4,
-                    "uid": "01a1749e-62e5-78d4-bc2e-a7e1a7ce1b86",
+                    "uid": "01a17b26-63d2-705c-9b1a-27a9010af602",
                     "event_code": "bank_billet.created",
                     "sent_error": null,
                     "delivered_at": null,
@@ -8353,7 +8352,7 @@
                     "click_count": 0,
                     "read_at": null,
                     "read_count": 0,
-                    "to": "cliente@example.com,alesia.ferry@gleason.test",
+                    "to": "cliente@example.com,un@bergnaum.test",
                     "subject": "Assunto de email",
                     "email_account_id": 5,
                     "email_template_id": 6,
@@ -8364,20 +8363,20 @@
                     "reply_to_address": null,
                     "customer_id": null,
                     "customer_external_code": null,
-                    "created_at": "2026-10-26T04:51:39+09:00",
-                    "updated_at": "2026-10-26T04:51:39+09:00",
+                    "created_at": "2026-10-27T03:17:55+01:00",
+                    "updated_at": "2026-10-27T03:17:55+01:00",
                     "resource_owner": {
-                      "uid": "01a1749e-6308-7415-8329-cfc65689c50c",
+                      "uid": "01a17b26-63ff-7427-b45e-bdc5045947a8",
                       "type": "bank_billet"
                     },
                     "resource_base": {
-                      "uid": "01a1749e-6308-7415-8329-cfc65689c50c",
+                      "uid": "01a17b26-63ff-7427-b45e-bdc5045947a8",
                       "type": "bank_billet"
                     }
                   },
                   {
                     "id": 3,
-                    "uid": "01a1749e-62ad-75d8-b722-d669af77a780",
+                    "uid": "01a17b26-638e-73d7-a4ed-e9d92221bcb4",
                     "event_code": "bank_billet.created",
                     "sent_error": null,
                     "delivered_at": null,
@@ -8393,7 +8392,7 @@
                     "click_count": 0,
                     "read_at": null,
                     "read_count": 0,
-                    "to": "cliente@example.com,napoleon@beatty.example",
+                    "to": "cliente@example.com,rudy.collier@renner-berge.example",
                     "subject": "Assunto de email",
                     "email_account_id": 4,
                     "email_template_id": 4,
@@ -8404,20 +8403,20 @@
                     "reply_to_address": null,
                     "customer_id": null,
                     "customer_external_code": null,
-                    "created_at": "2026-10-26T04:51:39+09:00",
-                    "updated_at": "2026-10-26T04:51:39+09:00",
+                    "created_at": "2026-10-27T03:17:55+01:00",
+                    "updated_at": "2026-10-27T03:17:55+01:00",
                     "resource_owner": {
-                      "uid": "01a1749e-62cf-72bc-9074-d06b076ba0d8",
+                      "uid": "01a17b26-63b8-7207-af56-22e83340ce01",
                       "type": "bank_billet"
                     },
                     "resource_base": {
-                      "uid": "01a1749e-62cf-72bc-9074-d06b076ba0d8",
+                      "uid": "01a17b26-63b8-7207-af56-22e83340ce01",
                       "type": "bank_billet"
                     }
                   },
                   {
                     "id": 2,
-                    "uid": "01a1749e-6252-756b-8034-c75a0419b300",
+                    "uid": "01a17b26-631d-72bf-bdc2-e32ee9a9f590",
                     "event_code": "bank_billet.created",
                     "sent_error": null,
                     "delivered_at": null,
@@ -8433,7 +8432,7 @@
                     "click_count": 0,
                     "read_at": null,
                     "read_count": 0,
-                    "to": "cliente@example.com,brendan@koelpin.test",
+                    "to": "cliente@example.com,curtis@huel.example",
                     "subject": "Assunto de email",
                     "email_account_id": 3,
                     "email_template_id": 2,
@@ -8444,14 +8443,14 @@
                     "reply_to_address": null,
                     "customer_id": null,
                     "customer_external_code": null,
-                    "created_at": "2026-10-26T04:51:39+09:00",
-                    "updated_at": "2026-10-26T04:51:39+09:00",
+                    "created_at": "2026-10-27T03:17:55+01:00",
+                    "updated_at": "2026-10-27T03:17:55+01:00",
                     "resource_owner": {
-                      "uid": "01a1749e-6290-7910-8a7f-dfd206983223",
+                      "uid": "01a17b26-636c-7592-ab48-f443433f5823",
                       "type": "bank_billet"
                     },
                     "resource_base": {
-                      "uid": "01a1749e-6290-7910-8a7f-dfd206983223",
+                      "uid": "01a17b26-636c-7592-ab48-f443433f5823",
                       "type": "bank_billet"
                     }
                   }
@@ -8548,7 +8547,7 @@
               "application/json": {
                 "example": {
                   "id": 7,
-                  "uid": "01a1749e-6410-7979-87a2-4e2cc307d707",
+                  "uid": "01a17b26-6532-7e1e-afd6-b5c3c6cd3c5d",
                   "event_code": "bank_billet.created",
                   "sent_error": null,
                   "delivered_at": null,
@@ -8564,7 +8563,7 @@
                   "click_count": 0,
                   "read_at": null,
                   "read_count": 0,
-                  "to": "cliente@example.com,twanna.haley@bogisich.test",
+                  "to": "cliente@example.com,lenard@ullrich.example",
                   "subject": "Assunto de email",
                   "email_account_id": 8,
                   "email_template_id": 12,
@@ -8575,14 +8574,14 @@
                   "reply_to_address": null,
                   "customer_id": null,
                   "customer_external_code": null,
-                  "created_at": "2026-10-26T04:51:39+09:00",
-                  "updated_at": "2026-10-26T04:51:39+09:00",
+                  "created_at": "2026-10-27T03:17:56+01:00",
+                  "updated_at": "2026-10-27T03:17:56+01:00",
                   "resource_owner": {
-                    "uid": "01a1749e-643a-761c-88c8-8e75f37f48fc",
+                    "uid": "01a17b26-6564-7f53-9f10-a8ce96b11196",
                     "type": "bank_billet"
                   },
                   "resource_base": {
-                    "uid": "01a1749e-643a-761c-88c8-8e75f37f48fc",
+                    "uid": "01a17b26-6564-7f53-9f10-a8ce96b11196",
                     "type": "bank_billet"
                   }
                 },
@@ -9690,20 +9689,20 @@
                 "example": [
                   {
                     "resource_owner": {
-                      "uid": "01a1749e-65d1-7754-8e43-3e26629d2f4a",
+                      "uid": "01a17b26-674d-743b-a029-58a02ee119b4",
                       "type": "bank_billet"
                     },
                     "resource_base": {
-                      "uid": "01a1749e-65d1-7754-8e43-3e26629d2f4a",
+                      "uid": "01a17b26-674d-743b-a029-58a02ee119b4",
                       "type": "bank_billet"
                     },
-                    "uid": "01a1749e-65e1-7fa7-9aff-45a1c8cb43d4",
+                    "uid": "01a17b26-675f-7fbc-b0d2-81485c0e62fe",
                     "code": "ping",
                     "data": {
                       "object": {
                         "id": 37,
                         "pix": [],
-                        "uid": "01a1749e-65d1-7754-8e43-3e26629d2f4a",
+                        "uid": "01a17b26-674d-743b-a029-58a02ee119b4",
                         "url": "http://dev.bole.to:5001/2/bwl",
                         "line": "75691.43279 01022.938508 04003.310010 9 82900000005000",
                         "meta": null,
@@ -9742,15 +9741,15 @@
                         "expire_at": "2020-06-18",
                         "fine_type": 0,
                         "import_id": null,
-                        "issued_at": "2020-06-15T21:00:00+09:00",
+                        "issued_at": "2020-06-15T14:00:00+02:00",
                         "acceptance": "N",
-                        "created_at": "2020-06-15T21:00:00+09:00",
+                        "created_at": "2020-06-15T14:00:00+02:00",
                         "fine_value": null,
                         "ignore_sms": false,
                         "our_number": "40033",
                         "pix_qrcode": null,
                         "revoked_at": null,
-                        "updated_at": "2020-06-15T21:00:00+09:00",
+                        "updated_at": "2020-06-15T14:00:00+02:00",
                         "cancel_type": null,
                         "charge_type": 1,
                         "custom_data": null,
@@ -9882,26 +9881,26 @@
                         "divergent_payment_minimum_percentage": null
                       }
                     },
-                    "occurred_at": "2020-06-15T21:00:00+09:00",
-                    "created_at": "2020-06-15T21:00:00+09:00",
-                    "updated_at": "2020-06-15T21:00:00+09:00"
+                    "occurred_at": "2020-06-15T14:00:00+02:00",
+                    "created_at": "2020-06-15T14:00:00+02:00",
+                    "updated_at": "2020-06-15T14:00:00+02:00"
                   },
                   {
                     "resource_owner": {
-                      "uid": "01a1749e-65fd-7c42-9ef2-e5fd09039167",
+                      "uid": "01a17b26-6782-7ceb-bc45-56ecac3cbf3f",
                       "type": "bank_billet"
                     },
                     "resource_base": {
-                      "uid": "01a1749e-65fd-7c42-9ef2-e5fd09039167",
+                      "uid": "01a17b26-6782-7ceb-bc45-56ecac3cbf3f",
                       "type": "bank_billet"
                     },
-                    "uid": "01a1749e-660c-72b7-92ab-64eac78e8c62",
+                    "uid": "01a17b26-6796-7faf-b457-6414a4e811a0",
                     "code": "ping",
                     "data": {
                       "object": {
                         "id": 38,
                         "pix": [],
-                        "uid": "01a1749e-65fd-7c42-9ef2-e5fd09039167",
+                        "uid": "01a17b26-6782-7ceb-bc45-56ecac3cbf3f",
                         "url": "http://dev.bole.to:5001/2/zkq",
                         "line": "75691.43279 01022.938508 04003.490010 7 82900000005000",
                         "meta": null,
@@ -9940,15 +9939,15 @@
                         "expire_at": "2020-06-18",
                         "fine_type": 0,
                         "import_id": null,
-                        "issued_at": "2020-06-15T21:00:00+09:00",
+                        "issued_at": "2020-06-15T14:00:00+02:00",
                         "acceptance": "N",
-                        "created_at": "2020-06-15T21:00:00+09:00",
+                        "created_at": "2020-06-15T14:00:00+02:00",
                         "fine_value": null,
                         "ignore_sms": false,
                         "our_number": "40034",
                         "pix_qrcode": null,
                         "revoked_at": null,
-                        "updated_at": "2020-06-15T21:00:00+09:00",
+                        "updated_at": "2020-06-15T14:00:00+02:00",
                         "cancel_type": null,
                         "charge_type": 1,
                         "custom_data": null,
@@ -10080,26 +10079,26 @@
                         "divergent_payment_minimum_percentage": null
                       }
                     },
-                    "occurred_at": "2020-06-15T21:00:00+09:00",
-                    "created_at": "2020-06-15T21:00:00+09:00",
-                    "updated_at": "2020-06-15T21:00:00+09:00"
+                    "occurred_at": "2020-06-15T14:00:00+02:00",
+                    "created_at": "2020-06-15T14:00:00+02:00",
+                    "updated_at": "2020-06-15T14:00:00+02:00"
                   },
                   {
                     "resource_owner": {
-                      "uid": "01a1749e-662b-703d-83fe-1e34cdbfb6d9",
+                      "uid": "01a17b26-67bb-7c46-975d-ea5fea0b5fd3",
                       "type": "bank_billet"
                     },
                     "resource_base": {
-                      "uid": "01a1749e-662b-703d-83fe-1e34cdbfb6d9",
+                      "uid": "01a17b26-67bb-7c46-975d-ea5fea0b5fd3",
                       "type": "bank_billet"
                     },
-                    "uid": "01a1749e-663a-7da3-a13c-71038fb04fd6",
+                    "uid": "01a17b26-67ce-72bf-808e-d0bf4ed5cae5",
                     "code": "ping",
                     "data": {
                       "object": {
                         "id": 39,
                         "pix": [],
-                        "uid": "01a1749e-662b-703d-83fe-1e34cdbfb6d9",
+                        "uid": "01a17b26-67bb-7c46-975d-ea5fea0b5fd3",
                         "url": "http://dev.bole.to:5001/2/qdb",
                         "line": "75691.43279 01022.938508 04003.560010 5 82900000005000",
                         "meta": null,
@@ -10138,15 +10137,15 @@
                         "expire_at": "2020-06-18",
                         "fine_type": 0,
                         "import_id": null,
-                        "issued_at": "2020-06-15T21:00:00+09:00",
+                        "issued_at": "2020-06-15T14:00:00+02:00",
                         "acceptance": "N",
-                        "created_at": "2020-06-15T21:00:00+09:00",
+                        "created_at": "2020-06-15T14:00:00+02:00",
                         "fine_value": null,
                         "ignore_sms": false,
                         "our_number": "40035",
                         "pix_qrcode": null,
                         "revoked_at": null,
-                        "updated_at": "2020-06-15T21:00:00+09:00",
+                        "updated_at": "2020-06-15T14:00:00+02:00",
                         "cancel_type": null,
                         "charge_type": 1,
                         "custom_data": null,
@@ -10278,26 +10277,26 @@
                         "divergent_payment_minimum_percentage": null
                       }
                     },
-                    "occurred_at": "2020-06-15T21:00:00+09:00",
-                    "created_at": "2020-06-15T21:00:00+09:00",
-                    "updated_at": "2020-06-15T21:00:00+09:00"
+                    "occurred_at": "2020-06-15T14:00:00+02:00",
+                    "created_at": "2020-06-15T14:00:00+02:00",
+                    "updated_at": "2020-06-15T14:00:00+02:00"
                   },
                   {
                     "resource_owner": {
-                      "uid": "01a1749e-6656-77ac-9875-5b7ecb92c5a5",
+                      "uid": "01a17b26-67f1-72bb-a94a-a4284ac09bec",
                       "type": "bank_billet"
                     },
                     "resource_base": {
-                      "uid": "01a1749e-6656-77ac-9875-5b7ecb92c5a5",
+                      "uid": "01a17b26-67f1-72bb-a94a-a4284ac09bec",
                       "type": "bank_billet"
                     },
-                    "uid": "01a1749e-6669-7f0a-b977-a793337d6321",
+                    "uid": "01a17b26-6808-7dee-8667-fad9ae0b776d",
                     "code": "ping",
                     "data": {
                       "object": {
                         "id": 40,
                         "pix": [],
-                        "uid": "01a1749e-6656-77ac-9875-5b7ecb92c5a5",
+                        "uid": "01a17b26-67f1-72bb-a94a-a4284ac09bec",
                         "url": "http://dev.bole.to:5001/2/xzr",
                         "line": "75691.43279 01022.938508 04003.630011 3 82900000005000",
                         "meta": null,
@@ -10336,15 +10335,15 @@
                         "expire_at": "2020-06-18",
                         "fine_type": 0,
                         "import_id": null,
-                        "issued_at": "2020-06-15T21:00:00+09:00",
+                        "issued_at": "2020-06-15T14:00:00+02:00",
                         "acceptance": "N",
-                        "created_at": "2020-06-15T21:00:00+09:00",
+                        "created_at": "2020-06-15T14:00:00+02:00",
                         "fine_value": null,
                         "ignore_sms": false,
                         "our_number": "40036",
                         "pix_qrcode": null,
                         "revoked_at": null,
-                        "updated_at": "2020-06-15T21:00:00+09:00",
+                        "updated_at": "2020-06-15T14:00:00+02:00",
                         "cancel_type": null,
                         "charge_type": 1,
                         "custom_data": null,
@@ -10476,26 +10475,26 @@
                         "divergent_payment_minimum_percentage": null
                       }
                     },
-                    "occurred_at": "2020-06-15T21:00:00+09:00",
-                    "created_at": "2020-06-15T21:00:00+09:00",
-                    "updated_at": "2020-06-15T21:00:00+09:00"
+                    "occurred_at": "2020-06-15T14:00:00+02:00",
+                    "created_at": "2020-06-15T14:00:00+02:00",
+                    "updated_at": "2020-06-15T14:00:00+02:00"
                   },
                   {
                     "resource_owner": {
-                      "uid": "01a1749e-6687-7321-aae6-2e926a6a2af3",
+                      "uid": "01a17b26-682b-773c-9da0-e7ddff255131",
                       "type": "bank_billet"
                     },
                     "resource_base": {
-                      "uid": "01a1749e-6687-7321-aae6-2e926a6a2af3",
+                      "uid": "01a17b26-682b-773c-9da0-e7ddff255131",
                       "type": "bank_billet"
                     },
-                    "uid": "01a1749e-6698-70f7-841f-cd312d6da889",
+                    "uid": "01a17b26-683e-73d3-956d-3e3a0cdb3e05",
                     "code": "ping",
                     "data": {
                       "object": {
                         "id": 41,
                         "pix": [],
-                        "uid": "01a1749e-6687-7321-aae6-2e926a6a2af3",
+                        "uid": "01a17b26-682b-773c-9da0-e7ddff255131",
                         "url": "http://dev.bole.to:5001/2/rgn",
                         "line": "75691.43279 01022.938508 04003.700012 1 82900000005000",
                         "meta": null,
@@ -10534,15 +10533,15 @@
                         "expire_at": "2020-06-18",
                         "fine_type": 0,
                         "import_id": null,
-                        "issued_at": "2020-06-15T21:00:00+09:00",
+                        "issued_at": "2020-06-15T14:00:00+02:00",
                         "acceptance": "N",
-                        "created_at": "2020-06-15T21:00:00+09:00",
+                        "created_at": "2020-06-15T14:00:00+02:00",
                         "fine_value": null,
                         "ignore_sms": false,
                         "our_number": "40037",
                         "pix_qrcode": null,
                         "revoked_at": null,
-                        "updated_at": "2020-06-15T21:00:00+09:00",
+                        "updated_at": "2020-06-15T14:00:00+02:00",
                         "cancel_type": null,
                         "charge_type": 1,
                         "custom_data": null,
@@ -10674,9 +10673,9 @@
                         "divergent_payment_minimum_percentage": null
                       }
                     },
-                    "occurred_at": "2020-06-15T21:00:00+09:00",
-                    "created_at": "2020-06-15T21:00:00+09:00",
-                    "updated_at": "2020-06-15T21:00:00+09:00"
+                    "occurred_at": "2020-06-15T14:00:00+02:00",
+                    "created_at": "2020-06-15T14:00:00+02:00",
+                    "updated_at": "2020-06-15T14:00:00+02:00"
                   }
                 ],
                 "schema": {
@@ -10790,20 +10789,20 @@
               "application/json": {
                 "example": {
                   "resource_owner": {
-                    "uid": "01a1749e-6738-7f34-92a4-e2e76276a6a2",
+                    "uid": "01a17b26-68fe-7187-a010-6e68c5d0fa6b",
                     "type": "bank_billet"
                   },
                   "resource_base": {
-                    "uid": "01a1749e-6738-7f34-92a4-e2e76276a6a2",
+                    "uid": "01a17b26-68fe-7187-a010-6e68c5d0fa6b",
                     "type": "bank_billet"
                   },
-                  "uid": "01a1749e-6748-7e03-a956-08737df4e8fe",
+                  "uid": "01a17b26-690f-784b-961d-78dd1eac5ec1",
                   "code": "ping",
                   "data": {
                     "object": {
                       "id": 42,
                       "pix": [],
-                      "uid": "01a1749e-6738-7f34-92a4-e2e76276a6a2",
+                      "uid": "01a17b26-68fe-7187-a010-6e68c5d0fa6b",
                       "url": "http://dev.bole.to:5001/2/ejv",
                       "line": "75691.43279 01022.938508 04003.880012 1 82900000005000",
                       "meta": null,
@@ -10842,15 +10841,15 @@
                       "expire_at": "2020-06-18",
                       "fine_type": 0,
                       "import_id": null,
-                      "issued_at": "2020-06-15T21:00:00+09:00",
+                      "issued_at": "2020-06-15T14:00:00+02:00",
                       "acceptance": "N",
-                      "created_at": "2020-06-15T21:00:00+09:00",
+                      "created_at": "2020-06-15T14:00:00+02:00",
                       "fine_value": null,
                       "ignore_sms": false,
                       "our_number": "40038",
                       "pix_qrcode": null,
                       "revoked_at": null,
-                      "updated_at": "2020-06-15T21:00:00+09:00",
+                      "updated_at": "2020-06-15T14:00:00+02:00",
                       "cancel_type": null,
                       "charge_type": 1,
                       "custom_data": null,
@@ -10982,9 +10981,9 @@
                       "divergent_payment_minimum_percentage": null
                     }
                   },
-                  "occurred_at": "2020-06-15T21:00:00+09:00",
-                  "created_at": "2020-06-15T21:00:00+09:00",
-                  "updated_at": "2020-06-15T21:00:00+09:00"
+                  "occurred_at": "2020-06-15T14:00:00+02:00",
+                  "created_at": "2020-06-15T14:00:00+02:00",
+                  "updated_at": "2020-06-15T14:00:00+02:00"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/v1_event_object"
@@ -11990,7 +11989,7 @@
                 "example": [
                   {
                     "id": 6,
-                    "uid": "01a1749e-68eb-7160-8004-8074bc1e6d4c",
+                    "uid": "01a17b26-6ab3-759e-9e05-79d943005864",
                     "event_code": "bank_billet.created",
                     "message": "MyText",
                     "phone_to": "+5522987654321",
@@ -12003,20 +12002,20 @@
                     "sms_notification_id": 6,
                     "customer_id": 68,
                     "customer_external_code": null,
-                    "created_at": "2026-10-26T04:51:41+09:00",
-                    "updated_at": "2026-10-26T04:51:41+09:00",
+                    "created_at": "2026-10-27T03:17:57+01:00",
+                    "updated_at": "2026-10-27T03:17:57+01:00",
                     "resource_owner": {
-                      "uid": "01a1749e-6904-70d4-a865-ee06158298bd",
+                      "uid": "01a17b26-6acc-7f4f-ade1-204748cdf4c1",
                       "type": "bank_billet"
                     },
                     "resource_base": {
-                      "uid": "01a1749e-6904-70d4-a865-ee06158298bd",
+                      "uid": "01a17b26-6acc-7f4f-ade1-204748cdf4c1",
                       "type": "bank_billet"
                     }
                   },
                   {
                     "id": 5,
-                    "uid": "01a1749e-68b8-767e-b9b1-f5d9d0c4815a",
+                    "uid": "01a17b26-6a7d-773c-8a20-59478154a62a",
                     "event_code": "bank_billet.created",
                     "message": "MyText",
                     "phone_to": "+5522987654321",
@@ -12029,20 +12028,20 @@
                     "sms_notification_id": 5,
                     "customer_id": 67,
                     "customer_external_code": null,
-                    "created_at": "2026-10-26T04:51:41+09:00",
-                    "updated_at": "2026-10-26T04:51:41+09:00",
+                    "created_at": "2026-10-27T03:17:57+01:00",
+                    "updated_at": "2026-10-27T03:17:57+01:00",
                     "resource_owner": {
-                      "uid": "01a1749e-68ce-774d-bdd8-76eb4cd7a9e6",
+                      "uid": "01a17b26-6a95-7837-a686-14cbd76f1ba9",
                       "type": "bank_billet"
                     },
                     "resource_base": {
-                      "uid": "01a1749e-68ce-774d-bdd8-76eb4cd7a9e6",
+                      "uid": "01a17b26-6a95-7837-a686-14cbd76f1ba9",
                       "type": "bank_billet"
                     }
                   },
                   {
                     "id": 4,
-                    "uid": "01a1749e-6882-7fde-8000-443136e80404",
+                    "uid": "01a17b26-6a48-74ca-a4e6-2711de1706db",
                     "event_code": "bank_billet.created",
                     "message": "MyText",
                     "phone_to": "+5522987654321",
@@ -12055,20 +12054,20 @@
                     "sms_notification_id": 4,
                     "customer_id": 66,
                     "customer_external_code": null,
-                    "created_at": "2026-10-26T04:51:40+09:00",
-                    "updated_at": "2026-10-26T04:51:40+09:00",
+                    "created_at": "2026-10-27T03:17:57+01:00",
+                    "updated_at": "2026-10-27T03:17:57+01:00",
                     "resource_owner": {
-                      "uid": "01a1749e-6899-720f-a968-9c82620e43a6",
+                      "uid": "01a17b26-6a5f-7b67-946c-8658cb4c05de",
                       "type": "bank_billet"
                     },
                     "resource_base": {
-                      "uid": "01a1749e-6899-720f-a968-9c82620e43a6",
+                      "uid": "01a17b26-6a5f-7b67-946c-8658cb4c05de",
                       "type": "bank_billet"
                     }
                   },
                   {
                     "id": 3,
-                    "uid": "01a1749e-684f-7c75-9e09-83608cbcbfa0",
+                    "uid": "01a17b26-6a10-764d-9d7d-78de1038740a",
                     "event_code": "bank_billet.created",
                     "message": "MyText",
                     "phone_to": "+5522987654321",
@@ -12081,20 +12080,20 @@
                     "sms_notification_id": 3,
                     "customer_id": 65,
                     "customer_external_code": null,
-                    "created_at": "2026-10-26T04:51:40+09:00",
-                    "updated_at": "2026-10-26T04:51:40+09:00",
+                    "created_at": "2026-10-27T03:17:57+01:00",
+                    "updated_at": "2026-10-27T03:17:57+01:00",
                     "resource_owner": {
-                      "uid": "01a1749e-6865-7bca-9675-89394a1a3b63",
+                      "uid": "01a17b26-6a29-7ac1-ab0b-6a6eeddb950a",
                       "type": "bank_billet"
                     },
                     "resource_base": {
-                      "uid": "01a1749e-6865-7bca-9675-89394a1a3b63",
+                      "uid": "01a17b26-6a29-7ac1-ab0b-6a6eeddb950a",
                       "type": "bank_billet"
                     }
                   },
                   {
                     "id": 2,
-                    "uid": "01a1749e-6813-7f32-bcbf-487cda71b1c5",
+                    "uid": "01a17b26-69ce-7582-9d73-68dea251c576",
                     "event_code": "bank_billet.created",
                     "message": "MyText",
                     "phone_to": "+5522987654321",
@@ -12107,14 +12106,14 @@
                     "sms_notification_id": 2,
                     "customer_id": 64,
                     "customer_external_code": null,
-                    "created_at": "2026-10-26T04:51:40+09:00",
-                    "updated_at": "2026-10-26T04:51:40+09:00",
+                    "created_at": "2026-10-27T03:17:57+01:00",
+                    "updated_at": "2026-10-27T03:17:57+01:00",
                     "resource_owner": {
-                      "uid": "01a1749e-6831-72c9-9c88-1a4705e96b4d",
+                      "uid": "01a17b26-69ee-7458-865d-13a227a1d629",
                       "type": "bank_billet"
                     },
                     "resource_base": {
-                      "uid": "01a1749e-6831-72c9-9c88-1a4705e96b4d",
+                      "uid": "01a17b26-69ee-7458-865d-13a227a1d629",
                       "type": "bank_billet"
                     }
                   }
@@ -12211,7 +12210,7 @@
               "application/json": {
                 "example": {
                   "id": 7,
-                  "uid": "01a1749e-699a-7738-a7c1-5588143917ba",
+                  "uid": "01a17b26-6b65-7b47-bfdf-468277460a2e",
                   "event_code": "bank_billet.created",
                   "message": "MyText",
                   "phone_to": "+5522987654321",
@@ -12224,14 +12223,14 @@
                   "sms_notification_id": 7,
                   "customer_id": 69,
                   "customer_external_code": null,
-                  "created_at": "2026-10-26T04:51:41+09:00",
-                  "updated_at": "2026-10-26T04:51:41+09:00",
+                  "created_at": "2026-10-27T03:17:57+01:00",
+                  "updated_at": "2026-10-27T03:17:57+01:00",
                   "resource_owner": {
-                    "uid": "01a1749e-69bb-7343-be65-657e8ca8f1eb",
+                    "uid": "01a17b26-6b87-7474-8990-1331179b104c",
                     "type": "bank_billet"
                   },
                   "resource_base": {
-                    "uid": "01a1749e-69bb-7343-be65-657e8ca8f1eb",
+                    "uid": "01a17b26-6b87-7474-8990-1331179b104c",
                     "type": "bank_billet"
                   }
                 },
@@ -12434,18 +12433,18 @@
               "application/json": {
                 "example": {
                   "id": 146,
-                  "email": "b1d5f31376d54833fa9827e5193f2691@spencer.example",
+                  "email": "c63812f6135b4911961fe9f6f859c910@runte-green.example",
                   "account_type": "individual",
                   "first_name": "Margret",
                   "middle_name": "Simões",
                   "last_name": "Gonçalo",
                   "full_name": "Margret Simões Gonçalo",
-                  "cpf": "490.187.241-90",
+                  "cpf": "654.839.042-30",
                   "date_of_birth": "1970-03-01",
                   "mother_name": "Lenadra Simões Gonçalo",
                   "father_name": "José Simões Gonçalo",
-                  "created_at": "2026-10-26T04:51:41+09:00",
-                  "updated_at": "2026-10-26T04:51:41+09:00",
+                  "created_at": "2026-10-27T03:17:58+01:00",
+                  "updated_at": "2026-10-27T03:17:58+01:00",
                   "address_street_name": "Av. Burkhard Hehn Simões",
                   "address_number": "120",
                   "address_complement": "709",
@@ -13485,7 +13484,7 @@
                 "example": [
                   {
                     "id": 5,
-                    "uid": "a7e70e43-b162-415e-8d13-173e05713641",
+                    "uid": "2bb13417-32ac-4688-9b7f-c8d6dfd78d7b",
                     "url": null,
                     "duration": null,
                     "request_headers": null,
@@ -13494,7 +13493,7 @@
                       "webhook": {
                         "id": 5,
                         "url": "http://dev.bole.to:5001",
-                        "first_try": "2026-10-26T04:51:42+09:00"
+                        "first_try": "2026-10-27T03:17:58+01:00"
                       }
                     },
                     "request_error": null,
@@ -13512,20 +13511,20 @@
                     "webhook_id": 5,
                     "event_code": "bank_billet.created",
                     "resource_owner_id": 54,
-                    "created_at": "2026-10-26T04:51:41+09:00",
-                    "updated_at": "2026-10-26T04:51:41+09:00",
+                    "created_at": "2026-10-27T03:17:58+01:00",
+                    "updated_at": "2026-10-27T03:17:58+01:00",
                     "resource_owner": {
-                      "uid": "01a1749e-6c88-77ad-9791-dc5afa01912c",
+                      "uid": "01a17b26-6f03-7df3-9f1e-a77486421b14",
                       "type": "bank_billet"
                     },
                     "resource_base": {
-                      "uid": "01a1749e-6c88-77ad-9791-dc5afa01912c",
+                      "uid": "01a17b26-6f03-7df3-9f1e-a77486421b14",
                       "type": "bank_billet"
                     }
                   },
                   {
                     "id": 4,
-                    "uid": "757cebeb-1404-4b8f-b921-f760521f2c16",
+                    "uid": "89aec837-c5e1-4cc8-b50e-6bcdcd1fe99d",
                     "url": null,
                     "duration": null,
                     "request_headers": null,
@@ -13534,7 +13533,7 @@
                       "webhook": {
                         "id": 4,
                         "url": "http://dev.bole.to:5001",
-                        "first_try": "2026-10-26T04:51:42+09:00"
+                        "first_try": "2026-10-27T03:17:58+01:00"
                       }
                     },
                     "request_error": null,
@@ -13552,20 +13551,20 @@
                     "webhook_id": 4,
                     "event_code": "bank_billet.created",
                     "resource_owner_id": 53,
-                    "created_at": "2026-10-26T04:51:41+09:00",
-                    "updated_at": "2026-10-26T04:51:41+09:00",
+                    "created_at": "2026-10-27T03:17:58+01:00",
+                    "updated_at": "2026-10-27T03:17:58+01:00",
                     "resource_owner": {
-                      "uid": "01a1749e-6c58-73ed-8e81-101944015111",
+                      "uid": "01a17b26-6ecc-75bf-ac0e-58611dbf3828",
                       "type": "bank_billet"
                     },
                     "resource_base": {
-                      "uid": "01a1749e-6c58-73ed-8e81-101944015111",
+                      "uid": "01a17b26-6ecc-75bf-ac0e-58611dbf3828",
                       "type": "bank_billet"
                     }
                   },
                   {
                     "id": 3,
-                    "uid": "7505173b-359b-4245-8989-5a8b92025900",
+                    "uid": "be4a521f-285e-4500-a87a-055aba968b3e",
                     "url": null,
                     "duration": null,
                     "request_headers": null,
@@ -13574,7 +13573,7 @@
                       "webhook": {
                         "id": 3,
                         "url": "http://dev.bole.to:5001",
-                        "first_try": "2026-10-26T04:51:42+09:00"
+                        "first_try": "2026-10-27T03:17:58+01:00"
                       }
                     },
                     "request_error": null,
@@ -13592,20 +13591,20 @@
                     "webhook_id": 3,
                     "event_code": "bank_billet.created",
                     "resource_owner_id": 52,
-                    "created_at": "2026-10-26T04:51:41+09:00",
-                    "updated_at": "2026-10-26T04:51:41+09:00",
+                    "created_at": "2026-10-27T03:17:58+01:00",
+                    "updated_at": "2026-10-27T03:17:58+01:00",
                     "resource_owner": {
-                      "uid": "01a1749e-6c2a-7882-9aa2-df3a0dc92c78",
+                      "uid": "01a17b26-6e94-7ba3-a536-b1efb89e7d22",
                       "type": "bank_billet"
                     },
                     "resource_base": {
-                      "uid": "01a1749e-6c2a-7882-9aa2-df3a0dc92c78",
+                      "uid": "01a17b26-6e94-7ba3-a536-b1efb89e7d22",
                       "type": "bank_billet"
                     }
                   },
                   {
                     "id": 2,
-                    "uid": "225ff37b-d7e3-4848-baf6-925b1b869028",
+                    "uid": "fde63738-203b-4999-9c73-806cafc317c7",
                     "url": null,
                     "duration": null,
                     "request_headers": null,
@@ -13614,7 +13613,7 @@
                       "webhook": {
                         "id": 2,
                         "url": "http://dev.bole.to:5001",
-                        "first_try": "2026-10-26T04:51:42+09:00"
+                        "first_try": "2026-10-27T03:17:58+01:00"
                       }
                     },
                     "request_error": null,
@@ -13632,20 +13631,20 @@
                     "webhook_id": 2,
                     "event_code": "bank_billet.created",
                     "resource_owner_id": 51,
-                    "created_at": "2026-10-26T04:51:41+09:00",
-                    "updated_at": "2026-10-26T04:51:41+09:00",
+                    "created_at": "2026-10-27T03:17:58+01:00",
+                    "updated_at": "2026-10-27T03:17:58+01:00",
                     "resource_owner": {
-                      "uid": "01a1749e-6bfa-785f-acad-ae436b607315",
+                      "uid": "01a17b26-6e5c-7daf-aef6-45b75c975614",
                       "type": "bank_billet"
                     },
                     "resource_base": {
-                      "uid": "01a1749e-6bfa-785f-acad-ae436b607315",
+                      "uid": "01a17b26-6e5c-7daf-aef6-45b75c975614",
                       "type": "bank_billet"
                     }
                   },
                   {
                     "id": 1,
-                    "uid": "6c462777-d1a5-416f-a8d2-e63cacc3e82c",
+                    "uid": "d27b020e-92b3-4735-9d37-4f98af9634c1",
                     "url": null,
                     "duration": null,
                     "request_headers": null,
@@ -13654,7 +13653,7 @@
                       "webhook": {
                         "id": 1,
                         "url": "http://dev.bole.to:5001",
-                        "first_try": "2026-10-26T04:51:42+09:00"
+                        "first_try": "2026-10-27T03:17:58+01:00"
                       }
                     },
                     "request_error": null,
@@ -13672,14 +13671,14 @@
                     "webhook_id": 1,
                     "event_code": "bank_billet.created",
                     "resource_owner_id": 50,
-                    "created_at": "2026-10-26T04:51:41+09:00",
-                    "updated_at": "2026-10-26T04:51:41+09:00",
+                    "created_at": "2026-10-27T03:17:58+01:00",
+                    "updated_at": "2026-10-27T03:17:58+01:00",
                     "resource_owner": {
-                      "uid": "01a1749e-6bc9-7637-b64e-e81b79926613",
+                      "uid": "01a17b26-6e22-7cc2-b432-ef941b2fb7e3",
                       "type": "bank_billet"
                     },
                     "resource_base": {
-                      "uid": "01a1749e-6bc9-7637-b64e-e81b79926613",
+                      "uid": "01a17b26-6e22-7cc2-b432-ef941b2fb7e3",
                       "type": "bank_billet"
                     }
                   }
@@ -13776,7 +13775,7 @@
               "application/json": {
                 "example": {
                   "id": 6,
-                  "uid": "678916c3-5439-4cf1-8318-99e9489c4648",
+                  "uid": "973f5e22-27c1-4e14-83cd-236de512ee29",
                   "url": null,
                   "duration": null,
                   "request_headers": null,
@@ -13785,7 +13784,7 @@
                     "webhook": {
                       "id": 6,
                       "url": "http://dev.bole.to:5001",
-                      "first_try": "2026-10-26T04:51:42+09:00"
+                      "first_try": "2026-10-27T03:17:59+01:00"
                     }
                   },
                   "request_error": null,
@@ -13803,14 +13802,14 @@
                   "webhook_id": 6,
                   "event_code": "bank_billet.created",
                   "resource_owner_id": 55,
-                  "created_at": "2026-10-26T04:51:42+09:00",
-                  "updated_at": "2026-10-26T04:51:42+09:00",
+                  "created_at": "2026-10-27T03:17:58+01:00",
+                  "updated_at": "2026-10-27T03:17:58+01:00",
                   "resource_owner": {
-                    "uid": "01a1749e-6d2d-73f4-b49c-76bc7d63897d",
+                    "uid": "01a17b26-6fba-7a8e-94de-da7ef8f024b1",
                     "type": "bank_billet"
                   },
                   "resource_base": {
-                    "uid": "01a1749e-6d2d-73f4-b49c-76bc7d63897d",
+                    "uid": "01a17b26-6fba-7a8e-94de-da7ef8f024b1",
                     "type": "bank_billet"
                   }
                 },
@@ -14011,7 +14010,7 @@
               "application/json": {
                 "example": {
                   "id": 13,
-                  "uid": "01a1749e-6f4c-7531-9f26-25a78c3dc106",
+                  "uid": "01a17b26-7230-7573-b5e1-4bf8ba0dcd87",
                   "name": null,
                   "url": "http://example.com/new",
                   "content_type": "application/json",
@@ -14023,9 +14022,9 @@
                   "concurrency_limit": 10,
                   "subaccounts": false,
                   "auth_kind": "basic_auth",
-                  "created_at": "2026-10-26T04:51:42+09:00",
-                  "updated_at": "2026-10-26T04:51:42+09:00",
-                  "secret_key": "e8a9e1d95904b6a3ce609d0b3955463afc558649fdf6bb804b98edaceae41080"
+                  "created_at": "2026-10-27T03:17:59+01:00",
+                  "updated_at": "2026-10-27T03:17:59+01:00",
+                  "secret_key": "e79323102d479a495b5824fb9c85705578e9167599f5182c2560d448b653a394"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/v1_webhook_object"
@@ -14156,7 +14155,7 @@
                 "example": [
                   {
                     "id": 18,
-                    "uid": "01a1749e-6ff4-7a19-9bec-78d55f9b0f90",
+                    "uid": "01a17b26-7300-7740-b888-287601d4cf20",
                     "name": "Nome do Webhook",
                     "url": "http://dev.bole.to:5001",
                     "content_type": "application/json",
@@ -14168,12 +14167,12 @@
                     "concurrency_limit": 10,
                     "subaccounts": false,
                     "auth_kind": "none",
-                    "created_at": "2026-10-26T04:51:42+09:00",
-                    "updated_at": "2026-10-26T04:51:42+09:00"
+                    "created_at": "2026-10-27T03:17:59+01:00",
+                    "updated_at": "2026-10-27T03:17:59+01:00"
                   },
                   {
                     "id": 17,
-                    "uid": "01a1749e-6ff0-7f82-b531-db1943df8107",
+                    "uid": "01a17b26-72fb-75a0-9c99-7270707028ca",
                     "name": "Nome do Webhook",
                     "url": "http://dev.bole.to:5001",
                     "content_type": "application/json",
@@ -14185,12 +14184,12 @@
                     "concurrency_limit": 10,
                     "subaccounts": false,
                     "auth_kind": "none",
-                    "created_at": "2026-10-26T04:51:42+09:00",
-                    "updated_at": "2026-10-26T04:51:42+09:00"
+                    "created_at": "2026-10-27T03:17:59+01:00",
+                    "updated_at": "2026-10-27T03:17:59+01:00"
                   },
                   {
                     "id": 16,
-                    "uid": "01a1749e-6feb-783e-b841-b9c97e44415d",
+                    "uid": "01a17b26-72f5-7e77-a447-7e831b1719c5",
                     "name": "Nome do Webhook",
                     "url": "http://dev.bole.to:5001",
                     "content_type": "application/json",
@@ -14202,12 +14201,12 @@
                     "concurrency_limit": 10,
                     "subaccounts": false,
                     "auth_kind": "none",
-                    "created_at": "2026-10-26T04:51:42+09:00",
-                    "updated_at": "2026-10-26T04:51:42+09:00"
+                    "created_at": "2026-10-27T03:17:59+01:00",
+                    "updated_at": "2026-10-27T03:17:59+01:00"
                   },
                   {
                     "id": 15,
-                    "uid": "01a1749e-6fe7-7d9d-b89b-6099b22d34d6",
+                    "uid": "01a17b26-72ef-7e44-9f59-6fba5edb8201",
                     "name": "Nome do Webhook",
                     "url": "http://dev.bole.to:5001",
                     "content_type": "application/json",
@@ -14219,12 +14218,12 @@
                     "concurrency_limit": 10,
                     "subaccounts": false,
                     "auth_kind": "none",
-                    "created_at": "2026-10-26T04:51:42+09:00",
-                    "updated_at": "2026-10-26T04:51:42+09:00"
+                    "created_at": "2026-10-27T03:17:59+01:00",
+                    "updated_at": "2026-10-27T03:17:59+01:00"
                   },
                   {
                     "id": 14,
-                    "uid": "01a1749e-6fe2-7734-a4a9-8fbb74d80f2e",
+                    "uid": "01a17b26-72e9-7131-bbc5-2135e0c750d9",
                     "name": "Nome do Webhook",
                     "url": "http://dev.bole.to:5001",
                     "content_type": "application/json",
@@ -14236,8 +14235,8 @@
                     "concurrency_limit": 10,
                     "subaccounts": false,
                     "auth_kind": "none",
-                    "created_at": "2026-10-26T04:51:42+09:00",
-                    "updated_at": "2026-10-26T04:51:42+09:00"
+                    "created_at": "2026-10-27T03:17:59+01:00",
+                    "updated_at": "2026-10-27T03:17:59+01:00"
                   }
                 ],
                 "schema": {
@@ -14332,7 +14331,7 @@
               "application/json": {
                 "example": {
                   "id": 19,
-                  "uid": "01a1749e-7044-7679-8915-8c0a4358064b",
+                  "uid": "01a17b26-735f-7497-b0a4-b4a9bd4fbd51",
                   "name": "Nome do Webhook",
                   "url": "http://dev.bole.to:5001",
                   "content_type": "application/json",
@@ -14344,8 +14343,8 @@
                   "concurrency_limit": 10,
                   "subaccounts": false,
                   "auth_kind": "none",
-                  "created_at": "2026-10-26T04:51:42+09:00",
-                  "updated_at": "2026-10-26T04:51:42+09:00"
+                  "created_at": "2026-10-27T03:17:59+01:00",
+                  "updated_at": "2026-10-27T03:17:59+01:00"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/v1_webhook_object"
@@ -14763,9 +14762,9 @@
               "application/json": {
                 "example": {
                   "id": 3,
-                  "uid": "01a1749e-735f-71a5-b75d-49fc4d58b73e",
-                  "created_at": "2026-10-26T04:51:43+09:00",
-                  "updated_at": "2026-10-26T04:51:43+09:00",
+                  "uid": "01a17b26-76b9-748e-97b8-2d8d5e6bf321",
+                  "created_at": "2026-10-27T03:18:00+01:00",
+                  "updated_at": "2026-10-27T03:18:00+01:00",
                   "name": "Lote de Boletos",
                   "bank_billet_ids": [
                     65,
@@ -14898,9 +14897,9 @@
                 "example": [
                   {
                     "id": 6,
-                    "uid": "01a1749e-745b-7bab-9ab2-323d2769d62c",
-                    "created_at": "2026-10-26T04:51:43+09:00",
-                    "updated_at": "2026-10-26T04:51:43+09:00",
+                    "uid": "01a17b26-7815-75b0-beee-cc00e7ee7f4f",
+                    "created_at": "2026-10-27T03:18:01+01:00",
+                    "updated_at": "2026-10-27T03:18:01+01:00",
                     "name": "Lote",
                     "bank_billet_ids": [
                       71,
@@ -14909,9 +14908,9 @@
                   },
                   {
                     "id": 5,
-                    "uid": "01a1749e-741f-7b15-982d-7d9476dfce6c",
-                    "created_at": "2026-10-26T04:51:43+09:00",
-                    "updated_at": "2026-10-26T04:51:43+09:00",
+                    "uid": "01a17b26-77c7-7dbb-b008-169f4a1a96a7",
+                    "created_at": "2026-10-27T03:18:01+01:00",
+                    "updated_at": "2026-10-27T03:18:01+01:00",
                     "name": "Lote",
                     "bank_billet_ids": [
                       69,
@@ -14920,9 +14919,9 @@
                   },
                   {
                     "id": 4,
-                    "uid": "01a1749e-73dc-7a18-973a-4b3b23018a65",
-                    "created_at": "2026-10-26T04:51:43+09:00",
-                    "updated_at": "2026-10-26T04:51:43+09:00",
+                    "uid": "01a17b26-774c-7994-9d91-641025f147d3",
+                    "created_at": "2026-10-27T03:18:00+01:00",
+                    "updated_at": "2026-10-27T03:18:00+01:00",
                     "name": "Lote",
                     "bank_billet_ids": [
                       67,
@@ -15022,9 +15021,9 @@
               "application/json": {
                 "example": {
                   "id": 7,
-                  "uid": "01a1749e-74e9-7521-88bd-68cfea34cfba",
-                  "created_at": "2026-10-26T04:51:44+09:00",
-                  "updated_at": "2026-10-26T04:51:44+09:00",
+                  "uid": "01a17b26-78d6-7735-b256-b6c0833e5b41",
+                  "created_at": "2026-10-27T03:18:01+01:00",
+                  "updated_at": "2026-10-27T03:18:01+01:00",
                   "name": "Lote",
                   "bank_billet_ids": [
                     73,
@@ -15530,16 +15529,16 @@
                 "example": {
                   "id": 3,
                   "account_id": 194,
-                  "account_public_id": "01a1749e-77fc-730f-988a-dc13c68b41d4",
+                  "account_public_id": "01a17b26-7c7f-76e1-85f8-6e2ba4e1a1d7",
                   "bank_billet_batch_id": 12,
-                  "bank_billet_batch_public_id": "01a1749e-783d-7152-8bad-76e3d0aadd94",
-                  "created_at": "2026-10-26T04:51:44+09:00",
+                  "bank_billet_batch_public_id": "01a17b26-7cca-7ec8-898f-2fdbb8b8af25",
+                  "created_at": "2026-10-27T03:18:02+01:00",
                   "file_format": "zip",
                   "output_url": null,
                   "processed_at": null,
-                  "public_id": "01a1749e-784a-7dc3-960e-cefd494de449",
+                  "public_id": "01a17b26-7cda-7565-b9c3-81d08541ed4e",
                   "status": "enqueued",
-                  "updated_at": "2026-10-26T04:51:44+09:00"
+                  "updated_at": "2026-10-27T03:18:02+01:00"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/v1_bank_billet_batch_export_object"
@@ -15661,16 +15660,16 @@
                 "example": {
                   "id": 4,
                   "account_id": 197,
-                  "account_public_id": "01a1749e-78a7-72d3-982a-63d461f22cb7",
+                  "account_public_id": "01a17b26-7d4c-788e-bed3-cc9fdc2ebce3",
                   "bank_billet_batch_id": 13,
-                  "bank_billet_batch_public_id": "01a1749e-78ee-7959-a58c-2f25eb6dfebe",
-                  "created_at": "2026-10-26T04:51:45+09:00",
+                  "bank_billet_batch_public_id": "01a17b26-7da0-7c34-9050-f8c1d0ba0fb7",
+                  "created_at": "2026-10-27T03:18:02+01:00",
                   "file_format": "pdf",
                   "output_url": null,
                   "processed_at": null,
-                  "public_id": "01a1749e-78fc-7d02-aec6-740229c8cc21",
+                  "public_id": "01a17b26-7db0-7424-b055-d612d479c466",
                   "status": "enqueued",
-                  "updated_at": "2026-10-26T04:51:45+09:00"
+                  "updated_at": "2026-10-27T03:18:02+01:00"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/v1_bank_billet_batch_export_object"
@@ -16096,7 +16095,7 @@
                 "example": [
                   {
                     "id": 3,
-                    "uid": "01a1749e-7a6d-7762-b82b-a5b9cdb8cc33",
+                    "uid": "01a17b26-7f1a-74fa-b843-82e19da9b66f",
                     "occurrence": "03",
                     "date_of_occurrence": "2014-03-08",
                     "discharge_id": 3,
@@ -16110,13 +16109,13 @@
                     "our_occurrence": "2001",
                     "bank_billet_account_id": null,
                     "bank_number": "756",
-                    "created_at": "2026-10-26T04:51:45+09:00",
-                    "updated_at": "2026-10-26T04:51:45+09:00",
+                    "created_at": "2026-10-27T03:18:02+01:00",
+                    "updated_at": "2026-10-27T03:18:02+01:00",
                     "kind": "400"
                   },
                   {
                     "id": 2,
-                    "uid": "01a1749e-7a3b-72a5-8a90-c3907b142b57",
+                    "uid": "01a17b26-7ee8-7918-90a1-2a988b3bcfb8",
                     "occurrence": "03",
                     "date_of_occurrence": "2014-03-08",
                     "discharge_id": 2,
@@ -16130,13 +16129,13 @@
                     "our_occurrence": "2001",
                     "bank_billet_account_id": null,
                     "bank_number": "756",
-                    "created_at": "2026-10-26T04:51:45+09:00",
-                    "updated_at": "2026-10-26T04:51:45+09:00",
+                    "created_at": "2026-10-27T03:18:02+01:00",
+                    "updated_at": "2026-10-27T03:18:02+01:00",
                     "kind": "400"
                   },
                   {
                     "id": 1,
-                    "uid": "01a1749e-79fb-7ba8-b08e-806ad5a2fcff",
+                    "uid": "01a17b26-7ea5-7d02-998b-53841bcf08b1",
                     "occurrence": "03",
                     "date_of_occurrence": "2014-03-08",
                     "discharge_id": 1,
@@ -16150,8 +16149,8 @@
                     "our_occurrence": "2001",
                     "bank_billet_account_id": null,
                     "bank_number": "756",
-                    "created_at": "2026-10-26T04:51:45+09:00",
-                    "updated_at": "2026-10-26T04:51:45+09:00",
+                    "created_at": "2026-10-27T03:18:02+01:00",
+                    "updated_at": "2026-10-27T03:18:02+01:00",
                     "kind": "400"
                   }
                 ],
@@ -16247,7 +16246,7 @@
               "application/json": {
                 "example": {
                   "id": 4,
-                  "uid": "01a1749e-7b0b-7384-adee-3a6a3570dc14",
+                  "uid": "01a17b26-7fb8-7a42-a22a-3c09b5d1180d",
                   "occurrence": "03",
                   "date_of_occurrence": "2014-03-08",
                   "discharge_id": 4,
@@ -16261,8 +16260,8 @@
                   "our_occurrence": "2001",
                   "bank_billet_account_id": null,
                   "bank_number": "756",
-                  "created_at": "2026-10-26T04:51:45+09:00",
-                  "updated_at": "2026-10-26T04:51:45+09:00",
+                  "created_at": "2026-10-27T03:18:03+01:00",
+                  "updated_at": "2026-10-27T03:18:03+01:00",
                   "kind": "400"
                 },
                 "schema": {
@@ -16384,7 +16383,7 @@
                   "paid_agency": "00001",
                   "paid_agency_number": "0000",
                   "paid_agency_digit": "1",
-                  "created_at": "2026-10-26T04:51:45+09:00",
+                  "created_at": "2026-10-27T03:18:03+01:00",
                   "credit_at": null,
                   "direct": false,
                   "created_via_api": false,
@@ -16392,14 +16391,14 @@
                   "paid_by_pix": false,
                   "kind": 0,
                   "financial_provider_external_id": null,
-                  "uid": "01a1749e-7bbe-777c-bc2f-ef808f5a2f21",
+                  "uid": "01a17b26-8078-7cf9-b9b1-83f078c1ee96",
                   "pix_id": null,
                   "document_number": null,
                   "our_number": "40086",
                   "customer_person_name": "José da Silva",
-                  "expire_at": "2026-10-29",
+                  "expire_at": "2026-10-30",
                   "amount": 50.0,
-                  "updated_at": "2026-10-26T04:51:45+09:00"
+                  "updated_at": "2026-10-27T03:18:03+01:00"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/v1_bank_billet_payment_object"
@@ -16579,14 +16578,14 @@
                     "bank_billet_id": 91,
                     "bank_billet_account_id": 116,
                     "discharge_id": null,
-                    "paid_at": "2026-10-28",
+                    "paid_at": "2026-10-29",
                     "paid_amount": 50.0,
                     "bank_rate": 1.5,
                     "paid_bank": "001",
                     "paid_agency": "0001",
                     "paid_agency_number": "0001",
                     "paid_agency_digit": null,
-                    "created_at": "2026-10-26T04:51:46+09:00",
+                    "created_at": "2026-10-27T03:18:03+01:00",
                     "credit_at": null,
                     "direct": null,
                     "created_via_api": false,
@@ -16594,14 +16593,14 @@
                     "paid_by_pix": false,
                     "kind": 1,
                     "financial_provider_external_id": null,
-                    "uid": "01a1749e-7c90-7ff8-8763-5517d0d4cfbf",
+                    "uid": "01a17b26-814e-729e-a995-ea55e52d9237",
                     "pix_id": null,
                     "document_number": null,
                     "our_number": "40087",
                     "customer_person_name": "José da Silva",
-                    "expire_at": "2026-10-29",
+                    "expire_at": "2026-10-30",
                     "amount": 50.0,
-                    "updated_at": "2026-10-26T04:51:46+09:00"
+                    "updated_at": "2026-10-27T03:18:03+01:00"
                   }
                 ],
                 "schema": {
@@ -16699,14 +16698,14 @@
                   "bank_billet_id": 92,
                   "bank_billet_account_id": 117,
                   "discharge_id": null,
-                  "paid_at": "2026-10-28",
+                  "paid_at": "2026-10-29",
                   "paid_amount": 50.0,
                   "bank_rate": 1.5,
                   "paid_bank": "001",
                   "paid_agency": "0001",
                   "paid_agency_number": "0001",
                   "paid_agency_digit": null,
-                  "created_at": "2026-10-26T04:51:46+09:00",
+                  "created_at": "2026-10-27T03:18:03+01:00",
                   "credit_at": null,
                   "direct": null,
                   "created_via_api": false,
@@ -16714,14 +16713,14 @@
                   "paid_by_pix": false,
                   "kind": 1,
                   "financial_provider_external_id": null,
-                  "uid": "01a1749e-7d11-7a36-af61-a8d3be6969a1",
+                  "uid": "01a17b26-81d4-743b-a702-64d8d502e0ac",
                   "pix_id": null,
                   "document_number": null,
                   "our_number": "40088",
                   "customer_person_name": "José da Silva",
-                  "expire_at": "2026-10-29",
+                  "expire_at": "2026-10-30",
                   "amount": 50.0,
-                  "updated_at": "2026-10-26T04:51:46+09:00"
+                  "updated_at": "2026-10-27T03:18:03+01:00"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/v1_bank_billet_payment_object"
@@ -16977,44 +16976,44 @@
                 "example": [
                   {
                     "id": 3,
-                    "uid": "01a1749e-7e7b-70c8-bd49-ca1ad320e74b",
+                    "uid": "01a17b26-8397-70d4-b735-13e51b4cf952",
                     "bank_billet_id": 95,
                     "bank_billet_account_id": 120,
-                    "created_at": "2026-10-26T04:51:46+09:00",
+                    "created_at": "2026-10-27T03:18:04+01:00",
                     "error_message": null,
                     "failed_at": null,
                     "fails_count": 0,
                     "registered_at": null,
                     "status": "1",
-                    "updated_at": "2026-10-26T04:51:46+09:00",
+                    "updated_at": "2026-10-27T03:18:04+01:00",
                     "retry_blocked": false
                   },
                   {
                     "id": 2,
-                    "uid": "01a1749e-7e54-72fa-bf78-407204b03d05",
+                    "uid": "01a17b26-836d-7004-899a-b0fdf41e8830",
                     "bank_billet_id": 94,
                     "bank_billet_account_id": 119,
-                    "created_at": "2026-10-26T04:51:46+09:00",
+                    "created_at": "2026-10-27T03:18:04+01:00",
                     "error_message": null,
                     "failed_at": null,
                     "fails_count": 0,
                     "registered_at": null,
                     "status": "1",
-                    "updated_at": "2026-10-26T04:51:46+09:00",
+                    "updated_at": "2026-10-27T03:18:04+01:00",
                     "retry_blocked": false
                   },
                   {
                     "id": 1,
-                    "uid": "01a1749e-7e2e-75de-bc4f-bdb85cc61fb2",
+                    "uid": "01a17b26-8342-74bb-9ec9-5c593385519a",
                     "bank_billet_id": 93,
                     "bank_billet_account_id": 118,
-                    "created_at": "2026-10-26T04:51:46+09:00",
+                    "created_at": "2026-10-27T03:18:03+01:00",
                     "error_message": null,
                     "failed_at": null,
                     "fails_count": 0,
                     "registered_at": null,
                     "status": "1",
-                    "updated_at": "2026-10-26T04:51:46+09:00",
+                    "updated_at": "2026-10-27T03:18:03+01:00",
                     "retry_blocked": false
                   }
                 ],
@@ -17110,16 +17109,16 @@
               "application/json": {
                 "example": {
                   "id": 4,
-                  "uid": "01a1749e-7ef8-70ce-8719-0fef058c0482",
+                  "uid": "01a17b26-8423-74ce-8e2d-0a67c4e82dc6",
                   "bank_billet_id": 96,
                   "bank_billet_account_id": 121,
-                  "created_at": "2026-10-26T04:51:46+09:00",
+                  "created_at": "2026-10-27T03:18:04+01:00",
                   "error_message": null,
                   "failed_at": null,
                   "fails_count": 0,
                   "registered_at": null,
                   "status": "1",
-                  "updated_at": "2026-10-26T04:51:46+09:00",
+                  "updated_at": "2026-10-27T03:18:04+01:00",
                   "retry_blocked": false
                 },
                 "schema": {
@@ -17303,7 +17302,7 @@
                 "example": [
                   {
                     "id": 4,
-                    "uid": "01a1749e-7fe6-7572-88f1-7c0365b0364d",
+                    "uid": "01a17b26-8528-7ace-9cca-3b0032831c29",
                     "our_code": "1001",
                     "occurrence": "01",
                     "remittance_id": null,
@@ -17311,12 +17310,12 @@
                     "bank_billet_account_id": 124,
                     "processed_at": null,
                     "occurrence_detail": "Entrada de Título",
-                    "created_at": "2026-10-26T04:51:46+09:00",
-                    "updated_at": "2026-10-26T04:51:46+09:00"
+                    "created_at": "2026-10-27T03:18:04+01:00",
+                    "updated_at": "2026-10-27T03:18:04+01:00"
                   },
                   {
                     "id": 3,
-                    "uid": "01a1749e-7fbf-7299-b295-e92602836c3e",
+                    "uid": "01a17b26-84fd-74a0-aa2a-2320e039c0e2",
                     "our_code": "1001",
                     "occurrence": "01",
                     "remittance_id": null,
@@ -17324,12 +17323,12 @@
                     "bank_billet_account_id": 123,
                     "processed_at": null,
                     "occurrence_detail": "Entrada de Título",
-                    "created_at": "2026-10-26T04:51:46+09:00",
-                    "updated_at": "2026-10-26T04:51:46+09:00"
+                    "created_at": "2026-10-27T03:18:04+01:00",
+                    "updated_at": "2026-10-27T03:18:04+01:00"
                   },
                   {
                     "id": 2,
-                    "uid": "01a1749e-7f9d-7502-a57d-999ab19346f4",
+                    "uid": "01a17b26-84d8-703d-9a7f-6e96610d1fc6",
                     "our_code": "1001",
                     "occurrence": "01",
                     "remittance_id": null,
@@ -17337,8 +17336,8 @@
                     "bank_billet_account_id": 122,
                     "processed_at": null,
                     "occurrence_detail": "Entrada de Título",
-                    "created_at": "2026-10-26T04:51:46+09:00",
-                    "updated_at": "2026-10-26T04:51:46+09:00"
+                    "created_at": "2026-10-27T03:18:04+01:00",
+                    "updated_at": "2026-10-27T03:18:04+01:00"
                   }
                 ],
                 "schema": {
@@ -17505,7 +17504,7 @@
                 "example": [
                   {
                     "id": 7,
-                    "uid": "01a1749e-8096-7b78-8de9-c8dc9b3ad8ff",
+                    "uid": "01a17b26-85ef-776f-876f-3148f3a6f0a7",
                     "our_code": "1001",
                     "occurrence": "01",
                     "remittance_id": null,
@@ -17513,12 +17512,12 @@
                     "bank_billet_account_id": 127,
                     "processed_at": null,
                     "occurrence_detail": "Entrada de Título",
-                    "created_at": "2026-10-26T04:51:47+09:00",
-                    "updated_at": "2026-10-26T04:51:47+09:00"
+                    "created_at": "2026-10-27T03:18:04+01:00",
+                    "updated_at": "2026-10-27T03:18:04+01:00"
                   },
                   {
                     "id": 6,
-                    "uid": "01a1749e-8077-726f-9a9c-a4aff4e28632",
+                    "uid": "01a17b26-85cd-7215-84c2-784887c410fd",
                     "our_code": "1001",
                     "occurrence": "01",
                     "remittance_id": null,
@@ -17526,12 +17525,12 @@
                     "bank_billet_account_id": 126,
                     "processed_at": null,
                     "occurrence_detail": "Entrada de Título",
-                    "created_at": "2026-10-26T04:51:47+09:00",
-                    "updated_at": "2026-10-26T04:51:47+09:00"
+                    "created_at": "2026-10-27T03:18:04+01:00",
+                    "updated_at": "2026-10-27T03:18:04+01:00"
                   },
                   {
                     "id": 5,
-                    "uid": "01a1749e-8059-7e7d-a191-f24e8d2814a2",
+                    "uid": "01a17b26-85ac-77d0-a0cc-383e9d338db4",
                     "our_code": "1001",
                     "occurrence": "01",
                     "remittance_id": null,
@@ -17539,8 +17538,8 @@
                     "bank_billet_account_id": 125,
                     "processed_at": null,
                     "occurrence_detail": "Entrada de Título",
-                    "created_at": "2026-10-26T04:51:47+09:00",
-                    "updated_at": "2026-10-26T04:51:47+09:00"
+                    "created_at": "2026-10-27T03:18:04+01:00",
+                    "updated_at": "2026-10-27T03:18:04+01:00"
                   }
                 ],
                 "schema": {
@@ -17852,7 +17851,7 @@
               "application/json": {
                 "example": {
                   "id": 9,
-                  "uid": "01a1749e-82be-771e-858e-0d8a246afce3",
+                  "uid": "01a17b26-880e-7303-a740-35aaf86eacdc",
                   "our_code": "1001",
                   "occurrence": "01",
                   "remittance_id": null,
@@ -17860,8 +17859,8 @@
                   "bank_billet_account_id": 131,
                   "processed_at": null,
                   "occurrence_detail": "Entrada de Título",
-                  "created_at": "2026-10-26T04:51:47+09:00",
-                  "updated_at": "2026-10-26T04:51:47+09:00"
+                  "created_at": "2026-10-27T03:18:05+01:00",
+                  "updated_at": "2026-10-27T03:18:05+01:00"
                 }
               }
             }
@@ -17969,15 +17968,15 @@
               "application/json": {
                 "example": {
                   "id": 6,
-                  "uid": "01a1749e-83ab-78ae-83e9-bdda0ed6a1de",
+                  "uid": "01a17b26-88ed-71ec-9324-0e07c9cd3814",
                   "filename": null,
                   "processed_at": null,
                   "created_via_api": true,
                   "status": "unprocessed",
                   "bank_billet_account_id": null,
                   "created_via_integration": null,
-                  "created_at": "2026-10-26T04:51:47+09:00",
-                  "updated_at": "2026-10-26T04:51:47+09:00",
+                  "created_at": "2026-10-27T03:18:05+01:00",
+                  "updated_at": "2026-10-27T03:18:05+01:00",
                   "external_id": "EXT-DIS-123456",
                   "custom_data": {
                     "foo": "bar",
@@ -18162,15 +18161,15 @@
                 "example": [
                   {
                     "id": 13,
-                    "uid": "01a1749e-8536-7249-a693-88b0ca5365db",
+                    "uid": "01a17b26-8a83-71a6-8c2c-96850b4e4cf8",
                     "filename": null,
                     "processed_at": null,
                     "created_via_api": false,
                     "status": "unprocessed",
                     "bank_billet_account_id": 133,
                     "created_via_integration": null,
-                    "created_at": "2026-10-26T04:51:48+09:00",
-                    "updated_at": "2026-10-26T04:51:48+09:00",
+                    "created_at": "2026-10-27T03:18:05+01:00",
+                    "updated_at": "2026-10-27T03:18:05+01:00",
                     "external_id": null,
                     "custom_data": null,
                     "tags": [
@@ -18274,15 +18273,15 @@
               "application/json": {
                 "example": {
                   "id": 16,
-                  "uid": "01a1749e-85d9-7c08-a61f-e27ac77ff7d4",
+                  "uid": "01a17b26-8b3e-7b52-babd-0cb9954bbd1e",
                   "filename": null,
                   "processed_at": null,
                   "created_via_api": false,
                   "status": "unprocessed",
                   "bank_billet_account_id": 134,
                   "created_via_integration": null,
-                  "created_at": "2026-10-26T04:51:48+09:00",
-                  "updated_at": "2026-10-26T04:51:48+09:00",
+                  "created_at": "2026-10-27T03:18:06+01:00",
+                  "updated_at": "2026-10-27T03:18:06+01:00",
                   "external_id": null,
                   "custom_data": null,
                   "tags": [],
@@ -18731,7 +18730,7 @@
                 "example": [
                   {
                     "id": 2,
-                    "uid": "01a1749e-8816-7c70-a903-b4e038df16e4",
+                    "uid": "01a17b26-8dc4-7df6-bf58-2c725111d92c",
                     "created_rows": 0,
                     "duplicated_rows": 0,
                     "enqueued_at": null,
@@ -18752,12 +18751,12 @@
                     "custom_data": null,
                     "tags": [],
                     "tag_list": null,
-                    "created_at": "2026-10-26T04:51:49+09:00",
-                    "updated_at": "2026-10-26T04:51:49+09:00"
+                    "created_at": "2026-10-27T03:18:06+01:00",
+                    "updated_at": "2026-10-27T03:18:06+01:00"
                   },
                   {
                     "id": 1,
-                    "uid": "01a1749e-87ff-75a7-9941-4494d38f3e2a",
+                    "uid": "01a17b26-8dab-7e13-b5d3-28b0fcca42f5",
                     "created_rows": 0,
                     "duplicated_rows": 0,
                     "enqueued_at": null,
@@ -18778,8 +18777,8 @@
                     "custom_data": null,
                     "tags": [],
                     "tag_list": null,
-                    "created_at": "2026-10-26T04:51:48+09:00",
-                    "updated_at": "2026-10-26T04:51:49+09:00"
+                    "created_at": "2026-10-27T03:18:06+01:00",
+                    "updated_at": "2026-10-27T03:18:06+01:00"
                   }
                 ],
                 "schema": {
@@ -18849,7 +18848,7 @@
               "application/json": {
                 "example": {
                   "id": 3,
-                  "uid": "01a1749e-885d-7346-b788-842b97f70392",
+                  "uid": "01a17b26-8e0f-7ae9-a40a-84274d2bfc5b",
                   "created_rows": 0,
                   "duplicated_rows": 0,
                   "enqueued_at": null,
@@ -18870,8 +18869,8 @@
                   "custom_data": null,
                   "tags": [],
                   "tag_list": null,
-                  "created_at": "2026-10-26T04:51:49+09:00",
-                  "updated_at": "2026-10-26T04:51:49+09:00"
+                  "created_at": "2026-10-27T03:18:06+01:00",
+                  "updated_at": "2026-10-27T03:18:06+01:00"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/v1_import"
@@ -19007,7 +19006,7 @@
               "application/json": {
                 "example": {
                   "id": 5,
-                  "uid": "01a1749e-893d-7023-b263-af2f3c95d682",
+                  "uid": "01a17b26-8ef8-7264-add6-362691431f82",
                   "created_rows": 0,
                   "duplicated_rows": 0,
                   "enqueued_at": null,
@@ -19028,8 +19027,8 @@
                   "custom_data": null,
                   "tags": [],
                   "tag_list": null,
-                  "created_at": "2026-10-26T04:51:49+09:00",
-                  "updated_at": "2026-10-26T04:51:49+09:00"
+                  "created_at": "2026-10-27T03:18:06+01:00",
+                  "updated_at": "2026-10-27T03:18:06+01:00"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/v1_import"
@@ -19101,13 +19100,13 @@
               "application/json": {
                 "example": {
                   "id": 3,
-                  "uid": "01a1749e-8a4a-7066-9806-e41ab3c0c17e",
-                  "filename": "2610261.REM",
+                  "uid": "01a17b26-9024-7087-997d-7e95e70d234a",
+                  "filename": "2610271.REM",
                   "created_via_api": true,
                   "status": "unprocessed",
                   "bank_billet_account_id": 136,
-                  "created_at": "2026-10-26T04:51:49+09:00",
-                  "updated_at": "2026-10-26T04:51:49+09:00",
+                  "created_at": "2026-10-27T03:18:07+01:00",
+                  "updated_at": "2026-10-27T03:18:07+01:00",
                   "processed_at": null,
                   "url": null,
                   "bank_billet_ids": [
@@ -19130,7 +19129,7 @@
                   "bank_billet_remittances": [
                     {
                       "id": 11,
-                      "uid": "01a1749e-8a36-7474-9da2-e9c052ab273e",
+                      "uid": "01a17b26-900c-7f08-bebc-6d88d3d1620d",
                       "our_code": "1001",
                       "occurrence": "01",
                       "remittance_id": 3,
@@ -19138,8 +19137,8 @@
                       "bank_billet_account_id": 136,
                       "processed_at": null,
                       "occurrence_detail": "Entrada de Título",
-                      "created_at": "2026-10-26T04:51:49+09:00",
-                      "updated_at": "2026-10-26T04:51:49+09:00"
+                      "created_at": "2026-10-27T03:18:07+01:00",
+                      "updated_at": "2026-10-27T03:18:07+01:00"
                     }
                   ]
                 },
@@ -19346,13 +19345,13 @@
                 "example": [
                   {
                     "id": 7,
-                    "uid": "01a1749e-8bce-78c2-ae4c-70c56f346f0a",
-                    "filename": "2610261.REM",
+                    "uid": "01a17b26-91ca-7047-9395-d52718c32571",
+                    "filename": "2610271.REM",
                     "created_via_api": false,
                     "status": "unprocessed",
                     "bank_billet_account_id": 141,
-                    "created_at": "2026-10-26T04:51:49+09:00",
-                    "updated_at": "2026-10-26T04:51:49+09:00",
+                    "created_at": "2026-10-27T03:18:07+01:00",
+                    "updated_at": "2026-10-27T03:18:07+01:00",
                     "processed_at": null,
                     "url": null,
                     "bank_billet_ids": [
@@ -19372,7 +19371,7 @@
                     "bank_billet_remittances": [
                       {
                         "id": 15,
-                        "uid": "01a1749e-8bcf-745d-b3a5-7001c1125eb6",
+                        "uid": "01a17b26-91cb-7cdb-84ce-33354a2515f1",
                         "our_code": "1001",
                         "occurrence": "01",
                         "remittance_id": 7,
@@ -19380,8 +19379,8 @@
                         "bank_billet_account_id": 141,
                         "processed_at": null,
                         "occurrence_detail": "Entrada de Título",
-                        "created_at": "2026-10-26T04:51:49+09:00",
-                        "updated_at": "2026-10-26T04:51:49+09:00"
+                        "created_at": "2026-10-27T03:18:07+01:00",
+                        "updated_at": "2026-10-27T03:18:07+01:00"
                       }
                     ]
                   }
@@ -19478,13 +19477,13 @@
               "application/json": {
                 "example": {
                   "id": 10,
-                  "uid": "01a1749e-8cb6-79d7-92ea-813cb4678818",
-                  "filename": "2610261.REM",
+                  "uid": "01a17b26-92c3-7151-88bb-04ffa023f8d9",
+                  "filename": "2610271.REM",
                   "created_via_api": false,
                   "status": "unprocessed",
                   "bank_billet_account_id": 145,
-                  "created_at": "2026-10-26T04:51:50+09:00",
-                  "updated_at": "2026-10-26T04:51:50+09:00",
+                  "created_at": "2026-10-27T03:18:07+01:00",
+                  "updated_at": "2026-10-27T03:18:07+01:00",
                   "processed_at": null,
                   "url": null,
                   "bank_billet_ids": [
@@ -19500,7 +19499,7 @@
                   "bank_billet_remittances": [
                     {
                       "id": 18,
-                      "uid": "01a1749e-8cb7-761e-b9b6-14d0b8db5487",
+                      "uid": "01a17b26-92c5-7c7e-9ca4-1a1646b1623d",
                       "our_code": "1001",
                       "occurrence": "01",
                       "remittance_id": 10,
@@ -19508,8 +19507,8 @@
                       "bank_billet_account_id": 145,
                       "processed_at": null,
                       "occurrence_detail": "Entrada de Título",
-                      "created_at": "2026-10-26T04:51:50+09:00",
-                      "updated_at": "2026-10-26T04:51:50+09:00"
+                      "created_at": "2026-10-27T03:18:07+01:00",
+                      "updated_at": "2026-10-27T03:18:07+01:00"
                     }
                   ]
                 },
@@ -19837,13 +19836,13 @@
                 "example": [
                   {
                     "id": 14,
-                    "uid": "01a1749e-8fe2-7433-bbd9-297bb0d09f0f",
-                    "filename": "2610261.REM",
+                    "uid": "01a17b26-956e-7796-ae0e-23db7e071791",
+                    "filename": "2610271.REM",
                     "created_via_api": true,
                     "status": "unprocessed",
                     "bank_billet_account_id": 152,
-                    "created_at": "2026-10-26T04:51:51+09:00",
-                    "updated_at": "2026-10-26T04:51:51+09:00",
+                    "created_at": "2026-10-27T03:18:08+01:00",
+                    "updated_at": "2026-10-27T03:18:08+01:00",
                     "processed_at": null,
                     "url": null,
                     "bank_billet_ids": [
@@ -19860,7 +19859,7 @@
                     "bank_billet_remittances": [
                       {
                         "id": 22,
-                        "uid": "01a1749e-8fbc-7282-83ab-08d75aa89700",
+                        "uid": "01a17b26-9554-70c8-aebf-1548dfc81002",
                         "our_code": "1001",
                         "occurrence": "01",
                         "remittance_id": 14,
@@ -19868,12 +19867,12 @@
                         "bank_billet_account_id": 152,
                         "processed_at": null,
                         "occurrence_detail": "Entrada de Título",
-                        "created_at": "2026-10-26T04:51:50+09:00",
-                        "updated_at": "2026-10-26T04:51:51+09:00"
+                        "created_at": "2026-10-27T03:18:08+01:00",
+                        "updated_at": "2026-10-27T03:18:08+01:00"
                       },
                       {
                         "id": 23,
-                        "uid": "01a1749e-8fc3-7cd6-a436-e8a0de417312",
+                        "uid": "01a17b26-9557-750b-a848-9b5b75252877",
                         "our_code": "1002",
                         "occurrence": "02",
                         "remittance_id": 14,
@@ -19881,8 +19880,8 @@
                         "bank_billet_account_id": 152,
                         "processed_at": null,
                         "occurrence_detail": "Pedido de Baixa",
-                        "created_at": "2026-10-26T04:51:50+09:00",
-                        "updated_at": "2026-10-26T04:51:51+09:00"
+                        "created_at": "2026-10-27T03:18:08+01:00",
+                        "updated_at": "2026-10-27T03:18:08+01:00"
                       }
                     ]
                   }

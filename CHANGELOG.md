@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-10-27
+
+### Changed
+
+- **Specs do Gateway Bancário atualizadas** com o `kobana-api-specs` atual — mesmas operações, textos revisados
+- **Traduções do Gateway Bancário completas** — as descrições em inglês e espanhol agora vêm dos arquivos `.en.json`/`.es.json` que o `kobana-api-specs` mantém ao lado de cada spec (os mesmos de que as docs são geradas), e cobrem todos os endpoints da v1 e da v2. Antes vinham de um snapshot das docs que deixava em português os endpoints novos ou renomeados (`financial companies`, `mailbox entries`, `data people` e outros)
+
 ## [0.6.0] - 2026-10-27
 
 ### Added
