@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-26
+
 ### Fixed
 
 - **Coleções sob um recurso pai viravam `get`** — um `GET` com parâmetro de caminho era sempre `get`, então `GET /webhooks/{id}/deliveries` (a lista) e `GET /webhooks/{id}/deliveries/{delivery_id}` (uma entrega) disputavam o mesmo nome e um dos dois sumia. Agora um `GET` que não termina em parâmetro e aceita paginação (`page`, `per_page`, `cursor`, `limit`) é `list`; recursos singulares sob um pai (`companies fiscal-profile`, `balances latest`) continuam `get`
