@@ -184,9 +184,12 @@ finance, and they mean different things.
 It is served straight from `main` (raw.githubusercontent.com), so a change ships
 on push — no release needed. It downloads the release asset for the platform into
 `~/.kobana/bin`, checks it against the SHA-256 GitHub publishes as each asset's
-`digest`, and links `~/.local/bin/kobana` to it. Output is Portuguese, with the
-ASCII banner in the brand lime (`#D3FD54`, 24-bit color; off when stdout is not a
-TTY or `NO_COLOR` is set).
+`digest`, and links `~/.local/bin/kobana` to it. Output is in pt, en or es,
+picked from `KOBANA_LANG`, then `LC_ALL`, `LC_MESSAGES`, `LANG` (a bare `C`/`POSIX`
+falls back to macOS's `AppleLocale`; anything else is English). Every string
+lives in `load_messages` as an `M_*` printf format — add a new one to all three
+languages. The ASCII banner is in the brand lime (`#D3FD54`, 24-bit color; off
+when stdout is not a TTY or `NO_COLOR` is set).
 
 > [!IMPORTANT]
 > `kobana update` on a standalone install replaces `std::env::current_exe()`

@@ -149,8 +149,10 @@ curl -fsSL https://raw.githubusercontent.com/universokobana/kobana-cli/main/scri
 Baixa o binário da release mais recente para `~/.kobana/bin`, confere o SHA-256
 publicado no GitHub e cria o link `~/.local/bin/kobana`. Para uma versão
 específica, passe-a como argumento (`| bash -s -- v0.5.1`). `KOBANA_INSTALL_DIR`
-e `KOBANA_BIN_DIR` trocam as pastas. Depois, `kobana update` atualiza o próprio
-binário.
+e `KOBANA_BIN_DIR` trocam as pastas. As mensagens saem em português, inglês ou
+espanhol conforme o idioma do sistema (`LC_ALL`, `LC_MESSAGES`, `LANG`);
+`KOBANA_LANG=pt|en|es` força um deles. Depois, `kobana update` atualiza o
+próprio binário.
 
 ### Homebrew (macOS e Linux)
 
