@@ -1,4 +1,5 @@
 use kobana::error::KobanaError;
+use kobana::{tr, trf};
 use kobana::spec::{CommandNode, ParameterLocation, ResolvedEndpoint};
 
 use crate::product::{self, LoadedProduct};
@@ -19,7 +20,12 @@ pub fn handle_schema(
     }
 
     Err(KobanaError::Validation(
-        "Usage: kobana schema <produto>.<servico>.<recurso>.<metodo> or kobana schema --list".into(),
+        tr!(
+            pt: "Uso: kobana schema <produto>.<recurso>.<metodo> ou kobana schema --list",
+            en: "Usage: kobana schema <product>.<resource>.<method> or kobana schema --list",
+            es: "Uso: kobana schema <producto>.<recurso>.<metodo> o kobana schema --list",
+        )
+        .into(),
     ))
 }
 
@@ -30,7 +36,7 @@ fn list_products(products: &[LoadedProduct]) -> Result<(), KobanaError> {
         out.insert(
             loaded.product.slug.to_string(),
             serde_json::json!({
-                "description": loaded.product.about,
+                "description": loaded.product.about(),
                 "resources": list_resources(&loaded.tree),
             }),
         );
@@ -86,8 +92,10 @@ fn show_endpoint_schema(
     // Parse a path like "banking.charge.pix.create" or "inbox.emails.list"
     let parts: Vec<&str> = endpoint_path.split('.').collect();
     if parts.len() < 3 || !product::is_product(parts[0]) {
-        return Err(KobanaError::Validation(format!(
-            "invalid endpoint path '{endpoint_path}'. Use format: product.resource.method (e.g., banking.charge.pix.create)"
+        return Err(KobanaError::Validation(trf!(
+            pt: "caminho de endpoint inválido '{endpoint_path}'. Use o formato produto.recurso.metodo (ex.: banking.charge.pix.create)",
+            en: "invalid endpoint path '{endpoint_path}'. Use format: product.resource.method (e.g., banking.charge.pix.create)",
+            es: "ruta de endpoint inválida '{endpoint_path}'. Usa el formato producto.recurso.metodo (ej.: banking.charge.pix.create)",
         )));
     }
 
@@ -95,7 +103,13 @@ fn show_endpoint_schema(
     let resource_parts = &parts[1..parts.len() - 1];
 
     let loaded = product::find(products, product_name)
-        .ok_or_else(|| KobanaError::Schema(format!("product '{product_name}' not found")))?;
+        .ok_or_else(|| {
+            KobanaError::Schema(trf!(
+                pt: "produto '{product_name}' não encontrado",
+                en: "product '{product_name}' not found",
+                es: "producto '{product_name}' no encontrado",
+            ))
+        })?;
 
     // API versions stopped being path segments; say so rather than reporting
     // a missing endpoint for every pre-existing `banking.v1.…` path
@@ -104,9 +118,11 @@ fn show_endpoint_schema(
             .chain(resource_parts[1..].iter().copied())
             .chain(std::iter::once(method_name))
             .collect();
-        return Err(KobanaError::Validation(format!(
-            "'{version}' is not part of endpoint paths — API versions are resolved from the spec. Use '{}'",
-            without.join(".")
+        let without = without.join(".");
+        return Err(KobanaError::Validation(trf!(
+            pt: "'{version}' não faz parte do caminho do endpoint — a versão da API vem da spec. Use '{without}'",
+            en: "'{version}' is not part of endpoint paths — API versions are resolved from the spec. Use '{without}'",
+            es: "'{version}' no forma parte de la ruta del endpoint — la versión de la API viene de la spec. Usa '{without}'",
         )));
     }
 
@@ -115,7 +131,7 @@ fn show_endpoint_schema(
     let mut node = &loaded.tree;
     for part in resource_parts {
         node = node.children.get(*part).ok_or_else(|| {
-            KobanaError::Schema(format!("endpoint '{endpoint_path}' not found"))
+            not_found(endpoint_path)
         })?;
     }
 
@@ -123,9 +139,17 @@ fn show_endpoint_schema(
         .endpoints
         .iter()
         .find(|e| e.cli_method == method_name)
-        .ok_or_else(|| KobanaError::Schema(format!("endpoint '{endpoint_path}' not found")))?;
+        .ok_or_else(|| not_found(endpoint_path))?;
 
     print_endpoint(loaded, endpoint)
+}
+
+fn not_found(endpoint_path: &str) -> KobanaError {
+    KobanaError::Schema(trf!(
+        pt: "endpoint '{endpoint_path}' não encontrado",
+        en: "endpoint '{endpoint_path}' not found",
+        es: "endpoint '{endpoint_path}' no encontrado",
+    ))
 }
 
 /// `v1`, `v2`, … — a leftover API version in a path

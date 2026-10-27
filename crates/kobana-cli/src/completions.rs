@@ -1,6 +1,7 @@
 use clap::Command;
 use clap_complete::{generate, Shell};
 use kobana::error::KobanaError;
+use kobana::trf;
 use std::io;
 
 /// Handle `kobana completions <shell>` — generate shell completions
@@ -12,8 +13,10 @@ pub fn generate_completions(shell_name: &str, cmd: &mut Command) -> Result<(), K
         "powershell" | "pwsh" => Shell::PowerShell,
         "elvish" => Shell::Elvish,
         other => {
-            return Err(KobanaError::Validation(format!(
-                "unknown shell '{other}'. Supported: bash, zsh, fish, powershell, elvish"
+            return Err(KobanaError::Validation(trf!(
+                pt: "shell desconhecido '{other}'. Suportados: bash, zsh, fish, powershell, elvish",
+                en: "unknown shell '{other}'. Supported: bash, zsh, fish, powershell, elvish",
+                es: "shell desconocido '{other}'. Soportados: bash, zsh, fish, powershell, elvish",
             )));
         }
     };

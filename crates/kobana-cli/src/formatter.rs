@@ -1,14 +1,21 @@
 use kobana::error::KobanaError;
+use kobana::{tr, trf};
 
 /// Format output based on the requested format
 pub fn format_output(value: &serde_json::Value, format: &str) -> Result<String, KobanaError> {
     match format {
         "json" => serde_json::to_string_pretty(value)
-            .map_err(|e| KobanaError::Internal(format!("JSON formatting error: {e}"))),
+            .map_err(|e| KobanaError::Internal(trf!(
+                pt: "erro ao formatar o JSON: {e}",
+                en: "JSON formatting error: {e}",
+                es: "error al formatear el JSON: {e}",
+            ))),
         "table" => format_table(value),
         "csv" => format_csv(value),
-        other => Err(KobanaError::Validation(format!(
-            "unknown output format '{other}'. Use: json, table, csv"
+        other => Err(KobanaError::Validation(trf!(
+            pt: "formato de saída desconhecido '{other}'. Use: json, table, csv",
+            en: "unknown output format '{other}'. Use: json, table, csv",
+            es: "formato de salida desconocido '{other}'. Usa: json, table, csv",
         ))),
     }
 }
@@ -67,7 +74,7 @@ fn format_table(value: &serde_json::Value) -> Result<String, KobanaError> {
 
     let items = extract_items(value);
     if items.is_empty() {
-        return Ok("(empty)".to_string());
+        return Ok(tr!(pt: "(vazio)", en: "(empty)", es: "(vacío)").to_string());
     }
 
     // Collect all unique keys from all items
@@ -124,7 +131,7 @@ fn format_csv(value: &serde_json::Value) -> Result<String, KobanaError> {
 
     let mut wtr = csv::Writer::from_writer(Vec::new());
     wtr.write_record(&columns)
-        .map_err(|e| KobanaError::Internal(format!("CSV error: {e}")))?;
+        .map_err(|e| KobanaError::Internal(trf!(pt: "erro no CSV: {e}", en: "CSV error: {e}", es: "error en el CSV: {e}")))?;
 
     for item in &items {
         let row: Vec<String> = columns
@@ -140,13 +147,17 @@ fn format_csv(value: &serde_json::Value) -> Result<String, KobanaError> {
             })
             .collect();
         wtr.write_record(&row)
-            .map_err(|e| KobanaError::Internal(format!("CSV error: {e}")))?;
+            .map_err(|e| KobanaError::Internal(trf!(pt: "erro no CSV: {e}", en: "CSV error: {e}", es: "error en el CSV: {e}")))?;
     }
 
     let bytes = wtr
         .into_inner()
-        .map_err(|e| KobanaError::Internal(format!("CSV error: {e}")))?;
-    String::from_utf8(bytes).map_err(|e| KobanaError::Internal(format!("CSV encoding error: {e}")))
+        .map_err(|e| KobanaError::Internal(trf!(pt: "erro no CSV: {e}", en: "CSV error: {e}", es: "error en el CSV: {e}")))?;
+    String::from_utf8(bytes).map_err(|e| KobanaError::Internal(trf!(
+        pt: "erro de codificação no CSV: {e}",
+        en: "CSV encoding error: {e}",
+        es: "error de codificación en el CSV: {e}",
+    )))
 }
 
 /// Extract a list of items from the response, handling data wrapper

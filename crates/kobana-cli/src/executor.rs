@@ -1,5 +1,6 @@
 use kobana::client::{ApiRequest, KobanaClient};
 use kobana::error::KobanaError;
+use kobana::{tr, trf};
 use kobana::spec::{HttpMethod, ParameterLocation, ResolvedEndpoint};
 use kobana::validate::validate_identifier;
 
@@ -18,13 +19,21 @@ pub async fn execute(
         .get_one::<String>("params")
         .map(|s| serde_json::from_str::<serde_json::Value>(s))
         .transpose()
-        .map_err(|e| KobanaError::Validation(format!("invalid --params JSON: {e}")))?;
+        .map_err(|e| KobanaError::Validation(trf!(
+            pt: "JSON inválido em --params: {e}",
+            en: "invalid --params JSON: {e}",
+            es: "JSON inválido en --params: {e}",
+        )))?;
 
     let body_json = root_matches
         .get_one::<String>("json")
         .map(|s| serde_json::from_str::<serde_json::Value>(s))
         .transpose()
-        .map_err(|e| KobanaError::Validation(format!("invalid --json JSON: {e}")))?;
+        .map_err(|e| KobanaError::Validation(trf!(
+            pt: "JSON inválido em --json: {e}",
+            en: "invalid --json JSON: {e}",
+            es: "JSON inválido en --json: {e}",
+        )))?;
 
     // Validate inputs
     if let Some(ref params) = params_json {
@@ -152,14 +161,22 @@ pub async fn execute(
             api_request.path
         );
         if let Some(body) = &api_request.body {
-            eprintln!(">> Body: {}", serde_json::to_string(body)?);
+            eprintln!(
+                ">> {} {}",
+                tr!(pt: "Corpo:", en: "Body:", es: "Cuerpo:"),
+                serde_json::to_string(body)?
+            );
         }
     }
 
     let response = client.execute(&api_request).await?;
 
     if verbose {
-        eprintln!("<< Status: {}", response.status);
+        eprintln!(
+            "<< {} {}",
+            tr!(pt: "Status:", en: "Status:", es: "Estado:"),
+            response.status
+        );
         for (key, value) in response.headers.iter() {
             if let Ok(v) = value.to_str() {
                 eprintln!("<< {}: {}", key, v);
@@ -179,8 +196,21 @@ pub async fn execute(
 
     if let Some(path) = output_path {
         std::fs::write(&path, &formatted)
-            .map_err(|e| KobanaError::Internal(format!("failed to write to {path}: {e}")))?;
-        eprintln!("Response saved to {path}");
+            .map_err(|e| {
+                KobanaError::Internal(trf!(
+                    pt: "não foi possível gravar em {path}: {e}",
+                    en: "failed to write to {path}: {e}",
+                    es: "no se pudo guardar en {path}: {e}",
+                ))
+            })?;
+        eprintln!(
+            "{}",
+            trf!(
+                pt: "Resposta salva em {path}",
+                en: "Response saved to {path}",
+                es: "Respuesta guardada en {path}",
+            )
+        );
     } else {
         println!("{formatted}");
     }
@@ -218,9 +248,11 @@ fn take_header_params(
             None => continue,
         };
         if value.chars().any(char::is_control) {
-            return Err(KobanaError::Validation(format!(
-                "header parameter '{}' contains control characters",
-                param.name
+            let name = &param.name;
+            return Err(KobanaError::Validation(trf!(
+                pt: "o parâmetro de cabeçalho '{name}' contém caracteres de controle",
+                en: "header parameter '{name}' contains control characters",
+                es: "el parámetro de encabezado '{name}' contiene caracteres de control",
             )));
         }
         headers.push((param.name.clone(), value));
@@ -258,8 +290,10 @@ fn resolve_path_template(
                     })
                 })
                 .ok_or_else(|| {
-                    KobanaError::Validation(format!(
-                        "missing required path parameter '{param_name}' in --params"
+                    KobanaError::Validation(trf!(
+                        pt: "falta o parâmetro de caminho obrigatório '{param_name}' em --params",
+                        en: "missing required path parameter '{param_name}' in --params",
+                        es: "falta el parámetro de ruta obligatorio '{param_name}' en --params",
                     ))
                 })?;
 

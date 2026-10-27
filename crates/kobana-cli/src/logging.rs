@@ -1,4 +1,5 @@
 use kobana::error::KobanaError;
+use kobana::trf;
 use std::path::PathBuf;
 use tracing_subscriber::fmt;
 use tracing_subscriber::prelude::*;
@@ -25,7 +26,11 @@ pub fn init_logging() -> Result<(), KobanaError> {
     if let Ok(log_dir) = std::env::var("KOBANA_LOG_FILE") {
         let log_path = PathBuf::from(&log_dir);
         std::fs::create_dir_all(&log_path)
-            .map_err(|e| KobanaError::Internal(format!("failed to create log dir: {e}")))?;
+            .map_err(|e| KobanaError::Internal(trf!(
+                pt: "não foi possível criar a pasta de logs: {e}",
+                en: "failed to create log dir: {e}",
+                es: "no se pudo crear la carpeta de logs: {e}",
+            )))?;
 
         let today = chrono::Local::now().format("%Y-%m-%d");
         let log_file = log_path.join(format!("kobana-{today}.log"));
@@ -34,7 +39,11 @@ pub fn init_logging() -> Result<(), KobanaError> {
             .create(true)
             .append(true)
             .open(&log_file)
-            .map_err(|e| KobanaError::Internal(format!("failed to open log file: {e}")))?;
+            .map_err(|e| KobanaError::Internal(trf!(
+                pt: "não foi possível abrir o arquivo de log: {e}",
+                en: "failed to open log file: {e}",
+                es: "no se pudo abrir el archivo de log: {e}",
+            )))?;
 
         let file_layer = fmt::layer()
             .with_writer(std::sync::Mutex::new(file))

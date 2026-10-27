@@ -347,6 +347,26 @@ kobana auth login --env sandbox
 
 Os tokens são **diferentes entre ambientes** — um token de sandbox não funciona em produção e vice-versa.
 
+### Idioma
+
+O CLI fala português, inglês ou espanhol: ajuda, mensagens, erros, perguntas do
+`kobana auth login` e a página que o navegador mostra no fim do login. As
+descrições dos endpoints, no `--help` e no `kobana schema`, vêm traduzidas das
+specs que cada produto publica nas suas docs.
+
+O idioma vem, nesta ordem, de `--lang`, de `KOBANA_LANG`, das variáveis de idioma
+do terminal (`LC_ALL`, `LC_MESSAGES`, `LANG`) e, por fim, do idioma do sistema.
+Locales `pt*` dão português, `es*` dão espanhol e qualquer outro dá inglês.
+
+```bash
+kobana --lang en banking bank-billets --help
+export KOBANA_LANG=es
+```
+
+O CLI também envia `Accept-Language` nas requisições, para que as APIs que
+traduzem as próprias mensagens respondam no mesmo idioma. Nomes de comandos e
+flags, chaves do JSON e códigos de saída não mudam com o idioma.
+
 ## Uso
 
 ### Sintaxe

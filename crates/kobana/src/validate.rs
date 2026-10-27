@@ -1,36 +1,49 @@
 use crate::error::KobanaError;
+use crate::trf;
 
 /// Validate that a string identifier is safe for use in URLs
 pub fn validate_identifier(value: &str, name: &str) -> Result<(), KobanaError> {
     if value.is_empty() {
-        return Err(KobanaError::Validation(format!("{name} cannot be empty")));
+        return Err(KobanaError::Validation(trf!(
+            pt: "{name} não pode ser vazio",
+            en: "{name} cannot be empty",
+            es: "{name} no puede estar vacío",
+        )));
     }
 
     // Reject path traversal
     if value.contains("../") || value.contains("..\\") {
-        return Err(KobanaError::Validation(format!(
-            "{name} contains path traversal sequence"
+        return Err(KobanaError::Validation(trf!(
+            pt: "{name} contém uma sequência de travessia de caminho",
+            en: "{name} contains path traversal sequence",
+            es: "{name} contiene una secuencia de recorrido de ruta",
         )));
     }
 
     // Reject control characters (ASCII < 0x20)
     if value.bytes().any(|b| b < 0x20) {
-        return Err(KobanaError::Validation(format!(
-            "{name} contains control characters"
+        return Err(KobanaError::Validation(trf!(
+            pt: "{name} contém caracteres de controle",
+            en: "{name} contains control characters",
+            es: "{name} contiene caracteres de control",
         )));
     }
 
     // Reject URL injection characters in identifiers
     if value.contains('?') || value.contains('#') {
-        return Err(KobanaError::Validation(format!(
-            "{name} contains invalid URL characters (? or #)"
+        return Err(KobanaError::Validation(trf!(
+            pt: "{name} contém caracteres inválidos para URL (? ou #)",
+            en: "{name} contains invalid URL characters (? or #)",
+            es: "{name} contiene caracteres inválidos para URL (? o #)",
         )));
     }
 
     // Reject double-encoding
     if value.contains('%') {
-        return Err(KobanaError::Validation(format!(
-            "{name} contains percent-encoded characters"
+        return Err(KobanaError::Validation(trf!(
+            pt: "{name} contém caracteres codificados com %",
+            en: "{name} contains percent-encoded characters",
+            es: "{name} contiene caracteres codificados con %",
         )));
     }
 

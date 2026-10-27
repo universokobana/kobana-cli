@@ -1,9 +1,11 @@
 use clap::{Arg, Command};
 use kobana::client::{ApiRequest, KobanaClient};
 use kobana::error::KobanaError;
+use kobana::tr;
 use kobana::spec::HttpMethod;
 
 use super::Helper;
+use crate::clap_i18n;
 
 /// Helper: +emitir — Create a bank billet with simplified interface
 pub struct EmitirBoleto;
@@ -14,19 +16,29 @@ impl Helper for EmitirBoleto {
     }
 
     fn about(&self) -> &'static str {
-        "Emitir boleto com interface simplificada"
+        tr!(
+            pt: "Emitir boleto com interface simplificada",
+            en: "Issue a bank slip with a simplified interface",
+            es: "Emitir un boleto con una interfaz simplificada",
+        )
     }
 
     fn command(&self) -> Command {
-        Command::new("+emitir")
-            .about("Emitir boleto com interface simplificada")
-            .arg(Arg::new("valor").long("valor").required(true).help("Valor do boleto (ex: 150.50)").value_name("VALOR"))
-            .arg(Arg::new("vencimento").long("vencimento").required(true).help("Data de vencimento (YYYY-MM-DD)").value_name("DATA"))
-            .arg(Arg::new("nome").long("nome").required(true).help("Nome do pagador").value_name("NOME"))
-            .arg(Arg::new("cpf-cnpj").long("cpf-cnpj").required(true).help("CPF ou CNPJ do pagador").value_name("DOC"))
-            .arg(Arg::new("carteira").long("carteira").required(true).help("ID da carteira de cobrança").value_name("ID"))
-            .arg(Arg::new("descricao").long("descricao").help("Descrição/instruções do boleto").value_name("TEXT"))
-            .arg(Arg::new("dry-run").long("dry-run").action(clap::ArgAction::SetTrue).help("Mostra a requisição sem executar"))
+        clap_i18n::command(
+            "+emitir",
+            format!(
+                "kobana +emitir --valor <VALOR> --vencimento <DATA> --nome <NOME> --cpf-cnpj <DOC> --carteira <ID> {}",
+                clap_i18n::options_placeholder()
+            ),
+        )
+            .about(self.about())
+            .arg(Arg::new("valor").long("valor").required(true).help(tr!(pt: "Valor do boleto (ex.: 150.50)", en: "Bank slip amount (e.g. 150.50)", es: "Monto del boleto (ej.: 150.50)")).value_name("VALOR"))
+            .arg(Arg::new("vencimento").long("vencimento").required(true).help(tr!(pt: "Data de vencimento (AAAA-MM-DD)", en: "Due date (YYYY-MM-DD)", es: "Fecha de vencimiento (AAAA-MM-DD)")).value_name("DATA"))
+            .arg(Arg::new("nome").long("nome").required(true).help(tr!(pt: "Nome do pagador", en: "Payer name", es: "Nombre del pagador")).value_name("NOME"))
+            .arg(Arg::new("cpf-cnpj").long("cpf-cnpj").required(true).help(tr!(pt: "CPF ou CNPJ do pagador", en: "Payer CPF or CNPJ", es: "CPF o CNPJ del pagador")).value_name("DOC"))
+            .arg(Arg::new("carteira").long("carteira").required(true).help(tr!(pt: "ID da carteira de cobrança", en: "Billing wallet ID", es: "ID de la cartera de cobro")).value_name("ID"))
+            .arg(Arg::new("descricao").long("descricao").help(tr!(pt: "Descrição/instruções do boleto", en: "Bank slip description/instructions", es: "Descripción/instrucciones del boleto")).value_name("TEXT"))
+            .arg(Arg::new("dry-run").long("dry-run").action(clap::ArgAction::SetTrue).help(tr!(pt: "Mostra a requisição sem executar", en: "Show the request without executing", es: "Muestra la solicitud sin ejecutarla")))
     }
 
     fn execute<'a>(
@@ -99,14 +111,21 @@ impl Helper for CancelarLoteBoletos {
     }
 
     fn about(&self) -> &'static str {
-        "Cancelar múltiplos boletos de uma vez"
+        tr!(
+            pt: "Cancelar múltiplos boletos de uma vez",
+            en: "Cancel several bank slips at once",
+            es: "Cancelar varios boletos a la vez",
+        )
     }
 
     fn command(&self) -> Command {
-        Command::new("+cancelar-lote")
-            .about("Cancelar múltiplos boletos de uma vez")
-            .arg(Arg::new("ids").long("ids").required(true).help("IDs dos boletos separados por vírgula").value_name("IDS"))
-            .arg(Arg::new("dry-run").long("dry-run").action(clap::ArgAction::SetTrue).help("Mostra a requisição sem executar"))
+        clap_i18n::command(
+            "+cancelar-lote",
+            format!("kobana +cancelar-lote --ids <IDS> {}", clap_i18n::options_placeholder()),
+        )
+            .about(self.about())
+            .arg(Arg::new("ids").long("ids").required(true).help(tr!(pt: "IDs dos boletos separados por vírgula", en: "Comma-separated bank slip IDs", es: "IDs de los boletos separados por comas")).value_name("IDS"))
+            .arg(Arg::new("dry-run").long("dry-run").action(clap::ArgAction::SetTrue).help(tr!(pt: "Mostra a requisição sem executar", en: "Show the request without executing", es: "Muestra la solicitud sin ejecutarla")))
     }
 
     fn execute<'a>(

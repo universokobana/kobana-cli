@@ -13,3 +13,4 @@ anyhow = "1"
 tokio = { version = "1", features = ["time", "fs"] }
 tracing = "0.1"
 percent-encoding = "2"
+sys-locale = "0.3"

@@ -1,4 +1,5 @@
 use kobana::error::KobanaError;
+use kobana::{tr, trf};
 use serde::Deserialize;
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -66,9 +67,11 @@ fn install_command(method: &InstallMethod) -> &'static str {
             "cargo install --git https://github.com/universokobana/kobana-cli kobana-cli --force"
         }
         InstallMethod::Standalone => "kobana update",
-        InstallMethod::Unknown => {
-            "Download from https://github.com/universokobana/kobana-cli/releases/latest"
-        }
+        InstallMethod::Unknown => tr!(
+            pt: "Baixe em https://github.com/universokobana/kobana-cli/releases/latest",
+            en: "Download from https://github.com/universokobana/kobana-cli/releases/latest",
+            es: "Descarga en https://github.com/universokobana/kobana-cli/releases/latest",
+        ),
     }
 }
 
@@ -78,7 +81,11 @@ fn http_client(timeout: Duration) -> Result<reqwest::Client, KobanaError> {
         .user_agent(USER_AGENT)
         .timeout(timeout)
         .build()
-        .map_err(|e| KobanaError::Internal(format!("http client error: {e}")))
+        .map_err(|e| KobanaError::Internal(trf!(
+            pt: "erro no cliente HTTP: {e}",
+            en: "http client error: {e}",
+            es: "error en el cliente HTTP: {e}",
+        )))
 }
 
 /// Fetch the latest release (tag without leading `v`, html_url) from GitHub.
@@ -90,19 +97,29 @@ pub async fn fetch_latest_release(timeout: Duration) -> Result<(String, String),
         .header("Accept", "application/vnd.github+json")
         .send()
         .await
-        .map_err(|e| KobanaError::Internal(format!("failed to fetch latest release: {e}")))?;
+        .map_err(|e| KobanaError::Internal(trf!(
+            pt: "não foi possível consultar a última versão: {e}",
+            en: "failed to fetch latest release: {e}",
+            es: "no se pudo consultar la última versión: {e}",
+        )))?;
 
     let status = response.status();
     if !status.is_success() {
-        return Err(KobanaError::Internal(format!(
-            "GitHub API returned {status}"
+        return Err(KobanaError::Internal(trf!(
+            pt: "a API do GitHub respondeu {status}",
+            en: "GitHub API returned {status}",
+            es: "la API de GitHub respondió {status}",
         )));
     }
 
     let release: GitHubRelease = response
         .json()
         .await
-        .map_err(|e| KobanaError::Internal(format!("invalid release response: {e}")))?;
+        .map_err(|e| KobanaError::Internal(trf!(
+            pt: "resposta de versão inválida: {e}",
+            en: "invalid release response: {e}",
+            es: "respuesta de versión inválida: {e}",
+        )))?;
 
     let tag = release
         .tag_name
@@ -148,25 +165,54 @@ pub async fn handle_update(check_only: bool, as_json: bool) -> Result<(), Kobana
     }
 
     if !update_available {
-        println!("kobana {current} is already up to date.");
+        println!(
+            "{}",
+            trf!(
+                pt: "kobana {current} já está na versão mais recente.",
+                en: "kobana {current} is already up to date.",
+                es: "kobana {current} ya está en la versión más reciente.",
+            )
+        );
         return Ok(());
     }
 
-    println!("Update available: kobana {current} → {latest}");
+    println!(
+        "{}",
+        trf!(
+            pt: "Atualização disponível: kobana {current} → {latest}",
+            en: "Update available: kobana {current} → {latest}",
+            es: "Actualización disponible: kobana {current} → {latest}",
+        )
+    );
 
     if check_only {
-        println!("Run: {command}");
+        println!("{}", run_message(command));
         return Ok(());
     }
 
     // Ask for confirmation before running anything destructive.
     let prompt = match method {
-        InstallMethod::Homebrew | InstallMethod::Cargo => {
-            format!("Run `{command}` now?")
-        }
-        InstallMethod::Standalone => "Download and install the new binary now?".to_string(),
+        InstallMethod::Homebrew | InstallMethod::Cargo => trf!(
+            pt: "Rodar `{command}` agora?",
+            en: "Run `{command}` now?",
+            es: "¿Ejecutar `{command}` ahora?",
+        ),
+        InstallMethod::Standalone => tr!(
+            pt: "Baixar e instalar o novo binário agora?",
+            en: "Download and install the new binary now?",
+            es: "¿Descargar e instalar el nuevo binario ahora?",
+        )
+        .to_string(),
         InstallMethod::Unknown => {
-            println!("Install method not recognized. Run: {command}");
+            println!(
+                "{}",
+                trf!(
+                    pt: "Forma de instalação não reconhecida. {}",
+                    en: "Install method not recognized. {}",
+                    es: "Forma de instalación no reconocida. {}",
+                    run_message(command)
+                )
+            );
             return Ok(());
         }
     };
@@ -174,17 +220,21 @@ pub async fn handle_update(check_only: bool, as_json: bool) -> Result<(), Kobana
     // Only prompt when stdin is a terminal; otherwise fall back to printing
     // the command and exiting, so scripts don't hang.
     if !std::io::IsTerminal::is_terminal(&std::io::stdin()) {
-        println!("Run: {command}");
+        println!("{}", run_message(command));
         return Ok(());
     }
 
-    let confirm = inquire::Confirm::new(&prompt)
-        .with_default(true)
-        .prompt()
-        .map_err(|e| KobanaError::Internal(format!("prompt error: {e}")))?;
+    let confirm = confirm(&prompt)?;
 
     if !confirm {
-        println!("Update skipped.");
+        println!(
+            "{}",
+            tr!(
+                pt: "Atualização ignorada.",
+                en: "Update skipped.",
+                es: "Actualización omitida.",
+            )
+        );
         return Ok(());
     }
 
@@ -205,18 +255,63 @@ pub async fn handle_update(check_only: bool, as_json: bool) -> Result<(), Kobana
     }
 }
 
+fn run_message(command: &str) -> String {
+    trf!(pt: "Rode: {command}", en: "Run: {command}", es: "Ejecuta: {command}")
+}
+
+/// A yes/no question that accepts the answer in the user's language
+/// (s/sim, y/yes, n/não). Enter takes the default, yes.
+fn confirm(prompt: &str) -> Result<bool, KobanaError> {
+    let (yes, no, hint) = (
+        tr!(pt: "Sim", en: "Yes", es: "Sí"),
+        tr!(pt: "Não", en: "No", es: "No"),
+        tr!(pt: "(S/n)", en: "(Y/n)", es: "(S/n)"),
+    );
+    let parser = |answer: &str| -> Result<bool, ()> {
+        match answer.trim().to_lowercase().as_str() {
+            "s" | "sim" | "si" | "sí" | "y" | "yes" => Ok(true),
+            "n" | "nao" | "não" | "no" => Ok(false),
+            _ => Err(()),
+        }
+    };
+    inquire::Confirm::new(prompt)
+        .with_default(true)
+        .with_default_value_formatter(&|_| hint.to_string())
+        .with_formatter(&|answer| if answer { yes } else { no }.to_string())
+        .with_parser(&parser)
+        .with_error_message(tr!(
+            pt: "Responda s ou n",
+            en: "Answer y or n",
+            es: "Responde s o n",
+        ))
+        .prompt()
+        .map_err(|e| {
+            KobanaError::Internal(trf!(
+                pt: "erro na pergunta: {e}",
+                en: "prompt error: {e}",
+                es: "error en la pregunta: {e}",
+            ))
+        })
+}
+
 /// Run an external command inline, inheriting stdin/stdout/stderr so the user
 /// sees progress from tools like brew and cargo.
 fn run_shell_command(program: &str, args: &[&str]) -> Result<(), KobanaError> {
     let status = std::process::Command::new(program)
         .args(args)
         .status()
-        .map_err(|e| KobanaError::Internal(format!("failed to spawn {program}: {e}")))?;
+        .map_err(|e| KobanaError::Internal(trf!(
+            pt: "não foi possível rodar {program}: {e}",
+            en: "failed to spawn {program}: {e}",
+            es: "no se pudo ejecutar {program}: {e}",
+        )))?;
 
     if !status.success() {
-        return Err(KobanaError::Internal(format!(
-            "{program} {} exited with status {status}",
-            args.join(" ")
+        let command = args.join(" ");
+        return Err(KobanaError::Internal(trf!(
+            pt: "{program} {command} terminou com status {status}",
+            en: "{program} {command} exited with status {status}",
+            es: "{program} {command} terminó con estado {status}",
         )));
     }
     Ok(())
@@ -234,7 +329,14 @@ async fn perform_self_update(version: &str) -> Result<(), KobanaError> {
         "https://github.com/universokobana/kobana-cli/releases/download/v{version}/{asset}"
     );
 
-    eprintln!("Downloading {download_url}...");
+    eprintln!(
+        "{}",
+        trf!(
+            pt: "Baixando {download_url}...",
+            en: "Downloading {download_url}...",
+            es: "Descargando {download_url}...",
+        )
+    );
 
     let client = http_client(Duration::from_secs(120))?;
     let bytes = client
@@ -242,17 +344,29 @@ async fn perform_self_update(version: &str) -> Result<(), KobanaError> {
         .send()
         .await
         .and_then(|r| r.error_for_status())
-        .map_err(|e| KobanaError::Internal(format!("download failed: {e}")))?
+        .map_err(|e| KobanaError::Internal(trf!(
+            pt: "o download falhou: {e}",
+            en: "download failed: {e}",
+            es: "la descarga falló: {e}",
+        )))?
         .bytes()
         .await
-        .map_err(|e| KobanaError::Internal(format!("read download body: {e}")))?;
+        .map_err(|e| KobanaError::Internal(trf!(
+            pt: "não foi possível ler o download: {e}",
+            en: "read download body: {e}",
+            es: "no se pudo leer la descarga: {e}",
+        )))?;
 
     // Resolve symlinks: install.sh links ~/.local/bin/kobana to
     // ~/.kobana/bin/kobana, and replacing the link itself would leave the
     // installed binary behind.
     let current_exe = std::env::current_exe()
         .and_then(|p| p.canonicalize())
-        .map_err(|e| KobanaError::Internal(format!("current exe: {e}")))?;
+        .map_err(|e| KobanaError::Internal(trf!(
+            pt: "não foi possível localizar o executável: {e}",
+            en: "current exe: {e}",
+            es: "no se pudo ubicar el ejecutable: {e}",
+        )))?;
 
     // Write to a temp file next to the current exe (same filesystem for atomic rename).
     let temp_path = current_exe.with_file_name(format!(
@@ -260,26 +374,49 @@ async fn perform_self_update(version: &str) -> Result<(), KobanaError> {
         std::process::id()
     ));
     std::fs::write(&temp_path, &bytes)
-        .map_err(|e| KobanaError::Internal(format!("write temp binary: {e}")))?;
+        .map_err(|e| KobanaError::Internal(trf!(
+            pt: "não foi possível gravar o binário temporário: {e}",
+            en: "write temp binary: {e}",
+            es: "no se pudo guardar el binario temporal: {e}",
+        )))?;
 
     let perms = std::fs::Permissions::from_mode(0o755);
     std::fs::set_permissions(&temp_path, perms)
-        .map_err(|e| KobanaError::Internal(format!("chmod temp binary: {e}")))?;
+        .map_err(|e| KobanaError::Internal(trf!(
+            pt: "não foi possível ajustar as permissões do binário: {e}",
+            en: "chmod temp binary: {e}",
+            es: "no se pudieron ajustar los permisos del binario: {e}",
+        )))?;
 
     std::fs::rename(&temp_path, &current_exe).map_err(|e| {
         let _ = std::fs::remove_file(&temp_path);
-        KobanaError::Internal(format!("atomic rename: {e}"))
+        KobanaError::Internal(trf!(
+            pt: "não foi possível substituir o binário: {e}",
+            en: "atomic rename: {e}",
+            es: "no se pudo reemplazar el binario: {e}",
+        ))
     })?;
 
-    eprintln!("✓ Updated to v{version}");
+    eprintln!(
+        "{}",
+        trf!(
+            pt: "✓ Atualizado para a v{version}",
+            en: "✓ Updated to v{version}",
+            es: "✓ Actualizado a la v{version}",
+        )
+    );
     Ok(())
 }
 
 #[cfg(not(unix))]
 async fn perform_self_update(_version: &str) -> Result<(), KobanaError> {
     Err(KobanaError::Internal(
-        "self-update is not supported on this platform — download the new binary manually from the releases page"
-            .into(),
+        tr!(
+            pt: "a atualização automática não funciona nesta plataforma — baixe o novo binário na página de releases",
+            en: "self-update is not supported on this platform — download the new binary manually from the releases page",
+            es: "la actualización automática no funciona en esta plataforma — descarga el nuevo binario en la página de releases",
+        )
+        .into(),
     ))
 }
 
@@ -297,7 +434,12 @@ fn current_target() -> Result<&'static str, KobanaError> {
     #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
     return Ok("windows-amd64.exe");
     Err(KobanaError::Internal(
-        "no release binary available for this platform".into(),
+        tr!(
+            pt: "não há binário publicado para esta plataforma",
+            en: "no release binary available for this platform",
+            es: "no hay binario publicado para esta plataforma",
+        )
+        .into(),
     ))
 }
 
@@ -381,8 +523,10 @@ fn notify_if_outdated(latest: &str) {
     if compare_versions(latest, current) != std::cmp::Ordering::Greater {
         return;
     }
-    let msg = format!(
-        "⚠ New version available: {current} → {latest}. Run `kobana update` for installation instructions."
+    let msg = trf!(
+        pt: "⚠ Nova versão disponível: {current} → {latest}. Rode `kobana update` para instalar.",
+        en: "⚠ New version available: {current} → {latest}. Run `kobana update` for installation instructions.",
+        es: "⚠ Nueva versión disponible: {current} → {latest}. Ejecuta `kobana update` para instalarla.",
     );
     if std::io::IsTerminal::is_terminal(&std::io::stderr()) {
         eprintln!("\x1b[33m{msg}\x1b[0m");

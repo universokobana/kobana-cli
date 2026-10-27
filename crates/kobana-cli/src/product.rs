@@ -11,25 +11,31 @@
 
 use kobana::client::KobanaClient;
 use kobana::error::KobanaError;
+use kobana::i18n::{self, Lang, SpecTranslations};
 use kobana::spec::{ApiSpec, CommandNode};
+use kobana::trf;
 
 use crate::config::Environment;
 
-// Embedded OpenAPI specs
-const BANKING_V1_SPEC: &str = include_str!("../specs/banking-v1.json");
-const BANKING_V2_SPEC: &str = include_str!("../specs/banking-v2.json");
-const INBOX_V1_SPEC: &str = include_str!("../specs/inbox-v1.json");
-const BILLING_V1_SPEC: &str = include_str!("../specs/billing-v1.json");
-const FINANCE_V1_SPEC: &str = include_str!("../specs/finance-v1.json");
-const DUNNING_V1_SPEC: &str = include_str!("../specs/dunning-v1.json");
-const DASHBOARDS_V1_SPEC: &str = include_str!("../specs/dashboards-v1.json");
+/// An embedded OpenAPI spec with the English and Spanish translations of its
+/// text (`specs/i18n/`, built by `scripts/build-spec-translations.rb`)
+macro_rules! spec {
+    ($name:literal, $version_prefix:literal) => {
+        SpecEntry {
+            json: include_str!(concat!("../specs/", $name, ".json")),
+            translations_en: include_str!(concat!("../specs/i18n/", $name, ".en.json")),
+            translations_es: include_str!(concat!("../specs/i18n/", $name, ".es.json")),
+            version_prefix: $version_prefix,
+        }
+    };
+}
 
 /// A Kobana product exposed as the first CLI segment.
 pub struct Product {
     /// CLI slug (e.g., `banking`)
     pub slug: &'static str,
-    /// Human-readable help text
-    pub about: &'static str,
+    /// Human-readable help text in Portuguese, English and Spanish
+    pub about: [&'static str; 3],
     /// API hosts per environment
     pub hosts: Hosts,
     /// The specs this product serves
@@ -53,14 +59,41 @@ pub struct Hosts {
 
 /// One OpenAPI spec belonging to a product.
 pub struct SpecEntry {
-    /// Embedded OpenAPI JSON
+    /// Embedded OpenAPI JSON, with its text in Portuguese
     pub json: &'static str,
+    /// Portuguese text → English, as a JSON object
+    pub translations_en: &'static str,
+    /// Portuguese text → Spanish, as a JSON object
+    pub translations_es: &'static str,
     /// API version prefix carried by the spec's own paths, e.g. `/v1`.
     /// Stripped for tree placement; kept in the request URL.
     pub version_prefix: &'static str,
 }
 
+impl SpecEntry {
+    /// The OpenAPI document with its text in `lang`. Text without a
+    /// translation stays in Portuguese.
+    pub fn document(&self, lang: Lang) -> Result<serde_json::Value, KobanaError> {
+        let mut doc: serde_json::Value =
+            serde_json::from_str(self.json).map_err(|e| KobanaError::Schema(e.to_string()))?;
+        let translations = match lang {
+            Lang::Pt => return Ok(doc),
+            Lang::En => self.translations_en,
+            Lang::Es => self.translations_es,
+        };
+        let translations: SpecTranslations =
+            serde_json::from_str(translations).map_err(|e| KobanaError::Schema(e.to_string()))?;
+        i18n::translate_spec(&mut doc, &translations);
+        Ok(doc)
+    }
+}
+
 impl Product {
+    /// Help text in the user's language
+    pub fn about(&self) -> &'static str {
+        i18n::pick(self.about)
+    }
+
     /// Base URL for this product in the given environment.
     ///
     /// Falls back to production when the product has no development host, so
@@ -104,16 +137,24 @@ pub fn client_for(
     let client = match std::env::var(var) {
         Ok(path) if !path.is_empty() => {
             let pem = std::fs::read(&path).map_err(|e| {
-                KobanaError::Auth(format!("could not read {var} ({path}): {e}"))
+                KobanaError::Auth(trf!(
+                    pt: "não foi possível ler {var} ({path}): {e}",
+                    en: "could not read {var} ({path}): {e}",
+                    es: "no se pudo leer {var} ({path}): {e}",
+                ))
             })?;
             KobanaClient::with_client_cert(base_url, token, &pem)
         }
         _ => {
             if !dry_run {
-                warn(&format!(
-                "⚠ {} requires a client certificate (mTLS). Set {} to a PEM file \
-                     holding the certificate chain and its private key.",
-                    product.slug, var
+                let slug = product.slug;
+                warn(&trf!(
+                    pt: "⚠ {slug} exige um certificado de cliente (mTLS). Defina {var} com o \
+                         caminho de um arquivo PEM com a cadeia do certificado e a chave privada.",
+                    en: "⚠ {slug} requires a client certificate (mTLS). Set {var} to a PEM file \
+                         holding the certificate chain and its private key.",
+                    es: "⚠ {slug} exige un certificado de cliente (mTLS). Define {var} con la \
+                         ruta de un archivo PEM con la cadena del certificado y la clave privada.",
                 ));
             }
             KobanaClient::new(base_url, token)
@@ -138,37 +179,36 @@ fn warn(msg: &str) {
 pub static REGISTRY: &[Product] = &[
 Product {
     slug: "banking",
-    about: "Gateway Bancário — cobranças, pagamentos, transferências (API v1 e v2)",
+    about: [
+        "Gateway Bancário — cobranças, pagamentos, transferências (API v1 e v2)",
+        "Banking Gateway — charges, payments, transfers (API v1 and v2)",
+        "Gateway Bancario — cobros, pagos, transferencias (API v1 y v2)",
+    ],
     hosts: Hosts {
         production: "https://api.kobana.com.br",
         sandbox: "https://api-sandbox.kobana.com.br",
         development: Some("http://localhost:5005/api"),
     },
     specs: &[
-        SpecEntry {
-            json: BANKING_V1_SPEC,
-            version_prefix: "/v1",
-        },
-        SpecEntry {
-            json: BANKING_V2_SPEC,
-            version_prefix: "/v2",
-        },
+        spec!("banking-v1", "/v1"),
+        spec!("banking-v2", "/v2"),
     ],
     client_cert_env: None,
     header_env: &[],
 },
 Product {
     slug: "inbox",
-    about: "Inbox Autônomo — caixas de entrada, agentes, e-mails, webhooks",
+    about: [
+        "Inbox Autônomo — caixas de entrada, agentes, e-mails, webhooks",
+        "Autonomous Inbox — inboxes, agents, emails, webhooks",
+        "Inbox Autónomo — bandejas de entrada, agentes, correos, webhooks",
+    ],
     hosts: Hosts {
         production: "https://api.inbox.kobana.com.br",
         sandbox: "https://api.inbox.sandbox.kobana.com.br",
         development: Some("http://localhost:3028/api"),
     },
-    specs: &[SpecEntry {
-        json: INBOX_V1_SPEC,
-        version_prefix: "/v1",
-    }],
+    specs: &[spec!("inbox-v1", "/v1")],
     // The inbox edge terminates mTLS and forwards the certificate fingerprint
     // to the origin, so requests must present a client certificate.
     client_cert_env: Some("KOBANA_INBOX_CLIENT_CERT"),
@@ -176,62 +216,66 @@ Product {
 },
 Product {
     slug: "billing",
-    about: "Faturamento Automático — assinaturas, planos, faturas",
+    about: [
+        "Faturamento Automático — assinaturas, planos, faturas",
+        "Automatic Billing — subscriptions, plans, invoices",
+        "Facturación Automática — suscripciones, planes, facturas",
+    ],
     hosts: Hosts {
         production: "https://api.billing.kobana.com.br",
         sandbox: "https://api.billing.sandbox.kobana.com.br",
         development: None,
     },
-    specs: &[SpecEntry {
-        json: BILLING_V1_SPEC,
-        version_prefix: "/v1",
-    }],
+    specs: &[spec!("billing-v1", "/v1")],
     client_cert_env: None,
     header_env: &[],
 },
 Product {
     slug: "finance",
-    about: "Financeiro Inteligente — contas, lançamentos, fluxo de caixa",
+    about: [
+        "Financeiro Inteligente — contas, lançamentos, fluxo de caixa",
+        "Smart Finance — accounts, transactions, cash flow",
+        "Financiero Inteligente — cuentas, movimientos, flujo de caja",
+    ],
     hosts: Hosts {
         production: "https://api.finance.kobana.com.br",
         sandbox: "https://api.finance.sandbox.kobana.com.br",
         development: None,
     },
-    specs: &[SpecEntry {
-        json: FINANCE_V1_SPEC,
-        version_prefix: "/v1",
-    }],
+    specs: &[spec!("finance-v1", "/v1")],
     client_cert_env: None,
     // Every finance route acts on one workspace of the token's organization
     header_env: &[("X-Workspace-Id", "KOBANA_WORKSPACE_ID")],
 },
 Product {
     slug: "dunning",
-    about: "Régua de Cobrança — clientes, cobranças, réguas, acordos, negativações",
+    about: [
+        "Régua de Cobrança — clientes, cobranças, réguas, acordos, negativações",
+        "Dunning — customers, charges, dunning rules, agreements, credit bureau reports",
+        "Cobranza — clientes, cobros, reglas de cobranza, acuerdos, reportes a burós de crédito",
+    ],
     hosts: Hosts {
         production: "https://api.dunning.kobana.com.br",
         sandbox: "https://api.dunning.sandbox.kobana.com.br",
         development: None,
     },
-    specs: &[SpecEntry {
-        json: DUNNING_V1_SPEC,
-        version_prefix: "/v1",
-    }],
+    specs: &[spec!("dunning-v1", "/v1")],
     client_cert_env: None,
     header_env: &[],
 },
 Product {
     slug: "dashboards",
-    about: "Dashboard Mágico — fontes de dados, entidades, portal, workspaces",
+    about: [
+        "Dashboard Mágico — fontes de dados, entidades, portal, workspaces",
+        "Magic Dashboard — data sources, entities, portal, workspaces",
+        "Dashboard Mágico — fuentes de datos, entidades, portal, espacios de trabajo",
+    ],
     hosts: Hosts {
         production: "https://api.dashboards.kobana.com.br",
         sandbox: "https://api.dashboards.sandbox.kobana.com.br",
         development: None,
     },
-    specs: &[SpecEntry {
-        json: DASHBOARDS_V1_SPEC,
-        version_prefix: "/v1",
-    }],
+    specs: &[spec!("dashboards-v1", "/v1")],
     client_cert_env: None,
     // Optional while the organization has a single workspace
     header_env: &[("X-Workspace-Id", "KOBANA_WORKSPACE_ID")],
@@ -254,7 +298,7 @@ fn load(product: &'static Product) -> Result<LoadedProduct, KobanaError> {
     let mut tree = CommandNode::default();
 
     for entry in product.specs {
-        let spec = ApiSpec::parse(entry.json)?;
+        let spec = ApiSpec::from_value(&entry.document(i18n::lang())?)?;
         merge(&mut tree, spec.build_command_tree(entry.version_prefix));
     }
 
@@ -297,21 +341,65 @@ pub fn is_product(slug: &str) -> bool {
 pub fn resource_about(product: &str, name: &str) -> Option<&'static str> {
     let about = match (product, name) {
         // banking v2 domains
-        ("banking", "charge") => "Cobranças (Pix, boletos, Pix automático)",
-        ("banking", "payment") => "Pagamentos (boletos, Pix, taxas, concessionárias)",
-        ("banking", "transfer") => "Transferências (Pix, TED, interna)",
-        ("banking", "financial") => "Financeiro (contas, saldos, extratos)",
-        ("banking", "admin") => "Administração (subcontas, usuários, conexões)",
-        ("banking", "mailbox") => "Caixa postal (EDI, arquivos)",
-        ("banking", "data") => "Consultas (boletos, QR codes Pix)",
-        ("banking", "edi") => "EDI (caixas EDI)",
-        ("banking", "me") => "Informações da conta",
-        ("banking", "payments") => "Pagamentos (unificado)",
-        ("banking", "transfers") => "Transferências (unificado)",
-        ("banking", "security") => "Segurança (tokens de acesso)",
+        ("banking", "charge") => [
+            "Cobranças (Pix, boletos, Pix automático)",
+            "Charges (Pix, bank slips, automatic Pix)",
+            "Cobros (Pix, boletos, Pix automático)",
+        ],
+        ("banking", "payment") => [
+            "Pagamentos (boletos, Pix, taxas, concessionárias)",
+            "Payments (bank slips, Pix, taxes, utilities)",
+            "Pagos (boletos, Pix, impuestos, servicios públicos)",
+        ],
+        ("banking", "transfer") => [
+            "Transferências (Pix, TED, interna)",
+            "Transfers (Pix, TED, internal)",
+            "Transferencias (Pix, TED, internas)",
+        ],
+        ("banking", "financial") => [
+            "Financeiro (contas, saldos, extratos)",
+            "Financial (accounts, balances, statements)",
+            "Financiero (cuentas, saldos, extractos)",
+        ],
+        ("banking", "admin") => [
+            "Administração (subcontas, usuários, conexões)",
+            "Administration (subaccounts, users, connections)",
+            "Administración (subcuentas, usuarios, conexiones)",
+        ],
+        ("banking", "mailbox") => [
+            "Caixa postal (EDI, arquivos)",
+            "Mailbox (EDI, files)",
+            "Buzón (EDI, archivos)",
+        ],
+        ("banking", "data") => [
+            "Consultas (boletos, QR codes Pix)",
+            "Lookups (bank slips, Pix QR codes)",
+            "Consultas (boletos, códigos QR Pix)",
+        ],
+        ("banking", "edi") => ["EDI (caixas EDI)", "EDI (EDI boxes)", "EDI (buzones EDI)"],
+        ("banking", "me") => [
+            "Informações da conta",
+            "Account information",
+            "Información de la cuenta",
+        ],
+        ("banking", "payments") => [
+            "Pagamentos (unificado)",
+            "Payments (unified)",
+            "Pagos (unificado)",
+        ],
+        ("banking", "transfers") => [
+            "Transferências (unificado)",
+            "Transfers (unified)",
+            "Transferencias (unificado)",
+        ],
+        ("banking", "security") => [
+            "Segurança (tokens de acesso)",
+            "Security (access tokens)",
+            "Seguridad (tokens de acceso)",
+        ],
         _ => return None,
     };
-    Some(about)
+    Some(i18n::pick(about))
 }
 
 #[cfg(test)]
@@ -598,10 +686,54 @@ mod tests {
     /// help text must never leak from one product to another.
     #[test]
     fn resource_descriptions_do_not_leak_across_products() {
-        assert_eq!(resource_about("banking", "payments"), Some("Pagamentos (unificado)"));
+        assert!(resource_about("banking", "payments").is_some());
         assert_eq!(resource_about("billing", "payments"), None);
-        assert_eq!(resource_about("banking", "transfers"), Some("Transferências (unificado)"));
+        assert!(resource_about("banking", "transfers").is_some());
         assert_eq!(resource_about("finance", "transfers"), None);
+    }
+
+    fn summaries(lang: Lang) -> Vec<(String, Option<String>)> {
+        fn walk(node: &CommandNode, out: &mut Vec<(String, Option<String>)>) {
+            for e in &node.endpoints {
+                let key = format!("{} {}", e.http_method, e.path_template);
+                out.push((key, e.operation.summary.clone()));
+            }
+            for child in node.children.values() {
+                walk(child, out);
+            }
+        }
+        let mut out = Vec::new();
+        for entry in REGISTRY.iter().flat_map(|p| p.specs) {
+            let doc = entry.document(lang).expect("translations must parse");
+            let spec = ApiSpec::from_value(&doc).unwrap();
+            walk(&spec.build_command_tree(entry.version_prefix), &mut out);
+        }
+        out
+    }
+
+    /// Translating a spec swaps text only: every language must serve the
+    /// exact same commands, and most summaries must actually change.
+    #[test]
+    fn translated_specs_serve_the_same_commands() {
+        let pt = summaries(Lang::Pt);
+        for lang in [Lang::En, Lang::Es] {
+            let other = summaries(lang);
+            let keys = |list: &[(String, Option<String>)]| -> Vec<String> {
+                list.iter().map(|(k, _)| k.clone()).collect()
+            };
+            assert_eq!(keys(&pt), keys(&other), "{lang:?} changed the command tree");
+
+            let translated = pt
+                .iter()
+                .zip(&other)
+                .filter(|((_, a), (_, b))| a.is_some() && a != b)
+                .count();
+            let with_summary = pt.iter().filter(|(_, s)| s.is_some()).count();
+            assert!(
+                translated * 10 >= with_summary * 9,
+                "{lang:?}: only {translated} of {with_summary} summaries are translated"
+            );
+        }
     }
 
     #[test]
@@ -648,7 +780,7 @@ mod tests {
 
         let no_dev = Product {
             slug: "x",
-            about: "",
+            about: ["", "", ""],
             hosts: Hosts {
                 production: "https://prod",
                 sandbox: "https://sandbox",

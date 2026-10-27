@@ -92,7 +92,12 @@ impl ApiSpec {
     pub fn parse(json_str: &str) -> Result<Self, KobanaError> {
         let raw: serde_json::Value =
             serde_json::from_str(json_str).map_err(|e| KobanaError::Schema(e.to_string()))?;
+        Self::from_value(&raw)
+    }
 
+    /// Build from an already parsed OpenAPI document (e.g. after its text was
+    /// translated with [`crate::i18n::translate_spec`])
+    pub fn from_value(raw: &serde_json::Value) -> Result<Self, KobanaError> {
         let version = raw["info"]["version"]
             .as_str()
             .unwrap_or("unknown")

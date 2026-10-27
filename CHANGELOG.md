@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Script de instalação** — `curl -fsSL https://raw.githubusercontent.com/universokobana/kobana-cli/main/scripts/install.sh | bash` baixa o binário da plataforma para `~/.kobana/bin`, confere o SHA-256 publicado na release e cria o link `~/.local/bin/kobana`, com banner e saída no estilo do instalador do Slack CLI. Fala português, inglês ou espanhol conforme o idioma do sistema (ou `KOBANA_LANG`). Aceita uma versão (`| bash -s -- v0.5.1`), `KOBANA_INSTALL_DIR`, `KOBANA_BIN_DIR` e `NO_COLOR`
 
+- **CLI em português, inglês e espanhol** — ajuda, mensagens, erros, perguntas do `kobana auth login` e a página de retorno do login seguem o idioma do sistema (`LC_ALL`, `LC_MESSAGES`, `LANG`, depois o do sistema operacional), ou o de `KOBANA_LANG` ou `--lang pt|en|es`. As descrições dos endpoints no `--help` e no `kobana schema` vêm traduzidas das specs que cada produto publica nas suas docs (`specs/i18n/`, geradas por `scripts/build-spec-translations.rb`). Inclui os textos do próprio clap (`Uso:`, `Opções:`, erros de argumento) e um subcomando `kobana help <comando>` próprio
+- **`Accept-Language`** em toda requisição, para as APIs que traduzem as próprias mensagens responderem no mesmo idioma
+
 ### Fixed
 
 - **`kobana update` por um link simbólico** — o binário instalado pelo script é chamado por `~/.local/bin/kobana`; o update substituía o link em vez do binário. Agora resolve o caminho real antes

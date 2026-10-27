@@ -1,4 +1,5 @@
 use kobana::error::KobanaError;
+use kobana::{tr, trf};
 
 use crate::config;
 use crate::credential_store::{self, StoredCredentials};
@@ -24,6 +25,22 @@ impl std::fmt::Display for LabeledOption {
     }
 }
 
+fn multi_select_help() -> &'static str {
+    tr!(
+        pt: "↑↓ Navegar · Espaço Selecionar · →/← Todos/Nenhum · Enter Confirmar · Esc Cancelar",
+        en: "↑↓ Move · Space Select · →/← All/None · Enter Confirm · Esc Cancel",
+        es: "↑↓ Navegar · Espacio Seleccionar · →/← Todos/Ninguno · Enter Confirmar · Esc Cancelar",
+    )
+}
+
+fn selection_cancelled(e: inquire::InquireError) -> String {
+    trf!(
+        pt: "seleção de escopos cancelada: {e}",
+        en: "scope selection cancelled: {e}",
+        es: "selección de alcances cancelada: {e}",
+    )
+}
+
 /// Interactive scope selection with drill-down:
 /// 1. Pick top-level resource groups (admin, charge, payment, etc.)
 /// 2. For each selected group with sub-scopes, pick which sub-scopes to include
@@ -40,7 +57,7 @@ fn prompt_scopes() -> Result<String, KobanaError> {
         .iter()
         .map(|(name, description)| LabeledOption {
             name,
-            description,
+            description: kobana::i18n::pick(*description),
             width: group_width,
         })
         .collect();
@@ -48,18 +65,27 @@ fn prompt_scopes() -> Result<String, KobanaError> {
     let all_group_indices: Vec<usize> = (0..group_options.len()).collect();
 
     let selected_groups = inquire::MultiSelect::new(
-        "Selecione os grupos de recursos",
+        tr!(
+            pt: "Selecione os grupos de recursos",
+            en: "Select the resource groups",
+            es: "Selecciona los grupos de recursos",
+        ),
         group_options,
     )
     .with_default(&all_group_indices)
     .with_page_size(20)
-    .with_help_message("↑↓ Navegar · Espaço Selecionar · →/← Todos/Nenhum · Enter Confirmar · Esc Cancelar")
+    .with_help_message(multi_select_help())
     .prompt()
-    .map_err(|e| KobanaError::Auth(format!("scope selection cancelled: {e}")))?;
+    .map_err(|e| KobanaError::Auth(selection_cancelled(e)))?;
 
     if selected_groups.is_empty() {
         return Err(KobanaError::Auth(
-            "no scopes selected — at least one group is required".into(),
+            tr!(
+                pt: "nenhum escopo selecionado — escolha pelo menos um grupo",
+                en: "no scopes selected — at least one group is required",
+                es: "ningún alcance seleccionado — elige al menos un grupo",
+            )
+            .into(),
         ));
     }
 
@@ -68,7 +94,7 @@ fn prompt_scopes() -> Result<String, KobanaError> {
 
     for group in &selected_groups {
         // Find all scopes under this group
-        let sub_scopes: Vec<(&'static str, &'static str)> = oauth::ALL_SCOPES
+        let sub_scopes: Vec<(&'static str, [&'static str; 3])> = oauth::ALL_SCOPES
             .iter()
             .filter(|(name, _)| {
                 let top = name.split('.').next().unwrap_or(name);
@@ -96,7 +122,7 @@ fn prompt_scopes() -> Result<String, KobanaError> {
             .iter()
             .map(|(name, description)| LabeledOption {
                 name,
-                description,
+                description: kobana::i18n::pick(*description),
                 width: sub_width,
             })
             .collect();
@@ -104,14 +130,19 @@ fn prompt_scopes() -> Result<String, KobanaError> {
         let all_sub_indices: Vec<usize> = (0..sub_options.len()).collect();
 
         let selected_subs = inquire::MultiSelect::new(
-            &format!("  └─ {}: selecione os sub-escopos", group.name),
+            &trf!(
+                pt: "  └─ {}: selecione os sub-escopos",
+                en: "  └─ {}: select the sub-scopes",
+                es: "  └─ {}: selecciona los sub-alcances",
+                group.name
+            ),
             sub_options,
         )
         .with_default(&all_sub_indices)
         .with_page_size(20)
-        .with_help_message("↑↓ Navegar · Espaço Selecionar · →/← Todos/Nenhum · Enter Confirmar · Esc Cancelar")
+        .with_help_message(multi_select_help())
         .prompt()
-        .map_err(|e| KobanaError::Auth(format!("scope selection cancelled: {e}")))?;
+        .map_err(|e| KobanaError::Auth(selection_cancelled(e)))?;
 
         for opt in selected_subs {
             final_scopes.push(opt.name);
@@ -120,7 +151,12 @@ fn prompt_scopes() -> Result<String, KobanaError> {
 
     if final_scopes.is_empty() {
         return Err(KobanaError::Auth(
-            "no scopes selected — at least one scope is required".into(),
+            tr!(
+                pt: "nenhum escopo selecionado — escolha pelo menos um",
+                en: "no scopes selected — at least one scope is required",
+                es: "ningún alcance seleccionado — elige al menos uno",
+            )
+            .into(),
         ));
     }
 
@@ -128,21 +164,34 @@ fn prompt_scopes() -> Result<String, KobanaError> {
     let permission_options = vec![
         LabeledOption {
             name: "read",
-            description: "Somente leitura",
+            description: tr!(pt: "Somente leitura", en: "Read only", es: "Solo lectura"),
             width: 5,
         },
         LabeledOption {
             name: "write",
-            description: "Leitura e escrita",
+            description: tr!(pt: "Leitura e escrita", en: "Read and write", es: "Lectura y escritura"),
             width: 5,
         },
     ];
 
-    let permission = inquire::Select::new("Nível de permissão", permission_options)
-        .with_starting_cursor(0)
-        .with_help_message("↑↓ Navegar · Enter Confirmar · Esc Cancelar")
-        .prompt()
-        .map_err(|e| KobanaError::Auth(format!("permission selection cancelled: {e}")))?;
+    let permission = inquire::Select::new(
+        tr!(pt: "Nível de permissão", en: "Permission level", es: "Nivel de permiso"),
+        permission_options,
+    )
+    .with_starting_cursor(0)
+    .with_help_message(tr!(
+        pt: "↑↓ Navegar · Enter Confirmar · Esc Cancelar",
+        en: "↑↓ Move · Enter Confirm · Esc Cancel",
+        es: "↑↓ Navegar · Enter Confirmar · Esc Cancelar",
+    ))
+    .prompt()
+    .map_err(|e| {
+        KobanaError::Auth(trf!(
+            pt: "seleção de permissão cancelada: {e}",
+            en: "permission selection cancelled: {e}",
+            es: "selección de permiso cancelada: {e}",
+        ))
+    })?;
 
     final_scopes.push(permission.name);
 
@@ -159,7 +208,14 @@ pub async fn handle_auth(
         Some(("logout", _)) => handle_logout(),
         Some(("status", _)) => handle_status(),
         Some(("export", _)) => handle_export(),
-        _ => Err(KobanaError::Validation("Unknown auth subcommand".into())),
+        _ => Err(KobanaError::Validation(
+            tr!(
+                pt: "subcomando de auth desconhecido",
+                en: "Unknown auth subcommand",
+                es: "subcomando de auth desconocido",
+            )
+            .into(),
+        )),
     }
 }
 
@@ -188,7 +244,14 @@ async fn handle_login(
 
     let token_response = if let (Some(id), Some(secret)) = (&client_id, &client_secret) {
         // Client credentials flow (requires both id + secret)
-        eprintln!("Authenticating with client credentials...");
+        eprintln!(
+            "{}",
+            tr!(
+                pt: "Autenticando com client credentials...",
+                en: "Authenticating with client credentials...",
+                es: "Autenticando con client credentials...",
+            )
+        );
         oauth::client_credentials_flow(id, secret, &env).await?
     } else {
         // Authorization Code + PKCE flow
@@ -201,7 +264,14 @@ async fn handle_login(
         let secret = client_secret
             .or_else(|| std::env::var("KOBANA_CLIENT_SECRET").ok());
 
-        eprintln!("Authenticating with PKCE (client: {id})...");
+        eprintln!(
+            "{}",
+            trf!(
+                pt: "Autenticando com PKCE (cliente: {id})...",
+                en: "Authenticating with PKCE (client: {id})...",
+                es: "Autenticando con PKCE (cliente: {id})...",
+            )
+        );
         oauth::authorization_code_flow(&id, secret.as_deref(), &scopes, &env, verbose).await?
     };
 
@@ -231,10 +301,18 @@ async fn handle_login(
         "{}",
         serde_json::to_string_pretty(&serde_json::json!({
             "status": "success",
-            "message": "Authentication successful. Encrypted credentials saved.",
+            "message": tr!(
+                pt: "Autenticação concluída. Credenciais criptografadas salvas.",
+                en: "Authentication successful. Encrypted credentials saved.",
+                es: "Autenticación completada. Credenciales cifradas guardadas.",
+            ),
             "environment": creds.environment,
             "credentials_file": cred_path.to_string_lossy(),
-            "encryption": format!("AES-256-GCM (key in OS keyring or local `.key`; current backend: {backend})"),
+            "encryption": trf!(
+                pt: "AES-256-GCM (chave no keyring do sistema ou no `.key` local; backend atual: {backend})",
+                en: "AES-256-GCM (key in OS keyring or local `.key`; current backend: {backend})",
+                es: "AES-256-GCM (clave en el keyring del sistema o en el `.key` local; backend actual: {backend})",
+            ),
             "expires_at": creds.expires_at,
             "scopes": scopes_list,
         }))
@@ -250,7 +328,11 @@ fn handle_logout() -> Result<(), KobanaError> {
         "{}",
         serde_json::json!({
             "logged_out": true,
-            "message": "Credentials removed."
+            "message": tr!(
+                pt: "Credenciais removidas.",
+                en: "Credentials removed.",
+                es: "Credenciales eliminadas.",
+            )
         })
     );
     Ok(())
@@ -296,7 +378,7 @@ fn handle_status() -> Result<(), KobanaError> {
                 "{}",
                 serde_json::json!({
                     "authenticated": false,
-                    "message": "No authentication configured. Set KOBANA_TOKEN or run 'kobana auth login'.",
+                    "message": crate::auth::not_configured_message(),
                 })
             );
         }

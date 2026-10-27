@@ -1,5 +1,6 @@
 mod auth;
 mod auth_commands;
+mod clap_i18n;
 mod commands;
 mod completions;
 mod config;
@@ -16,15 +17,29 @@ mod update;
 mod validate;
 
 use kobana::error::KobanaError;
+use kobana::trf;
 
 #[tokio::main]
 async fn main() {
     // Load .env files
     config::load_dotenv();
 
+    // The language must be fixed before any command or message is built
+    let args: Vec<String> = std::env::args().collect();
+    if let Some(lang) = clap_i18n::lang_from_args(&args) {
+        kobana::i18n::set_lang(lang);
+    }
+
     // Initialize structured logging
     if let Err(e) = logging::init_logging() {
-        eprintln!("Warning: failed to initialize logging: {e}");
+        eprintln!(
+            "{}",
+            trf!(
+                pt: "Aviso: não foi possível iniciar os logs: {e}",
+                en: "Warning: failed to initialize logging: {e}",
+                es: "Aviso: no se pudieron iniciar los logs: {e}",
+            )
+        );
     }
 
     if let Err(e) = run().await {
@@ -38,7 +53,17 @@ async fn run() -> Result<(), KobanaError> {
 
     // Phase 2: Build clap command and parse args
     let root_cmd = commands::build_root_command(&products);
-    let matches = root_cmd.get_matches();
+    let matches = root_cmd
+        .try_get_matches()
+        .unwrap_or_else(|e| clap_i18n::exit_with(e));
+
+    if let Some(("help", help_matches)) = matches.subcommand() {
+        let path: Vec<String> = help_matches
+            .get_many::<String>("command")
+            .map(|names| names.cloned().collect())
+            .unwrap_or_default();
+        return clap_i18n::print_help_for(commands::build_root_command(&products), &path);
+    }
 
     // Handle special commands
     if let Some(("schema", schema_matches)) = matches.subcommand() {
@@ -91,7 +116,14 @@ async fn run() -> Result<(), KobanaError> {
     // Resolve endpoint
     let (loaded_product, endpoint, method_matches) =
         commands::resolve_endpoint(&matches, &products).ok_or_else(|| {
-            KobanaError::Validation("could not resolve endpoint from arguments".into())
+            KobanaError::Validation(
+                kobana::tr!(
+                    pt: "não foi possível identificar o endpoint pelos argumentos",
+                    en: "could not resolve endpoint from arguments",
+                    es: "no se pudo identificar el endpoint por los argumentos",
+                )
+                .into(),
+            )
         })?;
 
     // Resolve environment

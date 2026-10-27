@@ -1,5 +1,6 @@
 use kobana::client::{ApiRequest, ApiResponse, KobanaClient};
 use kobana::error::KobanaError;
+use kobana::trf;
 use kobana::spec::ResolvedEndpoint;
 
 use crate::formatter::{filter_fields, format_output};
@@ -30,7 +31,14 @@ pub async fn paginate_all(
 
     loop {
         if pages_fetched >= page_limit {
-            eprintln!("Page limit reached ({page_limit})");
+            eprintln!(
+                "{}",
+                trf!(
+                    pt: "Limite de páginas atingido ({page_limit})",
+                    en: "Page limit reached ({page_limit})",
+                    es: "Límite de páginas alcanzado ({page_limit})",
+                )
+            );
             break;
         }
 
@@ -53,7 +61,15 @@ pub async fn paginate_all(
         };
 
         if verbose {
-            eprintln!(">> Page {page}: {} {}{}", endpoint.http_method, client.base_url(), base_path);
+            let (method, base_url) = (endpoint.http_method, client.base_url());
+            eprintln!(
+                "{}",
+                trf!(
+                    pt: ">> Página {page}: {method} {base_url}{base_path}",
+                    en: ">> Page {page}: {method} {base_url}{base_path}",
+                    es: ">> Página {page}: {method} {base_url}{base_path}",
+                )
+            );
         }
 
         let response = client.execute(&request).await?;
@@ -61,7 +77,15 @@ pub async fn paginate_all(
         let item_count = items.len();
 
         if verbose {
-            eprintln!("<< Page {page}: {item_count} items (status {})", response.status);
+            let status = response.status;
+            eprintln!(
+                "{}",
+                trf!(
+                    pt: "<< Página {page}: {item_count} itens (status {status})",
+                    en: "<< Page {page}: {item_count} items (status {status})",
+                    es: "<< Página {page}: {item_count} elementos (estado {status})",
+                )
+            );
         }
 
         if item_count == 0 {
@@ -122,7 +146,14 @@ pub async fn paginate_all(
     }
 
     if verbose {
-        eprintln!("Pagination complete: {pages_fetched} pages fetched");
+        eprintln!(
+            "{}",
+            trf!(
+                pt: "Paginação concluída: {pages_fetched} páginas buscadas",
+                en: "Pagination complete: {pages_fetched} pages fetched",
+                es: "Paginación completada: {pages_fetched} páginas obtenidas",
+            )
+        );
     }
 
     Ok(())

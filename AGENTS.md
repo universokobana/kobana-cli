@@ -120,8 +120,8 @@ every route) and `dashboards` (optional) map it to `KOBANA_WORKSPACE_ID`.
 
 #### Updating specs
 
-Embed the **Portuguese** spec — help text and `kobana schema` output are in
-Portuguese. Sources, taken from each repo's `main` (not a working tree, which may
+Embed the **Portuguese** spec — its text is the source that the English and
+Spanish translations in `specs/i18n/` are keyed by (see [Languages](#languages)). Sources, taken from each repo's `main` (not a working tree, which may
 hold someone's uncommitted edits):
 
 | Spec | Source |
@@ -146,12 +146,20 @@ guards catch most spec shapes the CLI cannot serve.
 alone: `payments` exists in banking and billing, `transfers` in banking and
 finance, and they mean different things.
 
+**After replacing a spec, rebuild its translations** — see
+[Languages](#languages):
+
+```bash
+ruby scripts/build-spec-translations.rb
+```
+
 #### Library (`crates/kobana/src/`)
 
 | File           | Purpose                                                    |
 | -------------- | ---------------------------------------------------------- |
 | `client.rs`    | HTTP client with Bearer auth and idempotency keys          |
 | `error.rs`     | `KobanaError` enum, structured exit codes, JSON serialization |
+| `i18n.rs`      | Language detection, `tr!`/`trf!`, spec text translation    |
 | `spec.rs`      | OpenAPI spec parsing, command tree builder, method inference, `SpecLayout` |
 | `validate.rs`  | Path/URL/identifier validators against injection attacks   |
 
@@ -162,6 +170,7 @@ finance, and they mean different things.
 | `main.rs`            | Entrypoint, two-phase CLI parsing, dispatch                    |
 | `product.rs`         | Product registry — hosts, embedded specs, CLI service layout   |
 | `commands.rs`        | Recursive `clap::Command` builder from OpenAPI spec            |
+| `clap_i18n.rs`       | Localized clap help layout, `-h`/`-V`/`help`, parse errors, `--lang` |
 | `executor.rs`        | HTTP request construction, response handling, dry-run           |
 | `auth.rs`            | Token resolution chain (env var → file → saved credentials)    |
 | `auth_commands.rs`   | `kobana auth` subcommands: `login`, `logout`, `status`, `export` |
@@ -177,6 +186,53 @@ finance, and they mean different things.
 | `helpers/mod.rs`     | Helper trait, registry, and dispatch                           |
 | `helpers/boleto.rs`  | `+emitir` and `+cancelar-lote` helpers                         |
 | `helpers/pix.rs`     | `+cobrar` helper                                               |
+
+## Languages
+
+Everything the CLI says to a person is in Portuguese, English or Spanish:
+help, progress lines, prompts, error messages, the OAuth result page. The
+language is picked once per run by `kobana::i18n::lang()` — `--lang` (read from
+the raw arguments before clap, since commands are built with the language
+already set), then `KOBANA_LANG`, `LC_ALL`, `LC_MESSAGES`, `LANG`, then the OS
+(`sys-locale`; a bare `C`/`POSIX` locale falls through to it). `pt*` → pt,
+`es*` → es, anything else → en.
+
+**Every user-facing string is written in all three languages, in place:**
+
+```rust
+eprintln!("{}", tr!(pt: "Pronto", en: "Done", es: "Listo"));
+KobanaError::Auth(trf!(pt: "falhou: {e}", en: "failed: {e}", es: "falló: {e}"))
+```
+
+`tr!` gives a `&'static str`, `trf!` a `String` via `format!` (inline captures
+work). Fixed tables use `[pt, en, es]` arrays read with `i18n::pick` — product
+`about`, `resource_about`, OAuth scope descriptions. Never translated: command
+and flag names (including the Portuguese helpers like `+emitir --valor`), JSON
+keys, exit codes, invariants that cannot fail at runtime (spec parse errors).
+
+**clap is English-only**, so `clap_i18n` takes over its strings: every command
+is built with `clap_i18n::command(name, usage)`, which sets a localized help
+template, headings and the full usage line (the path is known while building,
+so `[OPÇÕES]`/`<COMANDO>` are written out instead of clap's `[OPTIONS]`).
+`clap_i18n::root` swaps clap's `-h`, `-V` and `help` subcommand for localized
+ones (global settings, they reach every subcommand). Possible values and
+defaults are hidden from clap and stated in the arg's own help. Parse errors go
+through `clap_i18n::exit_with`, which rewrites the common kinds and falls back
+to clap's text for the rest.
+
+**Spec text** comes in Portuguese. `specs/i18n/<spec>.{en,es}.json` maps each
+Portuguese `summary`/`description` to its translation, and
+`SpecEntry::document` swaps them in at load time; text without a translation
+stays in Portuguese. The maps are built by `scripts/build-spec-translations.rb`
+from the localized specs each product publishes in its user docs (read from
+the repo's `main`), walking both specs side by side — paths are matched
+ignoring a `/vN` prefix and path parameter names. Finance's descriptions are in
+English even in its Portuguese spec; only its summaries get translated.
+`translated_specs_serve_the_same_commands` checks that translating never
+changes the command tree and that most summaries do change.
+
+The client sends `Accept-Language`, so APIs that localize their messages
+answer in the same language.
 
 ## Install Script
 
@@ -347,6 +403,7 @@ Current helpers:
 |----------|-------------|
 | `KOBANA_CONFIG_DIR` | Override the config directory (default: `~/.config/kobana`) |
 | `KOBANA_ENVIRONMENT` | `production` (default), `sandbox` or `development` |
+| `KOBANA_LANG` | `pt`, `en` or `es` (default: `LC_ALL`/`LC_MESSAGES`/`LANG`, then the system language). `--lang` wins over it |
 
 ### Logging
 

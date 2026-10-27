@@ -1,5 +1,7 @@
 use std::process;
 
+use crate::trf;
+
 /// Exit codes following the CLI spec
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ExitCode {
@@ -13,23 +15,43 @@ pub enum ExitCode {
 
 #[derive(Debug, thiserror::Error)]
 pub enum KobanaError {
-    #[error("API error ({status}): {message}")]
+    #[error("{}", trf!(
+        pt: "Erro da API ({status}): {message}",
+        en: "API error ({status}): {message}",
+        es: "Error de la API ({status}): {message}",
+    ))]
     Api {
         status: u16,
         message: String,
         body: Option<serde_json::Value>,
     },
 
-    #[error("Authentication error: {0}")]
+    #[error("{}", trf!(
+        pt: "Erro de autenticação: {_0}",
+        en: "Authentication error: {_0}",
+        es: "Error de autenticación: {_0}",
+    ))]
     Auth(String),
 
-    #[error("Validation error: {0}")]
+    #[error("{}", trf!(
+        pt: "Erro de validação: {_0}",
+        en: "Validation error: {_0}",
+        es: "Error de validación: {_0}",
+    ))]
     Validation(String),
 
-    #[error("Schema error: {0}")]
+    #[error("{}", trf!(
+        pt: "Erro de schema: {_0}",
+        en: "Schema error: {_0}",
+        es: "Error de schema: {_0}",
+    ))]
     Schema(String),
 
-    #[error("Internal error: {0}")]
+    #[error("{}", trf!(
+        pt: "Erro interno: {_0}",
+        en: "Internal error: {_0}",
+        es: "Error interno: {_0}",
+    ))]
     Internal(String),
 
     #[error(transparent)]

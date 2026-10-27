@@ -1,9 +1,11 @@
 use clap::{Arg, Command};
 use kobana::client::{ApiRequest, KobanaClient};
 use kobana::error::KobanaError;
+use kobana::tr;
 use kobana::spec::HttpMethod;
 
 use super::Helper;
+use crate::clap_i18n;
 
 /// Helper: +cobrar — Create a Pix charge with simplified interface
 pub struct CobrarPix;
@@ -14,18 +16,28 @@ impl Helper for CobrarPix {
     }
 
     fn about(&self) -> &'static str {
-        "Criar cobrança Pix com interface simplificada"
+        tr!(
+            pt: "Criar cobrança Pix com interface simplificada",
+            en: "Create a Pix charge with a simplified interface",
+            es: "Crear un cobro Pix con una interfaz simplificada",
+        )
     }
 
     fn command(&self) -> Command {
-        Command::new("+cobrar")
-            .about("Criar cobrança Pix com interface simplificada")
-            .arg(Arg::new("valor").long("valor").required(true).help("Valor da cobrança").value_name("VALOR"))
-            .arg(Arg::new("conta-pix").long("conta-pix").required(true).help("UID da conta Pix").value_name("UID"))
-            .arg(Arg::new("nome").long("nome").help("Nome do pagador").value_name("NOME"))
-            .arg(Arg::new("cpf-cnpj").long("cpf-cnpj").help("CPF ou CNPJ do pagador").value_name("DOC"))
-            .arg(Arg::new("descricao").long("descricao").help("Descrição da cobrança").value_name("TEXT"))
-            .arg(Arg::new("dry-run").long("dry-run").action(clap::ArgAction::SetTrue).help("Mostra a requisição sem executar"))
+        clap_i18n::command(
+            "+cobrar",
+            format!(
+                "kobana +cobrar --valor <VALOR> --conta-pix <UID> {}",
+                clap_i18n::options_placeholder()
+            ),
+        )
+            .about(self.about())
+            .arg(Arg::new("valor").long("valor").required(true).help(tr!(pt: "Valor da cobrança", en: "Charge amount", es: "Monto del cobro")).value_name("VALOR"))
+            .arg(Arg::new("conta-pix").long("conta-pix").required(true).help(tr!(pt: "UID da conta Pix", en: "Pix account UID", es: "UID de la cuenta Pix")).value_name("UID"))
+            .arg(Arg::new("nome").long("nome").help(tr!(pt: "Nome do pagador", en: "Payer name", es: "Nombre del pagador")).value_name("NOME"))
+            .arg(Arg::new("cpf-cnpj").long("cpf-cnpj").help(tr!(pt: "CPF ou CNPJ do pagador", en: "Payer CPF or CNPJ", es: "CPF o CNPJ del pagador")).value_name("DOC"))
+            .arg(Arg::new("descricao").long("descricao").help(tr!(pt: "Descrição da cobrança", en: "Charge description", es: "Descripción del cobro")).value_name("TEXT"))
+            .arg(Arg::new("dry-run").long("dry-run").action(clap::ArgAction::SetTrue).help(tr!(pt: "Mostra a requisição sem executar", en: "Show the request without executing", es: "Muestra la solicitud sin ejecutarla")))
     }
 
     fn execute<'a>(

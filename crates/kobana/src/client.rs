@@ -1,9 +1,19 @@
 use crate::error::KobanaError;
+use crate::i18n::{self, Lang};
 use crate::spec::HttpMethod;
-use reqwest::header::{HeaderMap, AUTHORIZATION, CONTENT_TYPE, USER_AGENT};
+use crate::{tr, trf};
+use reqwest::header::{HeaderMap, ACCEPT_LANGUAGE, AUTHORIZATION, CONTENT_TYPE, USER_AGENT};
 use std::time::Duration;
 
 const USER_AGENT_VALUE: &str = concat!("kobana-cli/", env!("CARGO_PKG_VERSION"));
+
+fn accept_language() -> &'static str {
+    match i18n::lang() {
+        Lang::Pt => "pt-BR,pt;q=0.9",
+        Lang::En => "en",
+        Lang::Es => "es",
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct KobanaClient {
@@ -44,8 +54,10 @@ impl KobanaClient {
     /// certificate is what their edge forwards to the origin.
     pub fn with_client_cert(base_url: &str, token: &str, pem: &[u8]) -> Result<Self, KobanaError> {
         let identity = reqwest::Identity::from_pem(pem).map_err(|e| {
-            KobanaError::Auth(format!(
-                "invalid client certificate: {e}. Expected PEM with the certificate chain and its private key."
+            KobanaError::Auth(trf!(
+                pt: "certificado de cliente inválido: {e}. Era esperado um PEM com a cadeia do certificado e a chave privada.",
+                en: "invalid client certificate: {e}. Expected PEM with the certificate chain and its private key.",
+                es: "certificado de cliente inválido: {e}. Se esperaba un PEM con la cadena del certificado y la clave privada.",
             ))
         })?;
         Self::build(base_url, token, Some(identity))
@@ -64,7 +76,11 @@ impl KobanaClient {
 
         let client = builder
             .build()
-            .map_err(|e| KobanaError::Internal(format!("failed to create HTTP client: {e}")))?;
+            .map_err(|e| KobanaError::Internal(trf!(
+                pt: "não foi possível criar o cliente HTTP: {e}",
+                en: "failed to create HTTP client: {e}",
+                es: "no se pudo crear el cliente HTTP: {e}",
+            )))?;
 
         Ok(Self {
             inner: client,
@@ -112,7 +128,9 @@ impl KobanaClient {
         builder = builder
             .header(AUTHORIZATION, format!("Bearer {}", self.token))
             .header(CONTENT_TYPE, "application/json")
-            .header(USER_AGENT, USER_AGENT_VALUE);
+            .header(USER_AGENT, USER_AGENT_VALUE)
+            // APIs that localize their messages answer in the user's language
+            .header(ACCEPT_LANGUAGE, accept_language());
 
         // Add idempotency key for mutations
         if let Some(key) = &req.idempotency_key {
@@ -161,7 +179,7 @@ impl KobanaClient {
                 .as_str()
                 .or_else(|| body["errors"][0]["message"].as_str())
                 .or_else(|| body["message"].as_str())
-                .unwrap_or("unknown error")
+                .unwrap_or(tr!(pt: "erro desconhecido", en: "unknown error", es: "error desconocido"))
                 .to_string();
 
             return Err(KobanaError::Api {
