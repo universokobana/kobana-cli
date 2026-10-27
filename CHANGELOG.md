@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-27
+
 ### Added
 
 - **Script de instalação** — `curl -fsSL https://raw.githubusercontent.com/universokobana/kobana-cli/main/scripts/install.sh | bash` baixa o binário da plataforma para `~/.kobana/bin`, confere o SHA-256 publicado na release e cria o link `~/.local/bin/kobana`, com banner e saída no estilo do instalador do Slack CLI. Fala português, inglês ou espanhol conforme o idioma do sistema (ou `KOBANA_LANG`). Aceita uma versão (`| bash -s -- v0.5.1`), `KOBANA_INSTALL_DIR`, `KOBANA_BIN_DIR` e `NO_COLOR`
