@@ -10,9 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Coleções sob um recurso pai viravam `get`** — um `GET` com parâmetro de caminho era sempre `get`, então `GET /webhooks/{id}/deliveries` (a lista) e `GET /webhooks/{id}/deliveries/{delivery_id}` (uma entrega) disputavam o mesmo nome e um dos dois sumia. Agora um `GET` que não termina em parâmetro e aceita paginação (`page`, `per_page`, `cursor`, `limit`) é `list`; recursos singulares sob um pai (`companies fiscal-profile`, `balances latest`) continuam `get`
-  - Voltaram comandos que estavam inacessíveis: `inbox webhooks deliveries list`, `banking financial accounts balances list`, `statement-transactions list`, `statement-transactions imports list`, `statement-transactions syncs list`, `billing customers users list`, `billing nfes requests list`, `dashboards data-sources logs list`, `dashboards entities logs list` e `dashboards entities records list`
-  - **BREAKING:** listagens que se chamavam `get` passam a `list` — `dashboards webhooks deliveries`, `dashboards entities tenant-syncs`, `dashboards portal-users activity timeline`, `dunning webhook-endpoints deliveries`, `dunning people contact-points`, `finance financial-accounts balances`, `billing customers statement` e `banking financial accounts statement-transactions`
-  - **BREAKING:** `banking financial accounts balances get` passa a ler **um** saldo (`.../balances/{balance_uid}`); a lista de saldos é `balances list`
+  - **BREAKING:** listagens que se chamavam `get` passam a `list` — `banking financial accounts balances`, `statement-transactions`, `statement-transactions imports` e `statement-transactions syncs`; `billing customers statement` e `customers users`; `dashboards entities records`, `entities tenant-syncs`, `portal-users activity timeline` e `webhooks deliveries`; `dunning people contact-points` e `webhook-endpoints deliveries`; `finance financial-accounts balances`
+  - Voltaram comandos que estavam inacessíveis: `banking financial accounts balances get`, `statement-transactions imports get` e `statement-transactions syncs get` (agora leem **um** item); `billing customers users get` e `billing nfes requests list`; `dashboards data-sources logs list`, `entities logs list` e `entities records get`; `inbox webhooks deliveries list`
+- **Exemplos de `payables aggregates`** no README e na skill do `finance` — o comando é `payables aggregates list`
 
 ### Changed
 

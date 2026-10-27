@@ -417,7 +417,7 @@ kobana finance payables list \
   --fields "id,description,amount,due_date"
 
 # Totais agregados em vez da lista inteira
-kobana finance payables aggregates --params '{"group_by": "category"}'
+kobana finance payables aggregates list --params '{"group_by": "category"}'
 
 # Enviar uma conta para pagamento no banco
 kobana finance payables send-to-bank --dry-run --params '{"id": "PAYABLE_ID"}'

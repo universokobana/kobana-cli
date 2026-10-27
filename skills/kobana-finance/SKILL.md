@@ -65,7 +65,7 @@ kobana finance financial-accounts list --fields "id,name,balance"
 kobana finance cash-flow list --params '{"start_date": "2026-01-01", "end_date": "2026-01-31"}'
 
 # Aggregates keep large result sets out of the context window
-kobana finance payables aggregates --params '{"group_by": "category"}'
+kobana finance payables aggregates list --params '{"group_by": "category"}'
 
 # Mutations: always dry-run first
 kobana finance payables send-to-bank --dry-run --params '{"id": "PAYABLE_ID"}'
