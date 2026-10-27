@@ -3,7 +3,7 @@
   "info": {
     "title": "API do Kobana Dunning",
     "version": "1.0.0",
-    "description": "API pública da Régua de Cobrança — a régua de cobrança da Kobana. Gerencie clientes, cobranças, réguas, acordos, disputas e webhooks programaticamente. Autentique com uma chave de API (Bearer) criada no dashboard em Configurações → Segurança; o acesso é limitado pelos escopos da chave (`dunning.dashboard.<recurso>.<ação>`).",
+    "description": "API pública da Régua de Cobrança — a régua de cobrança da Kobana. Gerencie clientes, cobranças, réguas, acordos, disputas e webhooks programaticamente. Autentique com um access token da Conta Kobana (`Authorization: Bearer <token>`), um JWT RS256 emitido pelo Authorization Server da Kobana; o acesso é limitado pelos escopos do token — o recurso (`dunning/charges`) e o verbo (`write`).",
     "license": {
       "name": "Proprietário — Kobana",
       "url": "https://kobana.com.br"
@@ -10744,7 +10744,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -10858,7 +10858,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -11002,7 +11002,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -11150,7 +11150,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -11254,7 +11254,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -11368,7 +11368,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -11499,7 +11499,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -11691,7 +11691,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -11839,7 +11839,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -12010,7 +12010,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -12140,7 +12140,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -12357,7 +12357,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -12471,7 +12471,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -12626,7 +12626,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -12774,7 +12774,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -12878,7 +12878,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -13002,7 +13002,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -13143,7 +13143,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -13303,7 +13303,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -13457,7 +13457,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -13630,7 +13630,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -13822,7 +13822,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -13936,7 +13936,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14091,7 +14091,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14239,7 +14239,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14353,7 +14353,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14514,7 +14514,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14674,7 +14674,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14798,7 +14798,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14911,7 +14911,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15059,7 +15059,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15235,7 +15235,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15349,7 +15349,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15493,7 +15493,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15641,7 +15641,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15896,7 +15896,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16010,7 +16010,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16154,7 +16154,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16302,7 +16302,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16406,7 +16406,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16537,7 +16537,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16678,7 +16678,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -16841,7 +16841,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -17098,7 +17098,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -17212,7 +17212,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -17356,7 +17356,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -17504,7 +17504,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -17608,7 +17608,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -17815,7 +17815,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -17929,7 +17929,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -18084,7 +18084,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -18232,7 +18232,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -18336,7 +18336,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -18477,7 +18477,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -18664,7 +18664,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -18778,7 +18778,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -18933,7 +18933,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -19081,7 +19081,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -19185,7 +19185,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -19308,7 +19308,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -19456,7 +19456,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -19617,7 +19617,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -19732,7 +19732,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -19986,7 +19986,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -20100,7 +20100,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -20254,7 +20254,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -20402,7 +20402,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -20516,7 +20516,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -20676,7 +20676,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -20908,7 +20908,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -21022,7 +21022,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -21187,7 +21187,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -21335,7 +21335,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -21449,7 +21449,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -21548,7 +21548,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -21675,7 +21675,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -21804,7 +21804,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -22026,7 +22026,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -22140,7 +22140,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -22294,7 +22294,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -22442,7 +22442,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -22546,7 +22546,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -22697,7 +22697,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -22907,7 +22907,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -23021,7 +23021,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -23175,7 +23175,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -23323,7 +23323,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -23427,7 +23427,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -23578,7 +23578,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -23667,7 +23667,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -23794,7 +23794,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -23938,7 +23938,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -24029,7 +24029,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -24181,7 +24181,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -24270,7 +24270,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -24397,7 +24397,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -24535,7 +24535,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -24644,7 +24644,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -24771,7 +24771,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -24915,7 +24915,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -25063,7 +25063,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -25167,7 +25167,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -25298,7 +25298,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -25429,7 +25429,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -25593,7 +25593,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -25735,7 +25735,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -25960,7 +25960,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -26093,7 +26093,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -26182,7 +26182,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -26309,7 +26309,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -26421,7 +26421,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -26548,7 +26548,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -26780,7 +26780,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -26894,7 +26894,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -27048,7 +27048,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -27196,7 +27196,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -27300,7 +27300,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -27397,7 +27397,7 @@
             }
           },
           "403": {
-            "description": "A chave não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação.",
             "content": {
               "application/json": {
                 "schema": {

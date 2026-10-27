@@ -8031,7 +8031,7 @@
             ],
             "minLength": 3,
             "maxLength": 50,
-            "description": "Subdomínio: 3 a 50 letras minúsculas, números e hífens (sem hífen nas pontas). `null` para remover.",
+            "description": "Slug do workspace, o primeiro rótulo do endereço (`{slug}.{slug_da_organizacao}.{domain}`): 3 a 50 letras minúsculas, números e hífens (sem hífen nas pontas). `null` para remover.",
             "example": "acme"
           },
           "domain": {
@@ -14669,7 +14669,7 @@
         "tags": [
           "Usuários do Portal"
         ],
-        "summary": "Convidar usuário do portal (verbo)",
+        "summary": "Convidar usuário do portal",
         "description": "Equivalente ao `POST /portal_users`. Disponível como rota de verbo para SDKs que preferem URLs descritivas.",
         "security": [
           {
@@ -16361,7 +16361,7 @@
         "tags": [
           "Administração da Conta"
         ],
-        "summary": "Cria ou atualiza um usuário do painel",
+        "summary": "Criar ou atualizar um usuário do painel",
         "description": "Localiza o usuário por `id`, `public_id`, `external_id` ou `email` — este último é único por organização. Encontrando, atualiza; caso contrário, cria e devolve `201`. Ao atualizar, com um token de pessoa, ela precisa ter acesso a todos os workspaces em que o membro trabalha (ou ser proprietária da organização); caso contrário, 403.",
         "security": [
           {
@@ -17399,7 +17399,7 @@
         "tags": [
           "Administração da Conta"
         ],
-        "summary": "Cria ou atualiza um papel de equipe",
+        "summary": "Criar ou atualizar um papel de equipe",
         "description": "Localiza o papel por `id`, `public_id` ou `external_id`. O `slug` não tem restrição de unicidade e por isso **não** identifica um registro. Encontrando, atualiza; caso contrário, cria e devolve `201`. Com um token de pessoa, ela precisa ter acesso a todos os workspaces da organização (ou ser proprietária): um papel vale em todos eles. Caso contrário, 403.",
         "security": [
           {
@@ -19047,7 +19047,7 @@
         "tags": [
           "Workspaces"
         ],
-        "summary": "Consultar o conteúdo do workspace",
+        "summary": "Contar o que a exclusão do workspace esconderia",
         "description": "Conta o que a exclusão do workspace esconderia — o mesmo resumo do diálogo de exclusão do dashboard.",
         "security": [
           {
@@ -25694,7 +25694,7 @@
         "tags": [
           "Entidades"
         ],
-        "summary": "Importar CSV",
+        "summary": "Importar registros por CSV",
         "description": "Importa um CSV para uma entidade sem conexão: um registro por linha, cada coluna lida por um campo convertida para o tipo dele (números, datas, booleanos). Linhas sem identificador são recusadas e listadas pelo número da linha (a 1 é o cabeçalho).",
         "security": [
           {
@@ -25873,7 +25873,7 @@
         "tags": [
           "Entidades"
         ],
-        "summary": "Agregar registros",
+        "summary": "Calcular agregados dos registros",
         "description": "Contagem, soma, média, mínimo ou máximo sobre os registros sincronizados, opcionalmente agrupados por um campo — o que os blocos de KPI e gráfico mostram.",
         "security": [
           {
@@ -27977,7 +27977,7 @@
         "tags": [
           "Construtor do Portal"
         ],
-        "summary": "Restaurar uma versão",
+        "summary": "Colocar uma versão de volta no ar",
         "description": "Coloca essa versão de volta no ar como o próximo número — os visitantes do portal a veem na hora. Retorna a nova versão e o construtor como ficou.",
         "security": [
           {
@@ -28824,7 +28824,7 @@
           "Construtor do Portal"
         ],
         "summary": "Listar os tipos de bloco",
-        "description": "Lists the block catalog: every block type the portal can render, with what it is for. Only these types exist.",
+        "description": "Lista o catálogo de blocos: todo tipo de bloco que o portal sabe renderizar, com para que serve. Só esses tipos existem.",
         "security": [
           {
             "bearerAuth": [
@@ -28974,7 +28974,7 @@
           "Construtor do Portal"
         ],
         "summary": "Descrever um tipo de bloco",
-        "description": "The props of one block type: JSON Schema, defaults and slots. Read it before inserting or changing a block you have not used yet.",
+        "description": "As props de um tipo de bloco: JSON Schema, valores padrão e slots. Leia antes de inserir ou alterar um bloco que você ainda não usou.",
         "security": [
           {
             "bearerAuth": [
@@ -29134,7 +29134,7 @@
           "Construtor do Portal"
         ],
         "summary": "Listar as ações do botão",
-        "description": "What an ActionButton can do (its actionType): open a link (a portal page or a URL) or fire a webhook, and the {{variables}} its webhook URL, headers and body may use.",
+        "description": "O que um ActionButton pode fazer (o seu actionType): abrir um link (uma página do portal ou uma URL) ou disparar um webhook, e as {{variáveis}} que a URL, os cabeçalhos e o corpo do webhook podem usar.",
         "security": [
           {
             "bearerAuth": [
@@ -29284,7 +29284,7 @@
           "Construtor do Portal"
         ],
         "summary": "Consultar as cores do tema",
-        "description": "The colors of the portal pages (the Visual tab of the draft), in hex, for light and dark mode: what each color is for and its current value.",
+        "description": "As cores das páginas do portal (a aba Visual do rascunho), em hex, nos modos claro e escuro: para que serve cada cor e o valor atual.",
         "security": [
           {
             "bearerAuth": [
@@ -29434,7 +29434,7 @@
           "Construtor do Portal"
         ],
         "summary": "Listar as páginas do rascunho",
-        "description": "Lists the pages of the draft in menu order: id, name, path, title and block count.",
+        "description": "Lista as páginas do rascunho na ordem do menu: id, nome, rota, título e quantidade de blocos.",
         "security": [
           {
             "bearerAuth": [
@@ -29584,7 +29584,7 @@
           "Construtor do Portal"
         ],
         "summary": "Consultar uma página do rascunho",
-        "description": "One page of the draft: its settings (name, path, title, SEO) and its block tree, each block with id, type, props and slots.",
+        "description": "Uma página do rascunho: as configurações (nome, rota, título, SEO) e a árvore de blocos, cada bloco com id, tipo, props e slots.",
         "security": [
           {
             "bearerAuth": [
@@ -29745,7 +29745,7 @@
           "Construtor do Portal"
         ],
         "summary": "Ler o conteúdo de um arquivo",
-        "description": "Opens a file of the Assets library to look at its content: an image or a PDF is shown to you, a text file (txt, csv, json, md, xml) or an .xlsx spreadsheet comes as text. Word/PowerPoint/zip cannot be read (only their details).",
+        "description": "Abre um arquivo da biblioteca de Arquivos para ver o conteúdo: imagem ou PDF vem como imagem, arquivo de texto (txt, csv, json, md, xml) ou planilha .xlsx vem como texto. Word/PowerPoint/zip não podem ser lidos (só os detalhes deles).",
         "security": [
           {
             "bearerAuth": [
@@ -29906,7 +29906,7 @@
           "Construtor do Portal"
         ],
         "summary": "Pré-visualizar o mapeamento de usuários do portal",
-        "description": "Checks a portal user mapping before saving it with `dashboards_portal_user_mappings_update`: the entity whose records would become the portal users, its tenant ID, e-mail and name fields, how many users that is, and how the tenant IDs match the owners of the other entities' records. Saves nothing.",
+        "description": "Confere um mapeamento de usuários do portal antes de salvá-lo com `dashboards_portal_user_mappings_update`: a entidade cujos registros virariam os usuários do portal, os campos de ID do tenant, e-mail e nome, quantos usuários seriam e como os IDs de tenant casam com os titulares dos registros das outras entidades. Não salva nada.",
         "security": [
           {
             "bearerAuth": [
@@ -30100,7 +30100,7 @@
           "Construtor do Portal"
         ],
         "summary": "Criar uma página",
-        "description": "Creates a page in the draft and adds it to the portal menu. template: blank (title only), list (title + KPIs + table of `entity`), detail (title + record detail + documents). The title is a PageHeader block: the answer lists the blocks it created — change them with update_block instead of inserting them again.",
+        "description": "Cria uma página no rascunho e a adiciona ao menu do portal. template: blank (só o título), list (título + KPIs + tabela de `entity`), detail (título + detalhe do registro + documentos). O título é um bloco PageHeader: a resposta lista os blocos criados — altere-os com update_block em vez de inseri-los de novo.",
         "security": [
           {
             "bearerAuth": [
@@ -30327,7 +30327,7 @@
           "Construtor do Portal"
         ],
         "summary": "Alterar uma página",
-        "description": "Changes the settings of a page: menu name, route, browser title, whether it is listed in the portal menu, and SEO / Open Graph tags. Only the fields sent change.",
+        "description": "Altera as configurações de uma página: nome no menu, rota, título no navegador, se ela aparece no menu do portal e as tags de SEO / Open Graph. Só os campos enviados mudam.",
         "security": [
           {
             "bearerAuth": [
@@ -30572,7 +30572,7 @@
           "Construtor do Portal"
         ],
         "summary": "Excluir uma página",
-        "description": "Removes a page (and its blocks) from the draft and from the menu. Only when the operator asks for it.",
+        "description": "Remove uma página (e os blocos dela) do rascunho e do menu. Só quando o operador pedir.",
         "security": [
           {
             "bearerAuth": [
@@ -30766,7 +30766,7 @@
           "Construtor do Portal"
         ],
         "summary": "Mover uma página no menu",
-        "description": "Moves a page to another place in the portal menu.",
+        "description": "Move uma página para outro lugar do menu do portal.",
         "security": [
           {
             "bearerAuth": [
@@ -30966,7 +30966,7 @@
           "Construtor do Portal"
         ],
         "summary": "Inserir um bloco",
-        "description": "Inserts a block of the catalog in a page: at the page root, or inside a slot of a Columns/Tabs block (parent_block_id + slot). Props not sent take the defaults.",
+        "description": "Insere um bloco do catálogo numa página: na raiz da página ou dentro de um slot de um bloco Columns/Tabs (parent_block_id + slot). Props não enviadas usam o valor padrão.",
         "security": [
           {
             "bearerAuth": [
@@ -31187,7 +31187,7 @@
           "Construtor do Portal"
         ],
         "summary": "Alterar um bloco",
-        "description": "Changes props of a block. Only the props sent change; the result is validated against the block type.",
+        "description": "Altera props de um bloco. Só as props enviadas mudam; o resultado é validado contra o tipo do bloco.",
         "security": [
           {
             "bearerAuth": [
@@ -31388,7 +31388,7 @@
           "Construtor do Portal"
         ],
         "summary": "Mover um bloco",
-        "description": "Moves a block inside its page: to another position at the root (parent_block_id null) or into a slot of a Columns/Tabs block.",
+        "description": "Move um bloco dentro da página: para outra posição na raiz (parent_block_id null) ou para um slot de um bloco Columns/Tabs.",
         "security": [
           {
             "bearerAuth": [
@@ -31598,7 +31598,7 @@
           "Construtor do Portal"
         ],
         "summary": "Remover um bloco",
-        "description": "Removes a block (and the blocks inside it) from its page.",
+        "description": "Remove um bloco (e os blocos dentro dele) da página.",
         "security": [
           {
             "bearerAuth": [
@@ -31792,7 +31792,7 @@
           "Construtor do Portal"
         ],
         "summary": "Duplicar um bloco",
-        "description": "Copies a block (with the blocks inside it) right after itself, with new ids.",
+        "description": "Copia um bloco (com os blocos dentro dele) logo depois dele mesmo, com ids novos.",
         "security": [
           {
             "bearerAuth": [
@@ -31986,7 +31986,7 @@
           "Construtor do Portal"
         ],
         "summary": "Registrar uma entidade a partir de uma fonte de dados",
-        "description": "Registers an entity (data blocks bind to it) from an operation of a connected data source (describe_data_source), with the fields inferred from a sample of its records, and starts its first sync. Use it when the operator wants data that no entity has yet. It takes effect in the workspace right away (it is not part of the draft); the new entity can be used by blocks in this same answer. The workspace caps how many fields a new entity keeps: when the source has more, the refusal lists every field with a sample value — call again with `fields` set to the ones the portal needs (what it shows, filters or sums, and whatever identifies the customer the record belongs to).",
+        "description": "Registra uma entidade (os blocos de dados se ligam a ela) a partir de uma operação de uma fonte de dados conectada (describe_data_source), com os campos inferidos de uma amostra dos registros, e inicia a primeira sincronização. Use quando o operador quer dados que nenhuma entidade tem ainda. Vale no workspace na hora (não faz parte do rascunho); a nova entidade já pode ser usada por blocos na mesma resposta. O workspace limita quantos campos uma entidade nova guarda: quando a fonte tem mais, a recusa lista todos os campos com um valor de exemplo — chame de novo com `fields` contendo os que o portal precisa (o que ele mostra, filtra ou soma, e o que identifica o cliente dono do registro).",
         "security": [
           {
             "bearerAuth": [
@@ -32236,7 +32236,7 @@
           "Construtor do Portal"
         ],
         "summary": "Renomear os campos de uma entidade",
-        "description": "Changes an existing entity: renames its fields — the labels the blocks show (table headers, card labels) — and, optionally, the entity itself, and can set its owner field (the titular: whose record it is). Use it when the labels came from the source in English or as raw keys (\"Expire at\", \"customer_cnpj_cpf\"): customers read them, so they go in Brazilian Portuguese; and when the owner is wrong or missing (a customers entity owns its records by its own id). Keys stay; a new owner maps the stored records again. It takes effect in the workspace right away, not in the draft.",
+        "description": "Altera uma entidade existente: renomeia os campos — os rótulos que os blocos mostram (cabeçalhos de tabela, rótulos de cards) — e, opcionalmente, a própria entidade, e pode definir o campo titular (de quem é o registro). Use quando os rótulos vieram da fonte em inglês ou como chaves cruas (\"Expire at\", \"customer_cnpj_cpf\"): os clientes leem, então vão em português do Brasil; e quando o titular está errado ou faltando (uma entidade de clientes é titular dos próprios registros pelo id). As chaves ficam; um novo titular mapeia de novo os registros guardados. Vale no workspace na hora, não no rascunho.",
         "security": [
           {
             "bearerAuth": [
@@ -32461,7 +32461,7 @@
           "Construtor do Portal"
         ],
         "summary": "Salvar um campo calculado",
-        "description": "Adds a computed field to an entity — a value derived from the other fields by an expression (n8n style) — or changes the expression of a computed field it already has (same key). Use it when the operator wants a value the source does not give as is: part of a text, a join of fields, a formatted date or amount, a label from a condition. It is tried on stored records first (an expression that fails on all of them is refused, nothing saved), then saved to the entity in the workspace right away (not part of the draft) and computed on every stored record from the data it already has (no new fetch from the source). Blocks and sample_records see it in this same answer.",
+        "description": "Adiciona um campo calculado a uma entidade — um valor derivado dos outros campos por uma expressão (no estilo do n8n) — ou altera a expressão de um campo calculado que ela já tem (mesma chave). Use quando o operador quer um valor que a fonte não entrega pronto: parte de um texto, a junção de campos, uma data ou valor formatado, um rótulo a partir de uma condição. A expressão é testada antes nos registros guardados (uma expressão que falha em todos é recusada e nada é salvo), depois salva na entidade no workspace na hora (não faz parte do rascunho) e calculada em cada registro guardado com os dados que ele já tem (sem buscar de novo na fonte). Blocos e sample_records já a veem na mesma resposta.",
         "security": [
           {
             "bearerAuth": [
@@ -33675,7 +33675,7 @@
           "Configurações do Portal"
         ],
         "summary": "Definir endereço do portal",
-        "description": "Define o endereço do portal na plataforma, `https://{slug}.{domain}`, ou o remove quando os dois são `null`.",
+        "description": "Define o endereço do portal na plataforma, `https://{slug}.{slug_da_organizacao}.{domain}` (o slug da organização é fixo aqui), ou o remove quando os dois são `null`.",
         "security": [
           {
             "bearerAuth": [
@@ -33844,7 +33844,7 @@
           "Configurações do Portal"
         ],
         "summary": "Verificar disponibilidade do endereço",
-        "description": "Informa se `slug.domain` está livre para o portal deste workspace (o endereço atual dele conta como livre).",
+        "description": "Informa se o `slug` está livre, sob o `domain`, para o portal deste workspace dentro da organização (o endereço atual dele conta como livre).",
         "security": [
           {
             "bearerAuth": [
@@ -33856,7 +33856,7 @@
           {
             "schema": {
               "type": "string",
-              "description": "Subdomínio: 3 a 50 letras minúsculas, números e hífens (sem hífen nas pontas). `null` para remover.",
+              "description": "Slug do workspace, o primeiro rótulo do endereço (`{slug}.{slug_da_organizacao}.{domain}`): 3 a 50 letras minúsculas, números e hífens (sem hífen nas pontas). `null` para remover.",
               "example": "acme"
             },
             "required": true,
@@ -43822,7 +43822,7 @@
         "tags": [
           "Importações"
         ],
-        "summary": "Importar CSV (POST /imports)",
+        "summary": "Importar usuários do portal por CSV",
         "description": "Envia um CSV em base64 e agenda a importação de usuários do portal no workspace. O painel faz upload prévio do arquivo; a API o recebe no corpo (limite de 2 MB por requisição). Segue a configuração da organização \"permitir criar usuários do portal\" (403 quando desligada). Assíncrono: 202; consulte `GET /imports/{id}`.",
         "security": [
           {

@@ -41,7 +41,7 @@ impl std::fmt::Display for HttpMethod {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Operation {
     pub summary: Option<String>,
     pub description: Option<String>,
@@ -184,7 +184,7 @@ impl ApiSpec {
                 let cli_method = if last_is_action {
                     resource_segments.last().unwrap().clone()
                 } else {
-                    infer_cli_method(*http_method, &path_params)
+                    infer_cli_method(*http_method, path, operation)
                 };
 
                 let endpoint = ResolvedEndpoint {
@@ -243,7 +243,7 @@ fn resolve_conflicts(node: &mut CommandNode) {
     // Move them into the matching child with a new inferred method name
     for mut ep in conflicting {
         let child_name = ep.cli_method.clone();
-        let new_method = infer_cli_method(ep.http_method, &ep.path_params);
+        let new_method = infer_cli_method(ep.http_method, &ep.path_template, &ep.operation);
         ep.cli_method = new_method.clone();
         if let Some(child) = node.children.get_mut(&child_name) {
             if !child
@@ -262,9 +262,28 @@ fn resolve_conflicts(node: &mut CommandNode) {
     }
 }
 
-/// Infer the CLI method name from HTTP method and path params
-fn infer_cli_method(http_method: HttpMethod, path_params: &[String]) -> String {
-    match (http_method, path_params.is_empty()) {
+/// Query parameters that only a collection takes
+const PAGINATION_PARAMS: &[&str] = &["page", "per_page", "cursor", "limit"];
+
+/// Infer the CLI method name from the HTTP method, path and operation.
+///
+/// A GET without path parameters lists. With them it reads one thing — an item
+/// (`/webhooks/{id}`) or a singleton under a parent (`/companies/{id}/fiscal`)
+/// — unless it is a collection under a parent (`/webhooks/{id}/deliveries`),
+/// which the path alone cannot tell from a singleton. Pagination parameters
+/// can: a GET that takes them, on a path not ending in a parameter, lists.
+fn infer_cli_method(http_method: HttpMethod, path: &str, operation: &Operation) -> String {
+    let ends_with_param = path
+        .trim_end_matches('/')
+        .rsplit('/')
+        .next()
+        .is_some_and(|seg| seg.starts_with('{') && seg.ends_with('}'));
+    let has_path_params = path.contains('{');
+    let paginated = operation.parameters.iter().any(|p| {
+        p.location == ParameterLocation::Query && PAGINATION_PARAMS.contains(&p.name.as_str())
+    });
+    let lists = !has_path_params || (!ends_with_param && paginated);
+    match (http_method, lists) {
         (HttpMethod::Get, true) => "list".to_string(),
         (HttpMethod::Get, false) => "get".to_string(),
         (HttpMethod::Post, _) => "create".to_string(),
@@ -431,9 +450,28 @@ mod tests {
 
     #[test]
     fn test_infer_cli_method() {
-        assert_eq!(infer_cli_method(HttpMethod::Get, &[]), "list");
-        assert_eq!(infer_cli_method(HttpMethod::Get, &["id".into()]), "get");
-        assert_eq!(infer_cli_method(HttpMethod::Post, &[]), "create");
-        assert_eq!(infer_cli_method(HttpMethod::Delete, &["uid".into()]), "delete");
+        let plain = Operation::default();
+        let paginated = Operation {
+            parameters: vec![Parameter {
+                name: "page".into(),
+                location: ParameterLocation::Query,
+                required: false,
+                description: None,
+                schema: None,
+                example: None,
+            }],
+            ..Operation::default()
+        };
+
+        assert_eq!(infer_cli_method(HttpMethod::Get, "/v1/webhooks", &plain), "list");
+        assert_eq!(infer_cli_method(HttpMethod::Get, "/v1/webhooks/{id}", &plain), "get");
+        assert_eq!(infer_cli_method(HttpMethod::Post, "/v1/webhooks", &plain), "create");
+        assert_eq!(infer_cli_method(HttpMethod::Delete, "/v1/webhooks/{uid}", &plain), "delete");
+
+        // Under a parent, pagination tells a collection from a singleton
+        assert_eq!(infer_cli_method(HttpMethod::Get, "/v1/webhooks/{id}/deliveries", &paginated), "list");
+        assert_eq!(infer_cli_method(HttpMethod::Get, "/v1/companies/{id}/fiscal", &plain), "get");
+        // An item is read one at a time even if the spec lists `page` on it
+        assert_eq!(infer_cli_method(HttpMethod::Get, "/v1/webhooks/{id}", &paginated), "get");
     }
 }
