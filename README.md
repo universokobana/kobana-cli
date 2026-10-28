@@ -317,12 +317,13 @@ próprios hosts:
 | `banking` | `api.kobana.com.br` | `api-sandbox.kobana.com.br` | `localhost:5005/api` |
 | `finance` | `api.finance.kobana.com.br` | `api.finance.sandbox.kobana.com.br` | — |
 | `billing` | `api.billing.kobana.com.br` | `api.billing.sandbox.kobana.com.br` | — |
-| `inbox` | `api.inbox.kobana.com.br` | `api.inbox.sandbox.kobana.com.br` | `localhost:3028/api` |
+| `inbox` | `api.inbox.kobana.com.br` | — | `localhost:3028/api` |
 | `dunning` | `api.dunning.kobana.com.br` | `api.dunning.sandbox.kobana.com.br` | — |
-| `dashboards` | `api.dashboards.kobana.com.br` | `api.dashboards.sandbox.kobana.com.br` | — |
+| `dashboards` | `api.dashboards.kobana.com.br` | — | — |
 
 Produtos sem host de desenvolvimento próprio caem em produção quando você passa
-`--env development`.
+`--env development`. Já `--env sandbox` num produto sem sandbox (`inbox` e
+`dashboards`) termina com erro, para nunca mandar um teste para produção.
 
 O OAuth (`kobana auth login`) é do Gateway Bancário e usa `app.kobana.com.br` em
 produção e `app-sandbox.kobana.com.br` em sandbox.

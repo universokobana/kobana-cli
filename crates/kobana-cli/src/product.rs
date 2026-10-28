@@ -52,7 +52,8 @@ pub struct Product {
 /// that lives in the spec's own paths.
 pub struct Hosts {
     pub production: &'static str,
-    pub sandbox: &'static str,
+    /// `None` when the product has no sandbox environment
+    pub sandbox: Option<&'static str>,
     /// `None` when the product has no documented local dev host
     pub development: Option<&'static str>,
 }
@@ -97,12 +98,21 @@ impl Product {
     /// Base URL for this product in the given environment.
     ///
     /// Falls back to production when the product has no development host, so
-    /// `--env development` never silently targets the wrong product.
-    pub fn base_url(&self, env: &Environment) -> &'static str {
+    /// `--env development` never silently targets the wrong product. A product
+    /// without a sandbox fails instead: falling back there would send test
+    /// requests to production.
+    pub fn base_url(&self, env: &Environment) -> Result<&'static str, KobanaError> {
         match env {
-            Environment::Production => self.hosts.production,
-            Environment::Sandbox => self.hosts.sandbox,
-            Environment::Development => self.hosts.development.unwrap_or(self.hosts.production),
+            Environment::Production => Ok(self.hosts.production),
+            Environment::Sandbox => self.hosts.sandbox.ok_or_else(|| {
+                let slug = self.slug;
+                KobanaError::Validation(trf!(
+                    pt: "{slug} não tem ambiente sandbox; use --env production",
+                    en: "{slug} has no sandbox environment; use --env production",
+                    es: "{slug} no tiene entorno sandbox; usa --env production",
+                ))
+            }),
+            Environment::Development => Ok(self.hosts.development.unwrap_or(self.hosts.production)),
         }
     }
 }
@@ -120,7 +130,7 @@ pub fn client_for(
     token: &str,
     dry_run: bool,
 ) -> Result<KobanaClient, KobanaError> {
-    let base_url = product.base_url(env);
+    let base_url = product.base_url(env)?;
     let default_headers = product
         .header_env
         .iter()
@@ -175,7 +185,7 @@ fn warn(msg: &str) {
 ///
 /// Every product except banking follows the
 /// `api.<product>[.sandbox].kobana.com.br` host shape — see the notes in
-/// AGENTS.md before adding one.
+/// AGENTS.md before adding one. Inbox and dashboards have no sandbox.
 pub static REGISTRY: &[Product] = &[
 Product {
     slug: "banking",
@@ -186,7 +196,7 @@ Product {
     ],
     hosts: Hosts {
         production: "https://api.kobana.com.br",
-        sandbox: "https://api-sandbox.kobana.com.br",
+        sandbox: Some("https://api-sandbox.kobana.com.br"),
         development: Some("http://localhost:5005/api"),
     },
     specs: &[
@@ -205,7 +215,7 @@ Product {
     ],
     hosts: Hosts {
         production: "https://api.inbox.kobana.com.br",
-        sandbox: "https://api.inbox.sandbox.kobana.com.br",
+        sandbox: None,
         development: Some("http://localhost:3028/api"),
     },
     specs: &[spec!("inbox-v1", "/v1")],
@@ -223,7 +233,7 @@ Product {
     ],
     hosts: Hosts {
         production: "https://api.billing.kobana.com.br",
-        sandbox: "https://api.billing.sandbox.kobana.com.br",
+        sandbox: Some("https://api.billing.sandbox.kobana.com.br"),
         development: None,
     },
     specs: &[spec!("billing-v1", "/v1")],
@@ -239,7 +249,7 @@ Product {
     ],
     hosts: Hosts {
         production: "https://api.finance.kobana.com.br",
-        sandbox: "https://api.finance.sandbox.kobana.com.br",
+        sandbox: Some("https://api.finance.sandbox.kobana.com.br"),
         development: None,
     },
     specs: &[spec!("finance-v1", "/v1")],
@@ -256,7 +266,7 @@ Product {
     ],
     hosts: Hosts {
         production: "https://api.dunning.kobana.com.br",
-        sandbox: "https://api.dunning.sandbox.kobana.com.br",
+        sandbox: Some("https://api.dunning.sandbox.kobana.com.br"),
         development: None,
     },
     specs: &[spec!("dunning-v1", "/v1")],
@@ -272,7 +282,7 @@ Product {
     ],
     hosts: Hosts {
         production: "https://api.dashboards.kobana.com.br",
-        sandbox: "https://api.dashboards.sandbox.kobana.com.br",
+        sandbox: None,
         development: None,
     },
     specs: &[spec!("dashboards-v1", "/v1")],
@@ -553,7 +563,7 @@ mod tests {
         assert_eq!(methods, vec!["create", "delete"]);
 
         assert_eq!(
-            inbox.product.base_url(&Environment::Production),
+            inbox.product.base_url(&Environment::Production).unwrap(),
             "https://api.inbox.kobana.com.br"
         );
     }
@@ -638,7 +648,7 @@ mod tests {
             assert!(billing.tree.children.contains_key(resource), "billing {resource}");
         }
         assert_eq!(
-            billing.product.base_url(&Environment::Production),
+            billing.product.base_url(&Environment::Production).unwrap(),
             "https://api.billing.kobana.com.br"
         );
 
@@ -647,7 +657,7 @@ mod tests {
             assert!(finance.tree.children.contains_key(resource), "finance {resource}");
         }
         assert_eq!(
-            finance.product.base_url(&Environment::Production),
+            finance.product.base_url(&Environment::Production).unwrap(),
             "https://api.finance.kobana.com.br"
         );
 
@@ -668,7 +678,7 @@ mod tests {
             assert!(dunning.tree.children.contains_key(resource), "dunning {resource}");
         }
         assert_eq!(
-            dunning.product.base_url(&Environment::Production),
+            dunning.product.base_url(&Environment::Production).unwrap(),
             "https://api.dunning.kobana.com.br"
         );
 
@@ -676,10 +686,7 @@ mod tests {
         for resource in ["data-sources", "entities", "workspaces", "portal-users"] {
             assert!(dashboards.tree.children.contains_key(resource), "dashboards {resource}");
         }
-        assert_eq!(
-            dashboards.product.base_url(&Environment::Sandbox),
-            "https://api.dashboards.sandbox.kobana.com.br"
-        );
+        assert!(dashboards.product.base_url(&Environment::Sandbox).is_err());
     }
 
     /// Resource names repeat across products with different meanings, so the
@@ -774,7 +781,7 @@ mod tests {
     fn base_url_falls_back_to_production_without_dev_host() {
         let banking = &REGISTRY[0];
         assert_eq!(
-            banking.base_url(&Environment::Sandbox),
+            banking.base_url(&Environment::Sandbox).unwrap(),
             "https://api-sandbox.kobana.com.br"
         );
 
@@ -783,13 +790,14 @@ mod tests {
             about: ["", "", ""],
             hosts: Hosts {
                 production: "https://prod",
-                sandbox: "https://sandbox",
+                sandbox: None,
                 development: None,
             },
             specs: &[],
             client_cert_env: None,
             header_env: &[],
         };
-        assert_eq!(no_dev.base_url(&Environment::Development), "https://prod");
+        assert_eq!(no_dev.base_url(&Environment::Development).unwrap(), "https://prod");
+        assert!(no_dev.base_url(&Environment::Sandbox).is_err());
     }
 }

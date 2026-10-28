@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`--env sandbox` em `inbox` e `dashboards`** — os dois produtos não têm sandbox, e o CLI mandava as requisições para hosts que não existem. Agora termina com erro pedindo `--env production`, em vez de cair em produção sem avisar
+- **Specs do Inbox e do Dashboard Mágico** não listam mais o servidor de sandbox
+
 ## [0.6.1] - 2026-10-27
 
 ### Changed

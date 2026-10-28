@@ -11,10 +11,6 @@
       "description": "Produção"
     },
     {
-      "url": "https://api.inbox.sandbox.kobana.com.br",
-      "description": "Sandbox"
-    },
-    {
       "url": "http://localhost:3028/api",
       "description": "Desenvolvimento local"
     }
