@@ -189,7 +189,7 @@ cd kobana-cli
 cargo install --path crates/kobana-cli
 ```
 
-Requer [Rust](https://rustup.rs/) 1.70+.
+Requer [Rust](https://rustup.rs/) 1.86+.
 
 ## Autenticação
 
