@@ -267,8 +267,9 @@ um `.env` por projeto) se você alterna entre produtos na mesma sessão.
 
 No `finance`, toda rota age sobre **um** espaço de trabalho da organização do
 token, escolhido pelo cabeçalho `X-Workspace-Id` — sem ele a API responde
-`400 WORKSPACE_REQUIRED`. No `dashboards` o cabeçalho é opcional enquanto a
-organização tem um único workspace.
+`400 WORKSPACE_REQUIRED`. No `dashboards` e no `dunning` o cabeçalho é
+opcional enquanto a organização tem um único workspace (`kobana dunning
+workspaces list` mostra os que o token alcança).
 
 O CLI preenche o cabeçalho a partir de `KOBANA_WORKSPACE_ID`. Para trocar de
 espaço em uma chamada só, passe-o em `--params`, que tem precedência:
@@ -578,7 +579,7 @@ OpenAPI specs embutidos. O caminho segue a mesma forma do comando:
 |----------|-----------|
 | `KOBANA_TOKEN` | Token do produto que você vai chamar (Bearer). Não é compartilhado entre produtos |
 | `KOBANA_INBOX_CLIENT_CERT` | Caminho para o PEM (certificado + chave) usado no mTLS do `inbox` |
-| `KOBANA_WORKSPACE_ID` | Espaço de trabalho enviado em `X-Workspace-Id` pelo `finance` (obrigatório) e pelo `dashboards` |
+| `KOBANA_WORKSPACE_ID` | Espaço de trabalho enviado em `X-Workspace-Id` pelo `finance` (obrigatório), pelo `dashboards` e pelo `dunning` |
 | `KOBANA_CREDENTIALS_FILE` | Caminho para arquivo JSON de credenciais |
 | `KOBANA_CLIENT_ID` | OAuth client ID (Gateway Bancário) |
 | `KOBANA_CLIENT_SECRET` | OAuth client secret (Gateway Bancário) |

@@ -1,6 +1,7 @@
 {
   "A chave, sem máscara (documentos só com dígitos, telefone com `+55`, e-mail e aleatória em minúsculas).": "La clave, sin máscara (documentos solo con dígitos, teléfono con `+55`, correo y aleatoria en minúsculas).",
   "A regra está ativa.": "Si la regla está activa.",
+  "A retenção da NF-e é diferente da retenção da fatura vinculada (`NFE_WITHHOLDING_MISMATCH`). `details` traz os dois lados; repita com `invoice_withholding: \"update_invoice\"` para atualizar a fatura.": "La retención de la NF-e difiere de la retención de la factura vinculada (`NFE_WITHHOLDING_MISMATCH`). `details` trae ambos lados; repite con `invoice_withholding: \"update_invoice\"` para actualizar la factura.",
   "Abrangência: nacional, estadual, municipal, ponto facultativo (`optional`) ou próprio da organização (`custom`).": "Alcance: nacional, estatal, municipal, punto facultativo (`optional`) o propio de la organización (`custom`).",
   "Aceita a proposta e cria (ou confirma) a assinatura correspondente no ciclo informado.": "Acepta la propuesta y crea (o confirma) la suscripción correspondiente en el ciclo informado.",
   "Aceitar proposta": "Aceptar propuesta",
@@ -1431,6 +1432,7 @@
   "O banco da conta.": "El banco de la cuenta.",
   "O parâmetro `{id}` aceita o UUID do cliente ou o `external_id`.": "El parámetro `{id}` acepta el UUID del cliente o el `external_id`.",
   "O parâmetro `{user_id}` aceita o UUID ou o `external_id` do usuário.": "El parámetro `{user_id}` acepta el UUID o el `external_id` del usuario.",
+  "O que fazer se a retenção das NFes for diferente da retenção da fatura: `block` (padrão) recusa com 409 `NFE_WITHHOLDING_MISMATCH`; `update_invoice` atualiza a fatura com a retenção da NF-e.": "Qué hacer si la retención de las NF-e difiere de la retención de la factura: `block` (predeterminado) rechaza con 409 `NFE_WITHHOLDING_MISMATCH`; `update_invoice` actualiza la factura con la retención de la NF-e.",
   "O tipo é identificado pela própria chave (CPF, CNPJ, e-mail, telefone com +55 ou aleatória); `key_type`, se enviado, precisa bater. A chave é guardada sem máscara e é única na organização.": "El tipo se identifica por la propia clave (CPF, CNPJ, correo, teléfono con +55 o aleatoria); `key_type`, si se envía, debe coincidir. La clave se guarda sin máscara y es única en la organización.",
   "Obrigatório ao criar um novo customer.": "Obligatorio al crear un nuevo cliente.",
   "Obter NFe": "Obtener NF-e",
@@ -1881,6 +1883,7 @@
   "Se `true`, permite alterar a quantidade de itens existentes.": "Si es `true`, permite cambiar la cantidad de ítems existentes.",
   "Se `true`, permite remover itens da assinatura.": "Si es `true`, permite eliminar ítems de la suscripción.",
   "Se `true`, permite trocar o preço (variação) de um item sem removê-lo.": "Si es `true`, permite cambiar el precio (variante) de un ítem sin eliminarlo.",
+  "Se a NF-e estiver vinculada a uma fatura e os novos impostos retiverem um valor diferente do da fatura: `block` (padrão) recusa com 409 `NFE_WITHHOLDING_MISMATCH`; `update_invoice` atualiza a fatura com a retenção da NF-e.": "Si la NF-e está vinculada a una factura y los nuevos impuestos retienen un valor distinto al de la factura: `block` (predeterminado) rechaza con 409 `NFE_WITHHOLDING_MISMATCH`; `update_invoice` actualiza la factura con la retención de la NF-e.",
   "Se foi apenas uma simulação.": "Si fue solo una simulación.",
   "Se os dias acrescentados são cobrados.": "Si se cobran los días añadidos.",
   "Se uma fatura é (ou seria) gerada. Falso para cortesia, valor zero ou `charge_proration=false`.": "Si se genera (o generaría) una factura. Falso para cortesía, importe cero o `charge_proration=false`.",

@@ -48,6 +48,7 @@
   "Excluir transação": "Eliminar transacción",
   "Excluir valor de classificador personalizado": "Eliminar valor de clasificador personalizado",
   "Gerar cobrança de uma conta a receber": "Generar cobro de una cuenta por cobrar",
+  "Hard-deletes the payable. Requires scope `finance.payables.write`. Dissolves any reconciliation the payable is part of and removes the auto-created payment transaction (manually-linked transactions are preserved). Calling DELETE twice on the same id returns 200 then 404 (Stripe-style). Deletes a single row — series-aware delete is not yet exposed.": "Hard-deletes the payable. Requires scope `finance.payables.write`. Dissolves any reconciliation the payable is part of and removes the auto-created payment transaction (manually-linked transactions are preserved). Calling DELETE twice on the same id returns 200 then 404 (Stripe-style). Deletes a single row — series-aware delete is not yet exposed. A payable already sent to the bank cannot be deleted (422) while its payment is in flight or after it was paid; it can again once the bank rejected or the payment was canceled.",
   "Listar IDs de contas a pagar": "Listar IDs de cuentas por pagar",
   "Listar IDs de contas a receber": "Listar IDs de cuentas por cobrar",
   "Listar IDs de pessoas": "Listar IDs de personas",

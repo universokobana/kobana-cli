@@ -271,7 +271,7 @@ Product {
     },
     specs: &[spec!("dunning-v1", "/v1")],
     client_cert_env: None,
-    header_env: &[],
+    header_env: &[("X-Workspace-Id", "KOBANA_WORKSPACE_ID")],
 },
 Product {
     slug: "dashboards",

@@ -262,6 +262,11 @@
             "format": "uuid",
             "description": "Organização dona do registro."
           },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do workspace a que o recurso pertence."
+          },
           "company_id": {
             "type": [
               "string",
@@ -440,6 +445,7 @@
           "id",
           "public_id",
           "organization_id",
+          "workspace_id",
           "company_id",
           "classification_id",
           "document_number",
@@ -589,6 +595,18 @@
             "additionalProperties": {
             },
             "description": "Metadados personalizáveis pelo cliente da API. Limites: 64 KB serializado e 16 níveis de aninhamento."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
           }
         },
         "required": [
@@ -720,6 +738,18 @@
             },
             "description": "Metadados personalizáveis pelo cliente da API. Limites: 64 KB serializado e 16 níveis de aninhamento."
           },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
+          },
           "custom_data_mode": {
             "type": "string",
             "enum": [
@@ -728,6 +758,15 @@
             ],
             "default": "replace",
             "description": "Como aplicar `custom_data` no update: `replace` (default) sobrescreve o objeto inteiro; `merge` mescla (deep) o payload sobre o valor armazenado — objetos aninhados mesclam, escalares/arrays/null sobrescrevem a chave."
+          },
+          "custom_metadata_mode": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "merge"
+            ],
+            "description": "Como o `custom_metadata` enviado é reconciliado com o valor gravado: `replace` (padrão) substitui o objeto inteiro; `merge` faz deep merge — objetos aninhados mesclam, escalares e arrays substituem a chave, e uma chave enviada com `null` é gravada como `null` (não é removida). Só na atualização.",
+            "example": "merge"
           }
         },
         "description": "Campos a atualizar (parcial — envie só o que muda)."
@@ -766,6 +805,11 @@
             "type": "string",
             "format": "uuid",
             "description": "Organização dona do registro."
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do workspace a que o recurso pertence."
           },
           "company_id": {
             "type": [
@@ -883,6 +927,7 @@
           "id",
           "public_id",
           "organization_id",
+          "workspace_id",
           "company_id",
           "person_id",
           "channel",
@@ -933,6 +978,18 @@
           "is_primary": {
             "type": "boolean",
             "description": "Indica o contato primário do canal (usado primeiro na resolução do destinatário)."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
           }
         },
         "required": [
@@ -967,6 +1024,27 @@
           "third_party": {
             "type": "boolean",
             "description": "`true` marca o contato como de terceiro agora; `false` reverte."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
+          },
+          "custom_metadata_mode": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "merge"
+            ],
+            "description": "Como o `custom_metadata` enviado é reconciliado com o valor gravado: `replace` (padrão) substitui o objeto inteiro; `merge` faz deep merge — objetos aninhados mesclam, escalares e arrays substituem a chave, e uma chave enviada com `null` é gravada como `null` (não é removida). Só na atualização.",
+            "example": "merge"
           }
         },
         "description": "Campos a atualizar (parcial — envie só o que muda)."
@@ -1056,6 +1134,11 @@
             "type": "string",
             "format": "uuid",
             "description": "Organização dona do registro."
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do workspace a que o recurso pertence."
           },
           "company_id": {
             "type": [
@@ -1160,6 +1243,15 @@
             },
             "description": "Metadados gravados pelo sistema."
           },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo."
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -1201,6 +1293,7 @@
           "id",
           "public_id",
           "organization_id",
+          "workspace_id",
           "company_id",
           "business_unit_id",
           "name",
@@ -1216,6 +1309,7 @@
           "custom_data",
           "tags",
           "metadata",
+          "custom_metadata",
           "created_at",
           "updated_at",
           "deleted_at"
@@ -1347,6 +1441,18 @@
             "additionalProperties": {
             },
             "description": "Metadados personalizáveis pelo cliente da API. Limites: 64 KB serializado e 16 níveis de aninhamento."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
           },
           "tags": {
             "type": "array",
@@ -1488,12 +1594,33 @@
             },
             "description": "Metadados personalizáveis pelo cliente da API. Limites: 64 KB serializado e 16 níveis de aninhamento."
           },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
+          },
           "tags": {
             "type": "array",
             "items": {
               "type": "string"
             },
             "description": "Tags livres."
+          },
+          "custom_metadata_mode": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "merge"
+            ],
+            "description": "Como o `custom_metadata` enviado é reconciliado com o valor gravado: `replace` (padrão) substitui o objeto inteiro; `merge` faz deep merge — objetos aninhados mesclam, escalares e arrays substituem a chave, e uma chave enviada com `null` é gravada como `null` (não é removida). Só na atualização.",
+            "example": "merge"
           }
         },
         "description": "Campos a atualizar (parcial — envie só o que muda)."
@@ -1532,6 +1659,11 @@
             "type": "string",
             "format": "uuid",
             "description": "Organização dona do registro."
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do workspace a que o recurso pertence."
           },
           "company_id": {
             "type": [
@@ -1651,6 +1783,15 @@
             },
             "description": "Metadados gravados pelo sistema."
           },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo."
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -1674,6 +1815,7 @@
           "id",
           "public_id",
           "organization_id",
+          "workspace_id",
           "company_id",
           "business_unit_id",
           "name",
@@ -1688,6 +1830,7 @@
           "custom_data",
           "tags",
           "metadata",
+          "custom_metadata",
           "created_at",
           "updated_at",
           "deleted_at"
@@ -1784,6 +1927,18 @@
             "additionalProperties": {
             },
             "description": "Metadados personalizáveis pelo cliente da API. Limites: 64 KB serializado e 16 níveis de aninhamento."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
           },
           "tags": {
             "type": "array",
@@ -1892,12 +2047,33 @@
             },
             "description": "Metadados personalizáveis pelo cliente da API. Limites: 64 KB serializado e 16 níveis de aninhamento."
           },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
+          },
           "tags": {
             "type": "array",
             "items": {
               "type": "string"
             },
             "description": "Tags livres."
+          },
+          "custom_metadata_mode": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "merge"
+            ],
+            "description": "Como o `custom_metadata` enviado é reconciliado com o valor gravado: `replace` (padrão) substitui o objeto inteiro; `merge` faz deep merge — objetos aninhados mesclam, escalares e arrays substituem a chave, e uma chave enviada com `null` é gravada como `null` (não é removida). Só na atualização.",
+            "example": "merge"
           }
         },
         "description": "Campos a atualizar (parcial — envie só o que muda)."
@@ -2071,6 +2247,15 @@
             },
             "description": "Metadados gravados pelo sistema."
           },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo."
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -2108,6 +2293,11 @@
                 "type": "string",
                 "format": "uuid",
                 "description": "Organização dona do registro."
+              },
+              "workspace_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID do workspace a que o recurso pertence."
               },
               "company_id": {
                 "type": [
@@ -2227,6 +2417,15 @@
                 },
                 "description": "Metadados gravados pelo sistema."
               },
+              "custom_metadata": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "additionalProperties": {
+                },
+                "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo."
+              },
               "created_at": {
                 "type": "string",
                 "format": "date-time",
@@ -2250,6 +2449,7 @@
               "id",
               "public_id",
               "organization_id",
+              "workspace_id",
               "company_id",
               "business_unit_id",
               "name",
@@ -2264,6 +2464,7 @@
               "custom_data",
               "tags",
               "metadata",
+              "custom_metadata",
               "created_at",
               "updated_at",
               "deleted_at"
@@ -2289,6 +2490,7 @@
           "custom_data",
           "tags",
           "metadata",
+          "custom_metadata",
           "created_at",
           "updated_at",
           "deleted_at"
@@ -2311,6 +2513,11 @@
             "type": "string",
             "format": "uuid",
             "description": "Organização dona do registro."
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do workspace a que o recurso pertence."
           },
           "company_id": {
             "type": [
@@ -2393,6 +2600,15 @@
             },
             "description": "Metadados gravados pelo sistema."
           },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo."
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -2450,6 +2666,7 @@
           "id",
           "public_id",
           "organization_id",
+          "workspace_id",
           "company_id",
           "business_unit_id",
           "classification_id",
@@ -2462,6 +2679,7 @@
           "custom_data",
           "tags",
           "metadata",
+          "custom_metadata",
           "created_at",
           "updated_at",
           "deleted_at",
@@ -2580,6 +2798,18 @@
             "additionalProperties": {
             },
             "description": "Metadados personalizáveis pelo cliente da API. Limites: 64 KB serializado e 16 níveis de aninhamento."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
           },
           "tags": {
             "type": "array",
@@ -2757,6 +2987,18 @@
             },
             "description": "Metadados personalizáveis pelo cliente da API. Limites: 64 KB serializado e 16 níveis de aninhamento."
           },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
+          },
           "tags": {
             "type": "array",
             "items": {
@@ -2836,6 +3078,18 @@
             },
             "description": "Metadados personalizáveis pelo cliente da API. Limites: 64 KB serializado e 16 níveis de aninhamento."
           },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
+          },
           "tags": {
             "type": "array",
             "items": {
@@ -2849,6 +3103,15 @@
               "$ref": "#/components/schemas/CollectionRuleStepUpsert"
             },
             "description": "Conjunto completo de etapas (upsert): com `id` atualiza, sem `id` cria, ausentes são excluídas."
+          },
+          "custom_metadata_mode": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "merge"
+            ],
+            "description": "Como o `custom_metadata` enviado é reconciliado com o valor gravado: `replace` (padrão) substitui o objeto inteiro; `merge` faz deep merge — objetos aninhados mesclam, escalares e arrays substituem a chave, e uma chave enviada com `null` é gravada como `null` (não é removida). Só na atualização.",
+            "example": "merge"
           }
         },
         "description": "Campos a atualizar (parcial). Se `steps` for enviado, o array substitui o conjunto de etapas (upsert)."
@@ -2985,12 +3248,33 @@
             },
             "description": "Metadados personalizáveis pelo cliente da API. Limites: 64 KB serializado e 16 níveis de aninhamento."
           },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
+          },
           "tags": {
             "type": "array",
             "items": {
               "type": "string"
             },
             "description": "Tags livres."
+          },
+          "custom_metadata_mode": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "merge"
+            ],
+            "description": "Como o `custom_metadata` enviado é reconciliado com o valor gravado: `replace` (padrão) substitui o objeto inteiro; `merge` faz deep merge — objetos aninhados mesclam, escalares e arrays substituem a chave, e uma chave enviada com `null` é gravada como `null` (não é removida). Só na atualização.",
+            "example": "merge"
           }
         },
         "description": "Campos da etapa a atualizar (parcial — envie só o que muda)."
@@ -3254,6 +3538,11 @@
             "type": "string",
             "format": "uuid",
             "description": "Organização dona do registro."
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do workspace a que o recurso pertence."
           },
           "company_id": {
             "type": [
@@ -3604,6 +3893,7 @@
           "id",
           "public_id",
           "organization_id",
+          "workspace_id",
           "company_id",
           "business_unit_id",
           "person_id",
@@ -3782,6 +4072,18 @@
             },
             "description": "Metadados personalizáveis pelo cliente da API. Limites: 64 KB serializado e 16 níveis de aninhamento."
           },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
+          },
           "tags": {
             "type": "array",
             "items": {
@@ -3943,6 +4245,18 @@
             },
             "description": "Metadados personalizáveis pelo cliente da API. Limites: 64 KB serializado e 16 níveis de aninhamento."
           },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
+          },
           "tags": {
             "type": "array",
             "items": {
@@ -3987,6 +4301,15 @@
             ],
             "default": "replace",
             "description": "Como aplicar `custom_data` no update: `replace` (default) sobrescreve o objeto inteiro; `merge` mescla (deep) o payload sobre o valor armazenado — objetos aninhados mesclam, escalares/arrays/null sobrescrevem a chave."
+          },
+          "custom_metadata_mode": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "merge"
+            ],
+            "description": "Como o `custom_metadata` enviado é reconciliado com o valor gravado: `replace` (padrão) substitui o objeto inteiro; `merge` faz deep merge — objetos aninhados mesclam, escalares e arrays substituem a chave, e uma chave enviada com `null` é gravada como `null` (não é removida). Só na atualização.",
+            "example": "merge"
           }
         },
         "description": "Campos a atualizar (parcial — envie só o que muda). `current_amount` e `days_overdue` são recalculados automaticamente."
@@ -4043,12 +4366,6 @@
             "type": "string",
             "format": "uuid",
             "description": "Etapa da régua de cobrança a associar (atualiza o `current_step` da cobrança)."
-          },
-          "metadata": {
-            "type": "object",
-            "additionalProperties": {
-            },
-            "description": "Metadados livres gravados na notificação."
           }
         },
         "required": [
@@ -4211,6 +4528,11 @@
             "type": "string",
             "format": "uuid",
             "description": "Organização dona do registro."
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do workspace a que o recurso pertence."
           },
           "company_id": {
             "type": [
@@ -4389,6 +4711,7 @@
           "id",
           "public_id",
           "organization_id",
+          "workspace_id",
           "company_id",
           "business_unit_id",
           "person_id",
@@ -4481,6 +4804,18 @@
             },
             "description": "Metadados personalizáveis pelo cliente da API. Limites: 64 KB serializado e 16 níveis de aninhamento."
           },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
+          },
           "tags": {
             "type": "array",
             "items": {
@@ -4553,6 +4888,27 @@
             ],
             "default": "replace",
             "description": "Como aplicar `custom_data` no update: `replace` (default) sobrescreve o objeto inteiro; `merge` mescla (deep) o payload sobre o valor armazenado — objetos aninhados mesclam, escalares/arrays/null sobrescrevem a chave."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
+          },
+          "custom_metadata_mode": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "merge"
+            ],
+            "description": "Como o `custom_metadata` enviado é reconciliado com o valor gravado: `replace` (padrão) substitui o objeto inteiro; `merge` faz deep merge — objetos aninhados mesclam, escalares e arrays substituem a chave, e uma chave enviada com `null` é gravada como `null` (não é removida). Só na atualização.",
+            "example": "merge"
           },
           "tags": {
             "type": "array",
@@ -4702,6 +5058,27 @@
               "cancelled"
             ],
             "description": "Status (`pending` | `paid` | `overdue` | `cancelled`)."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
+          },
+          "custom_metadata_mode": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "merge"
+            ],
+            "description": "Como o `custom_metadata` enviado é reconciliado com o valor gravado: `replace` (padrão) substitui o objeto inteiro; `merge` faz deep merge — objetos aninhados mesclam, escalares e arrays substituem a chave, e uma chave enviada com `null` é gravada como `null` (não é removida). Só na atualização.",
+            "example": "merge"
           }
         },
         "required": [
@@ -4827,6 +5204,11 @@
             "type": "string",
             "format": "uuid",
             "description": "Organização dona do registro."
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do workspace a que o recurso pertence."
           },
           "company_id": {
             "type": [
@@ -5012,6 +5394,7 @@
           "id",
           "public_id",
           "organization_id",
+          "workspace_id",
           "company_id",
           "business_unit_id",
           "charge_id",
@@ -5162,7 +5545,10 @@
             ],
             "additionalProperties": {
             },
-            "description": "Metadados personalizáveis pelo cliente da API. Limites: 64 KB serializado e 16 níveis de aninhamento."
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
           }
         },
         "required": [
@@ -5185,6 +5571,27 @@
             "type": "string",
             "format": "uuid",
             "description": "Usuário responsável pela análise (precisa pertencer à organização)."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
+          },
+          "custom_metadata_mode": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "merge"
+            ],
+            "description": "Como o `custom_metadata` enviado é reconciliado com o valor gravado: `replace` (padrão) substitui o objeto inteiro; `merge` faz deep merge — objetos aninhados mesclam, escalares e arrays substituem a chave, e uma chave enviada com `null` é gravada como `null` (não é removida). Só na atualização.",
+            "example": "merge"
           }
         },
         "required": [
@@ -5231,6 +5638,27 @@
             "exclusiveMinimum": 0,
             "description": "Novo valor da cobrança quando o efeito é `adjust_amount`.",
             "example": 120
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
+          },
+          "custom_metadata_mode": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "merge"
+            ],
+            "description": "Como o `custom_metadata` enviado é reconciliado com o valor gravado: `replace` (padrão) substitui o objeto inteiro; `merge` faz deep merge — objetos aninhados mesclam, escalares e arrays substituem a chave, e uma chave enviada com `null` é gravada como `null` (não é removida). Só na atualização.",
+            "example": "merge"
           }
         },
         "required": [
@@ -5254,6 +5682,27 @@
             "type": "string",
             "maxLength": 2000,
             "description": "Motivo do cancelamento."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
+          },
+          "custom_metadata_mode": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "merge"
+            ],
+            "description": "Como o `custom_metadata` enviado é reconciliado com o valor gravado: `replace` (padrão) substitui o objeto inteiro; `merge` faz deep merge — objetos aninhados mesclam, escalares e arrays substituem a chave, e uma chave enviada com `null` é gravada como `null` (não é removida). Só na atualização.",
+            "example": "merge"
           }
         },
         "required": [
@@ -5440,6 +5889,11 @@
             "format": "uuid",
             "description": "Organização dona do registro."
           },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do workspace a que o recurso pertence."
+          },
           "company_id": {
             "type": [
               "string",
@@ -5568,6 +6022,15 @@
             },
             "description": "Metadados gravados pelo sistema."
           },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo."
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -5624,6 +6087,7 @@
           "id",
           "public_id",
           "organization_id",
+          "workspace_id",
           "company_id",
           "business_unit_id",
           "person_id",
@@ -5640,6 +6104,7 @@
           "custom_data",
           "tags",
           "metadata",
+          "custom_metadata",
           "created_at",
           "updated_at",
           "deleted_at"
@@ -5742,6 +6207,18 @@
             "additionalProperties": {
             },
             "description": "Metadados personalizáveis pelo cliente da API. Limites: 64 KB serializado e 16 níveis de aninhamento."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
           },
           "tags": {
             "type": "array",
@@ -5860,6 +6337,27 @@
             ],
             "default": "replace",
             "description": "Como aplicar `custom_data` no update: `replace` (default) sobrescreve o objeto inteiro; `merge` mescla (deep) o payload sobre o valor armazenado — objetos aninhados mesclam, escalares/arrays/null sobrescrevem a chave."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
+          },
+          "custom_metadata_mode": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "merge"
+            ],
+            "description": "Como o `custom_metadata` enviado é reconciliado com o valor gravado: `replace` (padrão) substitui o objeto inteiro; `merge` faz deep merge — objetos aninhados mesclam, escalares e arrays substituem a chave, e uma chave enviada com `null` é gravada como `null` (não é removida). Só na atualização.",
+            "example": "merge"
           },
           "tags": {
             "type": "array",
@@ -6005,6 +6503,11 @@
             "format": "uuid",
             "description": "Organização dona do registro."
           },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do workspace a que o recurso pertence."
+          },
           "company_id": {
             "type": [
               "string",
@@ -6121,6 +6624,15 @@
             },
             "description": "Metadados livres da interação."
           },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo."
+          },
           "external_id": {
             "type": [
               "string",
@@ -6199,6 +6711,7 @@
           "id",
           "public_id",
           "organization_id",
+          "workspace_id",
           "company_id",
           "business_unit_id",
           "person_id",
@@ -6213,6 +6726,7 @@
           "contacted_at",
           "duration_seconds",
           "metadata",
+          "custom_metadata",
           "external_id",
           "custom_data",
           "tags",
@@ -6310,15 +6824,6 @@
             "minimum": 0,
             "description": "Duração do contato em segundos."
           },
-          "metadata": {
-            "type": [
-              "object",
-              "null"
-            ],
-            "additionalProperties": {
-            },
-            "description": "Metadados livres da interação."
-          },
           "external_id": {
             "type": [
               "string",
@@ -6334,6 +6839,18 @@
             "additionalProperties": {
             },
             "description": "Metadados personalizáveis pelo cliente da API. Limites: 64 KB serializado e 16 níveis de aninhamento."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
           },
           "tags": {
             "type": "array",
@@ -6399,15 +6916,6 @@
             "exclusiveMinimum": 0,
             "description": "Valor prometido (número positivo)."
           },
-          "metadata": {
-            "type": [
-              "object",
-              "null"
-            ],
-            "additionalProperties": {
-            },
-            "description": "Metadados livres da interação."
-          },
           "custom_data": {
             "type": [
               "object",
@@ -6425,6 +6933,27 @@
             ],
             "default": "replace",
             "description": "Como aplicar `custom_data` no update: `replace` (default) sobrescreve o objeto inteiro; `merge` mescla (deep) o payload sobre o valor armazenado — objetos aninhados mesclam, escalares/arrays/null sobrescrevem a chave."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
+          },
+          "custom_metadata_mode": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "merge"
+            ],
+            "description": "Como o `custom_metadata` enviado é reconciliado com o valor gravado: `replace` (padrão) substitui o objeto inteiro; `merge` faz deep merge — objetos aninhados mesclam, escalares e arrays substituem a chave, e uma chave enviada com `null` é gravada como `null` (não é removida). Só na atualização.",
+            "example": "merge"
           },
           "tags": {
             "type": "array",
@@ -6470,6 +6999,11 @@
             "type": "string",
             "format": "uuid",
             "description": "Organização dona do registro."
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do workspace a que o recurso pertence."
           },
           "person_id": {
             "type": "string",
@@ -6673,6 +7207,7 @@
           "id",
           "public_id",
           "organization_id",
+          "workspace_id",
           "person_id",
           "charge_id",
           "collection_rule_step_id",
@@ -6775,15 +7310,6 @@
               "type": "string"
             },
             "description": "Tags livres."
-          },
-          "metadata": {
-            "type": [
-              "object",
-              "null"
-            ],
-            "additionalProperties": {
-            },
-            "description": "Metadados gravados pelo sistema (ex.: `resend_of` em reenvios)."
           }
         },
         "required": [
@@ -6869,15 +7395,6 @@
               "type": "string"
             },
             "description": "Tags livres."
-          },
-          "metadata": {
-            "type": [
-              "object",
-              "null"
-            ],
-            "additionalProperties": {
-            },
-            "description": "Metadados gravados pelo sistema (ex.: `resend_of` em reenvios)."
           },
           "cost": {
             "type": [
@@ -6979,6 +7496,24 @@
             ],
             "format": "date-time",
             "description": "Momento da ativação (null = campanha encerrada)."
+          },
+          "metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do sistema (objeto JSON, somente leitura): contexto interno gravado pelo backend e pelas integrações. Nunca aceito no corpo — use `custom_metadata` para dados próprios."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo."
           }
         },
         "required": [
@@ -6991,7 +7526,9 @@
           "max_days_overdue",
           "valid_until",
           "terms",
-          "activated_at"
+          "activated_at",
+          "metadata",
+          "custom_metadata"
         ],
         "description": "Campanha de negociação: oferta de desconto reutilizável, válida para toda a organização e segmentada por faixa de dias de atraso. O portal do devedor oferece automaticamente a campanha ativa aplicável."
       },
@@ -7007,6 +7544,11 @@
                 "type": "string",
                 "format": "uuid",
                 "description": "Organização dona do registro."
+              },
+              "workspace_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "ID do workspace a que o recurso pertence."
               },
               "company_id": {
                 "type": [
@@ -7071,12 +7613,6 @@
                 },
                 "description": "Tags livres."
               },
-              "metadata": {
-                "type": "object",
-                "additionalProperties": {
-                },
-                "description": "Metadados gravados pelo sistema."
-              },
               "created_at": {
                 "type": "string",
                 "format": "date-time",
@@ -7098,6 +7634,7 @@
             },
             "required": [
               "organization_id",
+              "workspace_id",
               "company_id",
               "business_unit_id",
               "charge_id",
@@ -7106,7 +7643,6 @@
               "external_id",
               "custom_data",
               "tags",
-              "metadata",
               "created_at",
               "updated_at",
               "deleted_at"
@@ -7170,6 +7706,18 @@
             ],
             "maxLength": 500,
             "description": "Condições exibidas ao devedor."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
           }
         },
         "required": [
@@ -7317,6 +7865,11 @@
             "format": "uuid",
             "description": "Organização dona do registro."
           },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do workspace a que o recurso pertence."
+          },
           "company_id": {
             "type": [
               "string",
@@ -7428,6 +7981,15 @@
             },
             "description": "Metadados gravados pelo sistema."
           },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo."
+          },
           "person": {
             "$ref": "#/components/schemas/NegativationPersonSummary"
           },
@@ -7457,6 +8019,7 @@
           "id",
           "public_id",
           "organization_id",
+          "workspace_id",
           "company_id",
           "business_unit_id",
           "charge_id",
@@ -7472,6 +8035,7 @@
           "custom_data",
           "tags",
           "metadata",
+          "custom_metadata",
           "created_at",
           "updated_at",
           "deleted_at"
@@ -7521,6 +8085,18 @@
             "additionalProperties": {
             },
             "description": "Metadados personalizáveis pelo cliente da API. Limites: 64 KB serializado e 16 níveis de aninhamento."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
           },
           "tags": {
             "type": "array",
@@ -7598,6 +8174,27 @@
             "additionalProperties": {
             },
             "description": "Metadados personalizáveis pelo cliente da API. Limites: 64 KB serializado e 16 níveis de aninhamento."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
+          },
+          "custom_metadata_mode": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "merge"
+            ],
+            "description": "Como o `custom_metadata` enviado é reconciliado com o valor gravado: `replace` (padrão) substitui o objeto inteiro; `merge` faz deep merge — objetos aninhados mesclam, escalares e arrays substituem a chave, e uma chave enviada com `null` é gravada como `null` (não é removida). Só na atualização.",
+            "example": "merge"
           },
           "tags": {
             "type": "array",
@@ -7751,6 +8348,11 @@
             "format": "uuid",
             "description": "Organização dona do registro."
           },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do workspace a que o recurso pertence."
+          },
           "company_id": {
             "type": [
               "string",
@@ -7894,6 +8496,15 @@
             },
             "description": "Metadados gravados pelo sistema."
           },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo."
+          },
           "person": {
             "$ref": "#/components/schemas/ProtestPersonSummary"
           },
@@ -7923,6 +8534,7 @@
           "id",
           "public_id",
           "organization_id",
+          "workspace_id",
           "company_id",
           "business_unit_id",
           "charge_id",
@@ -7942,6 +8554,7 @@
           "custom_data",
           "tags",
           "metadata",
+          "custom_metadata",
           "created_at",
           "updated_at",
           "deleted_at"
@@ -8004,6 +8617,18 @@
             "additionalProperties": {
             },
             "description": "Metadados personalizáveis pelo cliente da API. Limites: 64 KB serializado e 16 níveis de aninhamento."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
           },
           "tags": {
             "type": "array",
@@ -8120,6 +8745,27 @@
             "additionalProperties": {
             },
             "description": "Metadados personalizáveis pelo cliente da API. Limites: 64 KB serializado e 16 níveis de aninhamento."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
+          },
+          "custom_metadata_mode": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "merge"
+            ],
+            "description": "Como o `custom_metadata` enviado é reconciliado com o valor gravado: `replace` (padrão) substitui o objeto inteiro; `merge` faz deep merge — objetos aninhados mesclam, escalares e arrays substituem a chave, e uma chave enviada com `null` é gravada como `null` (não é removida). Só na atualização.",
+            "example": "merge"
           },
           "tags": {
             "type": "array",
@@ -8246,6 +8892,24 @@
             ],
             "description": "Mensagem de erro quando o lote inteiro falha."
           },
+          "metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do sistema (objeto JSON, somente leitura): contexto interno gravado pelo backend e pelas integrações. Nunca aceito no corpo — use `custom_metadata` para dados próprios."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo."
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -8272,6 +8936,8 @@
           "updated_count",
           "error_count",
           "error_message",
+          "metadata",
+          "custom_metadata",
           "created_at",
           "completed_at"
         ],
@@ -8510,6 +9176,24 @@
             ],
             "description": "Mensagem de erro quando a geração falha."
           },
+          "metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do sistema (objeto JSON, somente leitura): contexto interno gravado pelo backend e pelas integrações. Nunca aceito no corpo — use `custom_metadata` para dados próprios."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo."
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -8541,6 +9225,8 @@
           "row_count",
           "truncated",
           "error_message",
+          "metadata",
+          "custom_metadata",
           "created_at",
           "completed_at",
           "expires_at"
@@ -8843,6 +9529,24 @@
             ],
             "description": "Autenticação do request contra o seu endpoint (`none` | `basic` | `bearer` | `header`), além da assinatura HMAC (sempre enviada)."
           },
+          "metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do sistema (objeto JSON, somente leitura): contexto interno gravado pelo backend e pelas integrações. Nunca aceito no corpo — use `custom_metadata` para dados próprios."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo."
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -8860,6 +9564,8 @@
           "events",
           "is_active",
           "auth_type",
+          "metadata",
+          "custom_metadata",
           "created_at",
           "deliveries"
         ],
@@ -8986,6 +9692,24 @@
             ],
             "description": "Autenticação do request contra o seu endpoint (`none` | `basic` | `bearer` | `header`), além da assinatura HMAC (sempre enviada)."
           },
+          "metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do sistema (objeto JSON, somente leitura): contexto interno gravado pelo backend e pelas integrações. Nunca aceito no corpo — use `custom_metadata` para dados próprios."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo."
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -9007,6 +9731,8 @@
           "events",
           "is_active",
           "auth_type",
+          "metadata",
+          "custom_metadata",
           "created_at",
           "deliveries"
         ],
@@ -9189,6 +9915,18 @@
             "example": {
               "token": "meu-token-secreto"
             }
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
           }
         },
         "required": [
@@ -9244,6 +9982,27 @@
             "example": {
               "token": "meu-token-secreto"
             }
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
+          },
+          "custom_metadata_mode": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "merge"
+            ],
+            "description": "Como o `custom_metadata` enviado é reconciliado com o valor gravado: `replace` (padrão) substitui o objeto inteiro; `merge` faz deep merge — objetos aninhados mesclam, escalares e arrays substituem a chave, e uma chave enviada com `null` é gravada como `null` (não é removida). Só na atualização.",
+            "example": "merge"
           }
         },
         "description": "Campos a atualizar (parcial — envie só o que muda)."
@@ -9286,6 +10045,24 @@
                 "type": "boolean",
                 "description": "Endpoint ativo recebe entregas; inativo é ignorado pelo worker."
               },
+              "metadata": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "additionalProperties": {
+                },
+                "description": "Metadados do sistema (objeto JSON, somente leitura): contexto interno gravado pelo backend e pelas integrações. Nunca aceito no corpo — use `custom_metadata` para dados próprios."
+              },
+              "custom_metadata": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "additionalProperties": {
+                },
+                "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo."
+              },
               "secret": {
                 "type": "string",
                 "description": "Secret HMAC (`whsec_…`) usado na assinatura `X-Webhook-Signature`. Exibido apenas na criação e na rotação — guarde com segurança.",
@@ -9299,6 +10076,8 @@
               "description",
               "events",
               "is_active",
+              "metadata",
+              "custom_metadata",
               "secret"
             ]
           }
@@ -9582,6 +10361,13 @@
             ],
             "description": "ID do usuário, nome do job ou do sistema."
           },
+          "impersonated_by": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "E-mail da pessoa da Kobana que operava uma sessão de suporte (impersonação) quando a entrada foi gravada; nulo fora dela."
+          },
           "actor": {
             "allOf": [
               {
@@ -9647,6 +10433,7 @@
           "entity_id",
           "actor_type",
           "actor_id",
+          "impersonated_by",
           "actor",
           "before",
           "after",
@@ -9875,6 +10662,24 @@
             "type": "boolean",
             "description": "Layout disponível para uso."
           },
+          "metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do sistema (objeto JSON, somente leitura): contexto interno gravado pelo backend e pelas integrações. Nunca aceito no corpo — use `custom_metadata` para dados próprios."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo."
+          },
           "companies_count": {
             "type": "integer",
             "description": "Quantidade de empresas que usam este layout."
@@ -9887,6 +10692,8 @@
           "html_body",
           "is_default",
           "is_active",
+          "metadata",
+          "custom_metadata",
           "companies_count"
         ],
         "description": "Layout de e-mail: HTML que envolve o conteúdo das mensagens enviadas pela régua. Deve conter o placeholder `{{content}}`, substituído pelo corpo da notificação no envio."
@@ -9907,6 +10714,11 @@
             "type": "string",
             "format": "uuid",
             "description": "Organização dona do layout."
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do workspace a que o recurso pertence."
           },
           "name": {
             "type": "string",
@@ -9929,6 +10741,15 @@
             "additionalProperties": {
             },
             "description": "Metadados gravados pelo sistema."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo."
           },
           "created_at": {
             "type": "string",
@@ -9953,11 +10774,13 @@
           "id",
           "public_id",
           "organization_id",
+          "workspace_id",
           "name",
           "html_body",
           "is_default",
           "is_active",
           "metadata",
+          "custom_metadata",
           "created_at",
           "updated_at",
           "deleted_at"
@@ -9983,6 +10806,18 @@
           "is_default": {
             "type": "boolean",
             "description": "Layout padrão da organização (apenas um; definir um novo padrão desmarca o anterior)."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
           }
         },
         "required": [
@@ -10061,6 +10896,24 @@
           "whatsapp_enabled": {
             "type": "boolean",
             "description": "Canal WhatsApp habilitado para o tipo."
+          },
+          "metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do sistema (objeto JSON, somente leitura): contexto interno gravado pelo backend e pelas integrações. Nunca aceito no corpo — use `custom_metadata` para dados próprios."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo."
           }
         },
         "required": [
@@ -10068,7 +10921,9 @@
           "label",
           "email_enabled",
           "sms_enabled",
-          "whatsapp_enabled"
+          "whatsapp_enabled",
+          "metadata",
+          "custom_metadata"
         ],
         "description": "Preferência de notificação: liga/desliga canais (e-mail, SMS, WhatsApp) por tipo de mensagem da régua. Sem registro salvo, todos os canais ficam ligados."
       },
@@ -10118,6 +10973,27 @@
                 "whatsapp_enabled": {
                   "type": "boolean",
                   "description": "Canal WhatsApp habilitado para o tipo."
+                },
+                "custom_metadata": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "additionalProperties": {
+                  },
+                  "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+                  "example": {
+                    "erp_id": "ERP-123"
+                  }
+                },
+                "custom_metadata_mode": {
+                  "type": "string",
+                  "enum": [
+                    "replace",
+                    "merge"
+                  ],
+                  "description": "Como o `custom_metadata` enviado é reconciliado com o valor gravado: `replace` (padrão) substitui o objeto inteiro; `merge` faz deep merge — objetos aninhados mesclam, escalares e arrays substituem a chave, e uma chave enviada com `null` é gravada como `null` (não é removida). Só na atualização.",
+                  "example": "merge"
                 }
               },
               "required": [
@@ -10161,6 +11037,13 @@
                 "type": "string",
                 "description": "ID da pessoa no Authorization Server."
               },
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Nome da pessoa nesta organização; `null` quando ela não é membro."
+              },
               "email": {
                 "type": [
                   "string",
@@ -10171,6 +11054,7 @@
             },
             "required": [
               "id",
+              "name",
               "email"
             ],
             "description": "Pessoa dona do token; `null` quando o token não é de uma pessoa."
@@ -10220,6 +11104,16 @@
                 },
                 "description": "Escopos concedidos ao token."
               },
+              "access_level": {
+                "type": "string",
+                "enum": [
+                  "read",
+                  "write",
+                  "all"
+                ],
+                "description": "Maior nível de acesso que os escopos concedem (`all` > `write` > `read`).",
+                "example": "write"
+              },
               "expires_at": {
                 "type": [
                   "string",
@@ -10232,6 +11126,7 @@
             "required": [
               "type",
               "scopes",
+              "access_level",
               "expires_at"
             ],
             "description": "Dados do token (sem o valor do token)."
@@ -10243,6 +11138,62 @@
           "token"
         ],
         "description": "Identidade por trás do token Bearer: pessoa, organização e dados do token."
+      },
+      "Workspace": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do workspace (valor do header `X-Workspace-Id`)."
+          },
+          "public_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID público do workspace (também aceito no header)."
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome do workspace.",
+            "example": "Principal"
+          },
+          "metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do sistema (objeto JSON, somente leitura): contexto interno gravado pelo backend e pelas integrações. Nunca aceito no corpo — use `custom_metadata` para dados próprios."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo."
+          },
+          "created_at": {
+            "type": "string",
+            "description": "Criação (ISO 8601)."
+          },
+          "updated_at": {
+            "type": "string",
+            "description": "Última alteração (ISO 8601)."
+          }
+        },
+        "required": [
+          "id",
+          "public_id",
+          "name",
+          "metadata",
+          "custom_metadata",
+          "created_at",
+          "updated_at"
+        ],
+        "description": "Espaço de dados da organização. Toda pessoa, cobrança, régua e demais recursos pertencem a um workspace."
       },
       "NotificationChannel": {
         "type": "object",
@@ -10260,6 +11211,11 @@
             "type": "string",
             "format": "uuid",
             "description": "Organização dona do canal."
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID do workspace a que o recurso pertence."
           },
           "company_id": {
             "type": [
@@ -10389,6 +11345,7 @@
           "id",
           "public_id",
           "organization_id",
+          "workspace_id",
           "company_id",
           "business_unit_id",
           "channel_type",
@@ -10481,6 +11438,18 @@
             },
             "description": "Dados personalizados (JSON) definidos pelo integrador."
           },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
+          },
           "tags": {
             "type": "array",
             "items": {
@@ -10569,12 +11538,33 @@
             },
             "description": "Dados personalizados (JSON) definidos pelo integrador."
           },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
+          },
           "tags": {
             "type": "array",
             "items": {
               "type": "string"
             },
             "description": "Etiquetas livres para organização."
+          },
+          "custom_metadata_mode": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "merge"
+            ],
+            "description": "Como o `custom_metadata` enviado é reconciliado com o valor gravado: `replace` (padrão) substitui o objeto inteiro; `merge` faz deep merge — objetos aninhados mesclam, escalares e arrays substituem a chave, e uma chave enviada com `null` é gravada como `null` (não é removida). Só na atualização.",
+            "example": "merge"
           }
         },
         "description": "Campos a atualizar (todos opcionais)."
@@ -10720,6 +11710,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -10930,6 +11930,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -10970,6 +11980,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -11095,6 +12115,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -11237,6 +12267,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -11343,6 +12383,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -11571,6 +12621,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -11667,6 +12727,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -11784,6 +12854,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -11959,6 +13039,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "requestBody": {
@@ -12108,6 +13198,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -12333,6 +13433,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -12543,6 +13653,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -12594,6 +13714,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -12719,6 +13849,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -12861,6 +14001,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -12977,6 +14127,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -13215,6 +14375,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -13375,6 +14545,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -13529,6 +14709,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -13575,6 +14765,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -13630,7 +14830,7 @@
             }
           },
           "403": {
-            "description": "O token não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação, ou a organização não tem plano contratado (`ENTITLEMENT_REQUIRED`, com `details.reason` = `no_plan` ou `missing_product`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -13798,6 +14998,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -14008,6 +15218,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -14059,6 +15279,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -14184,6 +15414,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -14336,6 +15576,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -14458,6 +15708,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -14623,6 +15883,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "requestBody": {
@@ -14773,6 +16043,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -14887,6 +16167,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -15004,6 +16294,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -15211,6 +16511,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -15421,6 +16731,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -15461,6 +16781,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -15586,6 +16916,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -15872,6 +17212,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -16082,6 +17432,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -16122,6 +17482,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -16247,6 +17617,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -16389,6 +17769,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -16501,6 +17891,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -16750,6 +18150,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -16909,6 +18319,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -17074,6 +18494,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -17284,6 +18714,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -17324,6 +18764,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -17449,6 +18899,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -17591,6 +19051,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -17791,6 +19261,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -17929,7 +19409,7 @@
             }
           },
           "403": {
-            "description": "O token não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação, ou a organização não tem plano contratado (`ENTITLEMENT_REQUIRED`, com `details.reason` = `no_plan` ou `missing_product`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -18001,6 +19481,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -18052,6 +19542,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -18181,6 +19681,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "requestBody": {
@@ -18289,7 +19799,7 @@
           "Notificações"
         ],
         "summary": "Excluir notificação",
-        "description": "Exclui uma notificação DEFINITIVAMENTE (hard delete — o modelo não tem soft delete).",
+        "description": "Exclui uma notificação DEFINITIVAMENTE (hard delete — o modelo não tem soft delete). Só a notificação ainda não entregue: a entregue é evidência probatória e responde `409`.",
         "security": [
           {
             "bearerAuth": [
@@ -18319,6 +19829,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -18347,6 +19867,16 @@
           },
           "404": {
             "description": "Recurso inexistente ou fora da sua organização.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A notificação já foi entregue — é evidência probatória e não pode ser excluída.",
             "content": {
               "application/json": {
                 "schema": {
@@ -18435,6 +19965,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -18477,7 +20017,7 @@
             }
           },
           "403": {
-            "description": "O token não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação, ou a organização não tem plano contratado (`ENTITLEMENT_REQUIRED`, com `details.reason` = `no_plan` ou `missing_product`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -18630,6 +20170,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -18778,7 +20328,7 @@
             }
           },
           "403": {
-            "description": "O token não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação, ou a organização não tem plano contratado (`ENTITLEMENT_REQUIRED`, com `details.reason` = `no_plan` ou `missing_product`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -18850,6 +20400,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -18901,6 +20461,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -19030,6 +20600,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "requestBody": {
@@ -19081,7 +20661,7 @@
             }
           },
           "403": {
-            "description": "O token não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação, ou a organização não tem plano contratado (`ENTITLEMENT_REQUIRED`, com `details.reason` = `no_plan` ou `missing_product`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -19168,6 +20748,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -19284,6 +20874,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -19401,6 +21001,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -19566,6 +21176,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "requestBody": {
@@ -19715,6 +21335,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -19952,6 +21582,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -20182,6 +21822,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -20222,6 +21872,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -20347,6 +22007,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -20499,6 +22169,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -20621,6 +22301,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -20874,6 +22564,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -21104,6 +22804,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -21155,6 +22865,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -21280,6 +23000,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -21432,6 +23162,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -21610,6 +23350,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       },
@@ -21675,7 +23425,7 @@
             }
           },
           "403": {
-            "description": "O token não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação, ou a organização não tem plano contratado (`ENTITLEMENT_REQUIRED`, com `details.reason` = `no_plan` ou `missing_product`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -21747,6 +23497,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -21787,6 +23547,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -22002,6 +23772,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -22140,7 +23920,7 @@
             }
           },
           "403": {
-            "description": "O token não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação, ou a organização não tem plano contratado (`ENTITLEMENT_REQUIRED`, com `details.reason` = `no_plan` ou `missing_product`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -22222,6 +24002,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -22262,6 +24052,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -22387,6 +24187,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -22529,6 +24339,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -22641,6 +24461,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -22883,6 +24713,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -23021,7 +24861,7 @@
             }
           },
           "403": {
-            "description": "O token não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação, ou a organização não tem plano contratado (`ENTITLEMENT_REQUIRED`, com `details.reason` = `no_plan` ou `missing_product`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -23103,6 +24943,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -23143,6 +24993,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -23268,6 +25128,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -23410,6 +25280,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -23522,6 +25402,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -23729,6 +25619,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       },
@@ -23866,6 +25766,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -23906,6 +25816,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -24091,6 +26011,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -24155,6 +26085,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -24332,6 +26272,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       },
@@ -24469,6 +26419,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -24509,6 +26469,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -24706,6 +26676,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       },
@@ -24843,6 +26823,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -24883,6 +26873,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -25008,6 +27008,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -25150,6 +27160,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -25262,6 +27282,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -25393,6 +27423,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -25569,6 +27609,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -25699,6 +27749,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -25926,6 +27986,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -26051,6 +28121,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -26244,6 +28324,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       },
@@ -26381,6 +28471,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -26483,6 +28583,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       },
@@ -26620,6 +28730,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -26746,6 +28866,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -26976,6 +29106,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ]
       }
@@ -27016,6 +29156,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -27141,6 +29291,16 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -27283,6 +29443,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -27448,6 +29618,119 @@
           }
         },
         "operationId": "get-me",
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "description": "Identificação do integrador. Inclua nome e e-mail de contato — ex.: `Kevin Mitnick <kmitnick@kobana.com.br>`. Usado para suporte e auditoria.",
+            "schema": {
+              "type": "string",
+              "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+            },
+            "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          }
+        ]
+      }
+    },
+    "/v1/workspaces": {
+      "get": {
+        "tags": [
+          "Workspaces"
+        ],
+        "summary": "Listar workspaces",
+        "description": "Lista os workspaces que o token alcança — todos os da organização para um token de integração. Envie o `id` (ou `public_id`) no header `X-Workspace-Id` das demais chamadas; ele é opcional enquanto a organização tiver um só workspace. Esta rota não exige o header.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Workspaces alcançáveis.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Workspace"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, inválido, expirado ou revogado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "O token não tem o escopo exigido pela operação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora da sua organização.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo da requisição acima de 2 MB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido (600 por minuto por chave; 60 tentativas inválidas por minuto por IP). Aguarde o `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Tente novamente; persistindo, contate o suporte.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get-workspaces",
         "parameters": [
           {
             "name": "User-Agent",

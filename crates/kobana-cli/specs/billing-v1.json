@@ -10249,6 +10249,14 @@
             ],
             "description": "Como o `custom_metadata` enviado é reconciliado com o valor armazenado. `replace` (padrão) substitui todo o objeto; `merge` faz um deep merge sobre o valor atual — objetos aninhados são mesclados recursivamente, escalares e arrays substituem a chave, e chaves `null` são mantidas (não removem a chave). Aceito apenas na atualização.",
             "example": "merge"
+          },
+          "invoice_withholding": {
+            "type": "string",
+            "enum": [
+              "block",
+              "update_invoice"
+            ],
+            "description": "Se a NF-e estiver vinculada a uma fatura e os novos impostos retiverem um valor diferente do da fatura: `block` (padrão) recusa com 409 `NFE_WITHHOLDING_MISMATCH`; `update_invoice` atualiza a fatura com a retenção da NF-e."
           }
         }
       },
@@ -10304,6 +10312,14 @@
             ],
             "format": "uuid",
             "description": "UUID da fatura a vincular. Envie `null` para desvincular."
+          },
+          "invoice_withholding": {
+            "type": "string",
+            "enum": [
+              "block",
+              "update_invoice"
+            ],
+            "description": "O que fazer se a retenção das NFes for diferente da retenção da fatura: `block` (padrão) recusa com 409 `NFE_WITHHOLDING_MISMATCH`; `update_invoice` atualiza a fatura com a retenção da NF-e."
           }
         },
         "required": [
@@ -51208,6 +51224,16 @@
               }
             }
           },
+          "409": {
+            "description": "A retenção da NF-e é diferente da retenção da fatura vinculada (`NFE_WITHHOLDING_MISMATCH`). `details` traz os dois lados; repita com `invoice_withholding: \"update_invoice\"` para atualizar a fatura.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Corpo da requisição falhou na validação.",
             "content": {
@@ -52368,6 +52394,16 @@
           },
           "404": {
             "description": "Recurso não encontrado na organização atual.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A retenção da NF-e é diferente da retenção da fatura vinculada (`NFE_WITHHOLDING_MISMATCH`). `details` traz os dois lados; repita com `invoice_withholding: \"update_invoice\"` para atualizar a fatura.",
             "content": {
               "application/json": {
                 "schema": {

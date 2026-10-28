@@ -115,7 +115,8 @@ never call `KobanaClient::new` directly from a command.
 
 `Product::header_env` fills spec-declared header parameters from env vars when
 `--params` does not carry them. `finance` (where `X-Workspace-Id` is required on
-every route) and `dashboards` (optional) map it to `KOBANA_WORKSPACE_ID`.
+every route), `dashboards` and `dunning` (optional while the organization has a
+single workspace) map it to `KOBANA_WORKSPACE_ID`.
 `header_env_names_a_header_parameter_of_the_spec` keeps the mapping honest.
 
 #### Updating specs

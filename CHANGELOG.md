@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-28
+
+### Added
+
+- **Workspace no `dunning`** — a Régua de Cobrança passou a ter workspaces: `kobana dunning workspaces list` lista os que o token alcança, e todo comando de dados aceita o cabeçalho `X-Workspace-Id`, preenchido a partir de `KOBANA_WORKSPACE_ID` quando `--params` não o traz (como no `finance` e no `dashboards`). Opcional enquanto a organização tem um workspace só; com vários, a API responde `400 WORKSPACE_REQUIRED` sem ele
+
+### Changed
+
+- **Specs da Régua de Cobrança, do Faturamento Automático e do Dashboard Mágico atualizadas** com o `main` de cada app — a do dunning ganha o workspace; as outras duas, só textos revisados. Traduções en/es refeitas para todos os produtos
+
 ### Fixed
 
 - **`--env sandbox` em `inbox` e `dashboards`** — os dois produtos não têm sandbox, e o CLI mandava as requisições para hosts que não existem. Agora termina com erro pedindo `--env production`, em vez de cair em produção sem avisar
