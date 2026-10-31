@@ -153,7 +153,8 @@ Recursos principais: `tasks` (`run`, `readiness`, `endpoint`), `executions`
 
 ```bash
 kobana kadu tasks list --fields "id,slug,label"
-kobana kadu tasks run --dry-run --params '{"id": "TASK_ID"}' --json '{}'
+kobana kadu tasks run --dry-run --params '{"id": "TASK_ID"}' \
+  --json '{"reference_date": "2026-10-30", "environment_id": "ENVIRONMENT_ID"}'
 kobana kadu executions logs --params '{"id": "EXECUTION_ID"}'
 ```
 
@@ -546,7 +547,8 @@ kobana dashboards entities records get --params '{"id": "ENTITY_ID"}'
 ```bash
 # Pré-checagem e disparo de uma Task
 kobana kadu tasks readiness --params '{"id": "TASK_ID"}'
-kobana kadu tasks run --dry-run --params '{"id": "TASK_ID"}' --json '{}'
+kobana kadu tasks run --dry-run --params '{"id": "TASK_ID"}' \
+  --json '{"reference_date": "2026-10-30", "environment_id": "ENVIRONMENT_ID"}'
 
 # Acompanhar a execução
 kobana kadu executions get --params '{"id": "EXECUTION_ID"}' --fields "id,status"

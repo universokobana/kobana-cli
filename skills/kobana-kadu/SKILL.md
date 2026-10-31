@@ -70,7 +70,8 @@ kobana kadu tasks list --fields "id,slug,label"
 kobana kadu tasks readiness --params '{"id": "TASK_ID"}'
 
 # Mutations: always dry-run first
-kobana kadu tasks run --dry-run --params '{"id": "TASK_ID"}' --json '{}'
+kobana kadu tasks run --dry-run --params '{"id": "TASK_ID"}' \
+  --json '{"reference_date": "2026-10-30", "environment_id": "ENVIRONMENT_ID"}'
 
 kobana kadu executions get --params '{"id": "EXECUTION_ID"}' --fields "id,status"
 kobana kadu executions logs --params '{"id": "EXECUTION_ID"}'
