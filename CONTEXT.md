@@ -16,7 +16,8 @@ kobana <produto> <recurso> <metodo> [flags]
 
 Produtos disponíveis: `banking` (Gateway Bancário), `inbox` (Inbox Autônomo),
 `billing` (Faturamento Automático), `finance` (Financeiro Inteligente),
-`dunning` (Régua de Cobrança) e `dashboards` (Dashboard Mágico).
+`dunning` (Régua de Cobrança), `dashboards` (Dashboard Mágico) e `kadu`
+(Agente Kadu).
 
 Cada produto é uma API separada com host e credenciais próprios — um
 `KOBANA_TOKEN` do banking não vale para os outros. O `inbox` ainda exige
@@ -38,7 +39,7 @@ kobana <produto> <recurso> <metodo> --help
 
 -   `--params '<JSON>'`: Parâmetros de query/URL/cabeçalho (e.g., `id`, `uid`, `page`, `per_page`, filtros, `X-Workspace-Id`).
 -   `--json '<JSON>'`: Corpo da requisição para POST/PUT/PATCH.
--   `--page-all`: Auto-paginação com saída NDJSON (um JSON por linha).
+-   `--page-all`: Auto-paginação com saída NDJSON (um JSON por linha). Rotas que declaram `cursor` (`finance`, `inbox`, `kadu`) seguem `meta.next_cursor`; as demais, `page`/`per_page`.
 -   `--fields '<CAMPOS>'`: Limita campos na resposta (crítico para eficiência de context window de IA).
 -   `--output <PATH>`: Salva resposta em arquivo.
 -   `--dry-run`: Mostra a requisição sem executar.

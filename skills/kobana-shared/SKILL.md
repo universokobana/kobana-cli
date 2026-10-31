@@ -54,7 +54,8 @@ kobana <product> <resource> <method> [flags]
 
 `<product>` is the Kobana product: `banking` (Gateway Bancário), `inbox`
 (Inbox Autônomo), `billing` (Faturamento Automático), `finance` (Financeiro
-Inteligente), `dunning` (Régua de Cobrança) or `dashboards` (Dashboard Mágico).
+Inteligente), `dunning` (Régua de Cobrança), `dashboards` (Dashboard Mágico) or
+`kadu` (Agente Kadu).
 Each is its own API with its own credentials — see that product's skill.
 
 ### Method Flags
@@ -64,7 +65,7 @@ Each is its own API with its own credentials — see that product's skill.
 | `--params '{"key": "val"}'` | URL/query/header parameters (id, uid, page, filters, `X-Workspace-Id`) |
 | `--json '{"key": "val"}'` | Request body for POST/PUT/PATCH |
 | `--output <PATH>` | Save response to file |
-| `--page-all` | Auto-paginate (NDJSON output) |
+| `--page-all` | Auto-paginate (NDJSON output); follows `meta.next_cursor` on routes that declare `cursor` |
 | `--page-limit <N>` | Max pages when using --page-all (default: 10) |
 | `--page-delay <MS>` | Delay between pages in ms (default: 100) |
 | `--idempotency-key <KEY>` | Custom idempotency key for mutations |

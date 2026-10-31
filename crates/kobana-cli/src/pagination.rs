@@ -1,13 +1,47 @@
 use kobana::client::{ApiRequest, ApiResponse, KobanaClient};
 use kobana::error::KobanaError;
 use kobana::trf;
-use kobana::spec::ResolvedEndpoint;
+use kobana::spec::{ParameterLocation, ResolvedEndpoint};
 
 use crate::formatter::{filter_fields, format_output};
 
+/// How an endpoint pages its results, read from the parameters its spec declares
+#[derive(Debug, PartialEq, Eq)]
+enum Strategy {
+    /// `page` + `per_page`; the last page is the one shorter than `per_page`
+    PageNumber,
+    /// `cursor` in, `meta.next_cursor` out; the last page has no next cursor
+    Cursor,
+}
+
+fn strategy(endpoint: &ResolvedEndpoint) -> Strategy {
+    let declares_cursor = endpoint
+        .operation
+        .parameters
+        .iter()
+        .any(|p| p.location == ParameterLocation::Query && p.name == "cursor");
+    if declares_cursor {
+        Strategy::Cursor
+    } else {
+        Strategy::PageNumber
+    }
+}
+
+/// The cursor of the next page: `meta.next_cursor`, or a top-level `next_cursor`.
+/// `None` (absent, null or empty) means this was the last page.
+fn next_cursor(body: &serde_json::Value) -> Option<String> {
+    body.pointer("/meta/next_cursor")
+        .or_else(|| body.get("next_cursor"))
+        .and_then(|v| v.as_str())
+        .filter(|c| !c.is_empty())
+        .map(str::to_string)
+}
+
 /// Handle paginated requests with --page-all
 ///
-/// Emits NDJSON (one JSON line per page) for streaming consumption.
+/// Emits NDJSON (one JSON line per page) for streaming consumption. Endpoints
+/// that declare a `cursor` query parameter follow `meta.next_cursor`; the rest
+/// walk `page`/`per_page`.
 #[allow(clippy::too_many_arguments)]
 pub async fn paginate_all(
     client: &KobanaClient,
@@ -21,7 +55,9 @@ pub async fn paginate_all(
     output_format: &str,
     verbose: bool,
 ) -> Result<(), KobanaError> {
+    let strategy = strategy(endpoint);
     let mut page = 1u64;
+    let mut cursor: Option<String> = None;
     let mut pages_fetched = 0usize;
     let per_page = base_params
         .as_ref()
@@ -45,9 +81,19 @@ pub async fn paginate_all(
         // Build params with current page
         let mut params = base_params.clone().unwrap_or(serde_json::json!({}));
         if let Some(obj) = params.as_object_mut() {
-            obj.insert("page".to_string(), serde_json::json!(page));
-            if !obj.contains_key("per_page") {
-                obj.insert("per_page".to_string(), serde_json::json!(per_page));
+            match strategy {
+                Strategy::PageNumber => {
+                    obj.insert("page".to_string(), serde_json::json!(page));
+                    if !obj.contains_key("per_page") {
+                        obj.insert("per_page".to_string(), serde_json::json!(per_page));
+                    }
+                }
+                // The first request keeps a cursor the caller passed in --params
+                Strategy::Cursor => {
+                    if let Some(c) = &cursor {
+                        obj.insert("cursor".to_string(), serde_json::json!(c));
+                    }
+                }
             }
         }
 
@@ -75,6 +121,14 @@ pub async fn paginate_all(
         let response = client.execute(&request).await?;
         let items = extract_page_items(&response);
         let item_count = items.len();
+        // Whether another page follows this one
+        let has_more = match strategy {
+            Strategy::PageNumber => item_count >= per_page as usize,
+            Strategy::Cursor => {
+                cursor = next_cursor(&response.body);
+                cursor.is_some()
+            }
+        };
 
         if verbose {
             let status = response.status;
@@ -106,7 +160,7 @@ pub async fn paginate_all(
             pages_fetched += 1;
             page += 1;
 
-            if item_count < per_page as usize {
+            if !has_more {
                 break;
             }
 
@@ -136,7 +190,7 @@ pub async fn paginate_all(
         pages_fetched += 1;
         page += 1;
 
-        if item_count < per_page as usize {
+        if !has_more {
             break;
         }
 
@@ -181,4 +235,49 @@ fn extract_page_items(response: &ApiResponse) -> Vec<serde_json::Value> {
     }
 
     vec![]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use kobana::spec::ApiSpec;
+
+    fn endpoint(params: &str) -> ResolvedEndpoint {
+        let spec = format!(
+            r#"{{"info": {{"version": "1"}}, "paths": {{"/v1/things": {{"get": {{
+                "parameters": {params}, "responses": {{}}}}}}}}}}"#
+        );
+        let tree = ApiSpec::parse(&spec).unwrap().build_command_tree("/v1");
+        tree.children["things"].endpoints[0].clone()
+    }
+
+    #[test]
+    fn an_endpoint_that_declares_a_cursor_pages_by_cursor() {
+        let cursor =
+            endpoint(r#"[{"name": "cursor", "in": "query"}, {"name": "limit", "in": "query"}]"#);
+        assert_eq!(strategy(&cursor), Strategy::Cursor);
+
+        let paged = endpoint(r#"[{"name": "page", "in": "query"}]"#);
+        assert_eq!(strategy(&paged), Strategy::PageNumber);
+
+        // A header that happens to be called `cursor` does not count
+        let header = endpoint(r#"[{"name": "cursor", "in": "header"}]"#);
+        assert_eq!(strategy(&header), Strategy::PageNumber);
+    }
+
+    #[test]
+    fn next_cursor_ends_on_null_absent_or_empty() {
+        let next = serde_json::json!({"data": [], "meta": {"next_cursor": "abc", "limit": 20}});
+        assert_eq!(next_cursor(&next).as_deref(), Some("abc"));
+        let top = serde_json::json!({"data": [], "next_cursor": "xyz"});
+        assert_eq!(next_cursor(&top).as_deref(), Some("xyz"));
+
+        for last in [
+            serde_json::json!({"data": [], "meta": {"next_cursor": null}}),
+            serde_json::json!({"data": [], "meta": {"next_cursor": ""}}),
+            serde_json::json!({"data": []}),
+        ] {
+            assert_eq!(next_cursor(&last), None, "{last}");
+        }
+    }
 }

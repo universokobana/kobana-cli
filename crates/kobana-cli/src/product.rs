@@ -185,7 +185,8 @@ fn warn(msg: &str) {
 ///
 /// Every product except banking follows the
 /// `api.<product>[.sandbox].kobana.com.br` host shape — see the notes in
-/// AGENTS.md before adding one. Inbox and dashboards have no sandbox.
+/// AGENTS.md before adding one. Kadu (`api.kadu.ia.br`) is the exception.
+/// Inbox, dashboards and kadu have no sandbox.
 pub static REGISTRY: &[Product] = &[
 Product {
     slug: "banking",
@@ -289,6 +290,25 @@ Product {
     client_cert_env: None,
     // Optional while the organization has a single workspace
     header_env: &[("X-Workspace-Id", "KOBANA_WORKSPACE_ID")],
+},
+Product {
+    slug: "kadu",
+    about: [
+        "Agente Kadu — tarefas, execuções, ambientes, agendamentos, webhooks",
+        "Kadu Agent — tasks, executions, environments, schedules, webhooks",
+        "Agente Kadu — tareas, ejecuciones, entornos, programaciones, webhooks",
+    ],
+    // Kadu predates the `api.<product>.kobana.com.br` convention and has
+    // staging, not a sandbox: `--env sandbox` must never reach production
+    hosts: Hosts {
+        production: "https://api.kadu.ia.br",
+        sandbox: None,
+        development: Some("http://localhost:3030/api"),
+    },
+    specs: &[spec!("kadu-v1", "/v1")],
+    client_cert_env: None,
+    // The organization is the token's `org` claim; there is no workspace header
+    header_env: &[],
 },
 ];
 
@@ -421,7 +441,7 @@ mod tests {
         let slugs: Vec<&str> = REGISTRY.iter().map(|p| p.slug).collect();
         assert_eq!(
             slugs,
-            ["banking", "inbox", "billing", "finance", "dunning", "dashboards"]
+            ["banking", "inbox", "billing", "finance", "dunning", "dashboards", "kadu"]
         );
     }
 
@@ -691,6 +711,38 @@ mod tests {
             assert!(dashboards.tree.children.contains_key(resource), "dashboards {resource}");
         }
         assert!(dashboards.product.base_url(&Environment::Sandbox).is_err());
+    }
+
+    #[test]
+    fn kadu_is_registered_with_its_resources() {
+        let products = load_all().unwrap();
+        let kadu = find(&products, "kadu").expect("kadu must load");
+        for resource in [
+            "tasks",
+            "executions",
+            "environments",
+            "secrets",
+            "schedules",
+            "webhooks",
+            "webhook-deliveries",
+            "operation-approvals",
+            "me",
+        ] {
+            assert!(kadu.tree.children.contains_key(resource), "kadu {resource}");
+        }
+
+        // Running a task is a method of `tasks`: `kobana kadu tasks run`
+        let tasks = &kadu.tree.children["tasks"];
+        assert!(tasks
+            .endpoints
+            .iter()
+            .any(|e| e.cli_method == "run" && e.path_template == "/v1/tasks/{id}/run"));
+
+        assert_eq!(
+            kadu.product.base_url(&Environment::Production).unwrap(),
+            "https://api.kadu.ia.br"
+        );
+        assert!(kadu.product.base_url(&Environment::Sandbox).is_err());
     }
 
     /// Resource names repeat across products with different meanings, so the

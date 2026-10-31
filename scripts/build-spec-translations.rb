@@ -33,7 +33,8 @@ SOURCES = {
   "dashboards-v1" => ["kobana-dashboards", "user-docs/openapi/openapi-v1-%s.yaml"],
   "dunning-v1" => ["kobana-dunning", "user-docs/openapi/openapi-v1-%s.yaml"],
   "finance-v1" => ["kobana-finance", "user-docs/static/openapi/openapi-v1-%s.yaml"],
-  "inbox-v1" => ["kobana-inbox", "user-docs/openapi/openapi-v1-%s.yaml"]
+  "inbox-v1" => ["kobana-inbox", "user-docs/openapi/openapi-v1-%s.yaml"],
+  "kadu-v1" => ["kobana-agent-kadu", "user-docs/openapi/openapi-v1-%s.yaml"]
 }.freeze
 
 TEXT_KEYS = %w[summary description].freeze

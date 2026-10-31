@@ -1,6 +1,6 @@
 # Kobana CLI
 
-CLI para as APIs da [Kobana](https://kobana.com.br) — os seis produtos em um
+CLI para as APIs da [Kobana](https://kobana.com.br) — os sete produtos em um
 único binário, direto do terminal.
 
 Projetado para humanos e agentes de IA, com saída JSON estruturada, introspecção
@@ -26,6 +26,7 @@ o primeiro segmento do comando.
 | Inbox Autônomo | `inbox` | `api.inbox.kobana.com.br` | [docs.inbox.kobana.com.br](https://docs.inbox.kobana.com.br) |
 | Régua de Cobrança | `dunning` | `api.dunning.kobana.com.br` | [docs.dunning.kobana.com.br](https://docs.dunning.kobana.com.br) |
 | Dashboard Mágico | `dashboards` | `api.dashboards.kobana.com.br` | [docs.dashboards.kobana.com.br](https://docs.dashboards.kobana.com.br) |
+| Agente Kadu | `kadu` | `api.kadu.ia.br` | [docs.kadu.ia.br](https://docs.kadu.ia.br) |
 
 > [!IMPORTANT]
 > Produtos não compartilham credenciais. Um token do Gateway Bancário não
@@ -138,6 +139,24 @@ kobana dashboards data-sources list --fields "id,name,status"
 kobana dashboards data-sources sync --dry-run --params '{"id": "DATA_SOURCE_ID"}'
 ```
 
+### Agente Kadu — `kadu`
+
+Agente de IA que executa rotinas financeiras (as Tasks) a partir do
+repositório de skills da organização. A organização vem do token (claim
+`org`), então não há cabeçalho de workspace: o workspace é um recurso, como
+`activities` e `tasks`.
+
+Recursos principais: `tasks` (`run`, `readiness`, `endpoint`), `executions`
+(`cancel`, `continue`, `logs`, `events`, `todos`, `search`), `environments`,
+`secrets`, `schedules`, `files`, `memories`, `webhooks`, `webhook-deliveries`,
+`repository` (`sync`), `usage`, `operation-approvals`.
+
+```bash
+kobana kadu tasks list --fields "id,slug,label"
+kobana kadu tasks run --dry-run --params '{"id": "TASK_ID"}' --json '{}'
+kobana kadu executions logs --params '{"id": "EXECUTION_ID"}'
+```
+
 ## Instalação
 
 ### Script de instalação (macOS e Linux)
@@ -205,6 +224,7 @@ obtê-lo muda:
 | `inbox` | JWT (RS256) + certificado mTLS | Conta Kobana (`account.kobana.com.br`) |
 | `dunning` | JWT (RS256) | Conta Kobana (`account.kobana.com.br`) |
 | `dashboards` | JWT (RS256), `X-Workspace-Id` opcional | Conta Kobana (`account.kobana.com.br`) |
+| `kadu` | JWT (RS256) | Conta Kobana (`account.kobana.com.br`) |
 
 ### Gateway Bancário
 
@@ -248,11 +268,11 @@ Credenciais salvas são criptografadas com AES-256-GCM. A chave fica no keyring 
 
 ### Demais produtos
 
-`finance`, `billing`, `inbox`, `dunning` e `dashboards` só **verificam** tokens:
+`finance`, `billing`, `inbox`, `dunning`, `dashboards` e `kadu` só **verificam** tokens:
 todos aceitam um access token **RS256 emitido pelo Authorization Server da
 Kobana** (`account.kobana.com.br`), enviado como `Authorization: Bearer <jwt>`.
 O `aud` do token é a URL da API do produto (`https://api.billing.kobana.com.br`,
-…), então um token continua valendo para um produto só. Coloque o token do
+`https://api.kadu.ia.br`, …), então um token continua valendo para um produto só. Coloque o token do
 produto em `KOBANA_TOKEN` antes de chamá-lo:
 
 ```bash
@@ -321,10 +341,11 @@ próprios hosts:
 | `inbox` | `api.inbox.kobana.com.br` | — | `localhost:3028/api` |
 | `dunning` | `api.dunning.kobana.com.br` | `api.dunning.sandbox.kobana.com.br` | — |
 | `dashboards` | `api.dashboards.kobana.com.br` | — | — |
+| `kadu` | `api.kadu.ia.br` | — | `localhost:3030/api` |
 
 Produtos sem host de desenvolvimento próprio caem em produção quando você passa
-`--env development`. Já `--env sandbox` num produto sem sandbox (`inbox` e
-`dashboards`) termina com erro, para nunca mandar um teste para produção.
+`--env development`. Já `--env sandbox` num produto sem sandbox (`inbox`,
+`dashboards` e `kadu`) termina com erro, para nunca mandar um teste para produção.
 
 O OAuth (`kobana auth login`) é do Gateway Bancário e usa `app.kobana.com.br` em
 produção e `app-sandbox.kobana.com.br` em sandbox.
@@ -377,8 +398,8 @@ flags, chaves do JSON e códigos de saída não mudam com o idioma.
 kobana <produto> <recurso> <metodo> [flags]
 ```
 
-- **`<produto>`** — `banking`, `finance`, `billing`, `inbox`, `dunning` ou
-  `dashboards` (veja [Produtos](#produtos))
+- **`<produto>`** — `banking`, `finance`, `billing`, `inbox`, `dunning`,
+  `dashboards` ou `kadu` (veja [Produtos](#produtos))
 - **`<recurso>`** — pode ser aninhado: `bank-billets`, `charge pix`,
   `webhooks deliveries`
 - **`<metodo>`** — a ação: `list`, `get`, `create`, `update`, `delete`, ou uma
@@ -520,6 +541,21 @@ kobana dashboards data-sources sync --dry-run --params '{"id": "DATA_SOURCE_ID"}
 kobana dashboards entities records get --params '{"id": "ENTITY_ID"}'
 ```
 
+#### Agente Kadu
+
+```bash
+# Pré-checagem e disparo de uma Task
+kobana kadu tasks readiness --params '{"id": "TASK_ID"}'
+kobana kadu tasks run --dry-run --params '{"id": "TASK_ID"}' --json '{}'
+
+# Acompanhar a execução
+kobana kadu executions get --params '{"id": "EXECUTION_ID"}' --fields "id,status"
+kobana kadu executions logs --params '{"id": "EXECUTION_ID"}'
+
+# Todas as execuções, seguindo o cursor
+kobana kadu executions list --page-all --fields "id,status,created_at"
+```
+
 ### Helpers
 
 Atalhos para operações comuns do **Gateway Bancário**:
@@ -550,6 +586,7 @@ kobana schema billing.subscriptions.create
 kobana schema inbox.emails.list
 kobana schema dunning.charges.create
 kobana schema dashboards.data-sources.sync
+kobana schema kadu.tasks.run
 ```
 
 Retorna parâmetros, campos obrigatórios, tipos e respostas — tudo derivado dos
@@ -564,7 +601,7 @@ OpenAPI specs embutidos. O caminho segue a mesma forma do comando:
 | `--json '<JSON>'` | Corpo da requisição (POST/PUT/PATCH) |
 | `--fields '<CAMPOS>'` | Limita campos na resposta |
 | `--dry-run` | Mostra a requisição sem executar |
-| `--page-all` | Auto-paginação com saída NDJSON |
+| `--page-all` | Auto-paginação com saída NDJSON (por `page` ou, onde a rota declara `cursor`, seguindo `meta.next_cursor`) |
 | `--page-limit <N>` | Máximo de páginas (default: 10) |
 | `--page-delay <MS>` | Delay entre páginas (default: 100ms) |
 | `--env <ENV>` | Ambiente: `production` (default), `sandbox`, `development` |
@@ -665,7 +702,7 @@ kobana-cli/
 └── docs/                # Especificações e documentação de design
 ```
 
-Comandos são gerados **dinamicamente** a partir dos OpenAPI specs dos seis
+Comandos são gerados **dinamicamente** a partir dos OpenAPI specs dos sete
 produtos, embutidos no binário. Atualizar a API = atualizar o spec + rebuild;
 adicionar um produto = um spec novo mais uma entrada no registro de produtos.
 

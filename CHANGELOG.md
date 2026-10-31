@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Agentes e skills de IA no `finance`** — `kobana finance ai-agents` (com `triggers` e o `token` do gatilho) e `kobana finance ai-skills`
+- **Produto `kadu` (Agente Kadu)** — `kobana kadu <recurso> <metodo>` fala com a API v1 do Kadu (`api.kadu.ia.br`): `tasks` (`run`, `readiness`, `endpoint`), `executions` (`cancel`, `continue`, `logs`, `events`, `todos`, `search`), `environments`, `secrets`, `schedules`, `files`, `memories`, `webhooks`, `webhook-deliveries`, `repository`, `usage` e o restante da API. Token RS256 da Conta Kobana com `aud=https://api.kadu.ia.br`; sem sandbox, e `--env development` vai para `localhost:3030/api`. Skill `kobana-kadu`
+
+### Fixed
+
+- **`--page-all` em rotas paginadas por cursor** — rotas que declaram o parâmetro `cursor` (`finance`, `inbox`, `kadu`) agora seguem `meta.next_cursor` até ele acabar. Antes o CLI mandava `page`/`per_page`, que essas APIs ignoram, e parava na primeira página sem avisar
 
 ### Changed
 

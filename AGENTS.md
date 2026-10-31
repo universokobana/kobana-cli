@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-`kobana` is a Rust CLI tool for interacting with the APIs of all six Kobana products — Gateway Bancário (`banking`), Financeiro Inteligente (`finance`), Faturamento Automático (`billing`), Inbox Autônomo (`inbox`), Régua de Cobrança (`dunning`) and Dashboard Mágico (`dashboards`). Each is an independent API with its own hosts and credentials. The CLI dynamically generates its command surface at startup by parsing OpenAPI 3.1 specs embedded in the binary.
+`kobana` is a Rust CLI tool for interacting with the APIs of all seven Kobana products — Gateway Bancário (`banking`), Financeiro Inteligente (`finance`), Faturamento Automático (`billing`), Inbox Autônomo (`inbox`), Régua de Cobrança (`dunning`), Dashboard Mágico (`dashboards`) and Agente Kadu (`kadu`). Each is an independent API with its own hosts and credentials. The CLI dynamically generates its command surface at startup by parsing OpenAPI 3.1 specs embedded in the binary.
 
 > [!IMPORTANT]
 > **Dynamic Commands**: This project does NOT hardcode API endpoints as Rust structs. Instead, it embeds OpenAPI JSON specs and builds `clap` commands dynamically via two-phase parsing. When updating the API surface, replace the spec files in `crates/kobana-cli/specs/` (named `<product>-<version>.json`) and rebuild. Do NOT add new crates or modules per endpoint.
@@ -82,8 +82,9 @@ the request URL keeps it:
 | `finance` | `https://api.finance.kobana.com.br` | `/v1/financial-accounts` | `/v1` |
 | `dunning` | `https://api.dunning.kobana.com.br` | `/v1/charges` | `/v1` |
 | `dashboards` | `https://api.dashboards.kobana.com.br` | `/v1/data_sources` | `/v1` |
+| `kadu` | `https://api.kadu.ia.br` | `/v1/tasks` | `/v1` |
 
-All six are registered.
+All seven are registered.
 
 > [!IMPORTANT]
 > **The published finance spec does not match that table yet.** It still ships
@@ -106,7 +107,9 @@ therefore adds its resources next to the existing ones — check the merged
 `--help` for name clashes, which `merge()` resolves first-spec-wins.
 
 Sandbox hosts follow `api.<product>.sandbox.kobana.com.br`, except banking,
-which predates the convention (`api-sandbox.kobana.com.br`).
+which predates the convention (`api-sandbox.kobana.com.br`). Kadu lives on its
+own domain (`api.kadu.ia.br`) and has staging, not a sandbox, so its `sandbox`
+is `None`; `development` is its local dev server (`localhost:3030/api`).
 
 `Product::client_cert_env` names the env var holding a PEM client certificate,
 for products whose edge terminates mTLS. `inbox` sets it; `banking` does not.
@@ -130,6 +133,7 @@ hold someone's uncommitted edits):
 | `banking-v1.json`, `banking-v2.json` | `kobana-api-specs`: `swagger/v{1,2}_0/kobana-api-v{1,2}_0-openapi-3_1.json` (already JSON) |
 | `billing`, `inbox`, `dunning`, `dashboards` | `<app>/user-docs/openapi/openapi-v1-pt.yaml` |
 | `finance` | `kobana-finance/user-docs/static/openapi/openapi-v1-pt.yaml` (then normalize, see above) |
+| `kadu` | `kobana-agent-kadu/user-docs/openapi/openapi-v1.yaml` (Portuguese; the translations are `openapi-v1-{en,es}.yaml`) |
 
 The same specs are published at `docs.<product>.kobana.com.br/pt/api/overview/openapi.md`.
 YAML must be converted to JSON before being embedded. macOS ships Ruby, which
@@ -179,7 +183,7 @@ ruby scripts/build-spec-translations.rb
 | `oauth.rs`           | OAuth2 Authorization Code and Client Credentials flows         |
 | `schema.rs`          | `kobana schema` command — introspect API endpoint schemas      |
 | `formatter.rs`       | Output formatting: JSON (default), table, CSV                  |
-| `pagination.rs`      | Auto-pagination with NDJSON streaming output                   |
+| `pagination.rs`      | Auto-pagination with NDJSON streaming output — `cursor`/`meta.next_cursor` when the endpoint declares a `cursor` query parameter, `page`/`per_page` otherwise |
 | `validate.rs`        | CLI-specific input validation for `--params` and `--json`      |
 | `config.rs`          | Config directory, `.env` loading, environment management       |
 | `logging.rs`         | Structured logging (stderr + JSON file rotation) via `tracing` |
@@ -228,7 +232,7 @@ stays in Portuguese. The maps are built by `scripts/build-spec-translations.rb`
 from each product's per-language spec files — the ones its user docs are
 generated from: `kobana-api-specs/swagger/v{1,2}_0/*.{en,es}.json` for banking
 (kept current by that repo's translate-specs workflow), `user-docs/openapi/*-{en,es}.yaml`
-for the others (read from the repo's `main`) — walking both specs side by side — paths are matched
+for the others (`kobana-agent-kadu` ships `openapi-v1-{en,es}.yaml` with an unsuffixed Portuguese file; read from the repo's `main`) — walking both specs side by side — paths are matched
 ignoring a `/vN` prefix and path parameter names. Finance's descriptions are in
 English even in its Portuguese spec; only its summaries get translated.
 `translated_specs_serve_the_same_commands` checks that translating never
