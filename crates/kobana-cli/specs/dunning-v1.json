@@ -3,7 +3,7 @@
   "info": {
     "title": "API do Kobana Dunning",
     "version": "1.0.0",
-    "description": "API pública da Régua de Cobrança — a régua de cobrança da Kobana. Gerencie clientes, cobranças, réguas, acordos, disputas e webhooks programaticamente. Autentique com um access token da Conta Kobana (`Authorization: Bearer <token>`), um JWT RS256 emitido pelo Authorization Server da Kobana; o acesso é limitado pelos escopos do token — o recurso (`dunning/charges`) e o verbo (`write`).",
+    "description": "API pública da Régua de Cobrança — a régua de cobrança da Kobana. Gerencie clientes, cobranças, réguas, acordos, disputas e webhooks programaticamente. Autentique com um access token da Conta Kobana (`Authorization: Bearer <token>`), um JWT RS256 emitido pelo Authorization Server da Kobana; o acesso é limitado pelos escopos do token — o recurso (`dunning/charges`) e o nível de acesso (`read`, `write`, `delete`, `import`, `export`, `all`).",
     "license": {
       "name": "Proprietário — Kobana",
       "url": "https://kobana.com.br"
@@ -4349,7 +4349,7 @@
           "recipient": {
             "type": "string",
             "minLength": 1,
-            "description": "Destinatário: e-mail para `email`, telefone para `sms`/`whatsapp`/`voice`; livre para `manual`.",
+            "description": "Destinatário: e-mail para `email`, telefone para `sms`/`whatsapp`/`voice` — sempre um contato cadastrado da pessoa da cobrança; livre para `manual`.",
             "example": "maria@exemplo.com.br"
           },
           "subject": {
@@ -4365,7 +4365,7 @@
           "collection_rule_step_id": {
             "type": "string",
             "format": "uuid",
-            "description": "Etapa da régua de cobrança a associar (atualiza o `current_step` da cobrança)."
+            "description": "Etapa da régua da cobrança a associar à notificação (rótulo; não altera o `current_step`)."
           }
         },
         "required": [
@@ -11595,7 +11595,7 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "Access token no header `Authorization: Bearer <token>`. É um JWT RS256 emitido pelo Authorization Server da Kobana (`account.kobana.com.br`), com `aud` igual a `https://api.dunning.kobana.com.br` e `exp` obrigatória — esta API só verifica tokens, não emite nenhum. Token sem escopos tem acesso total ao negócio; administração da conta (membros, roles, chaves) nunca é acessível via API."
+        "description": "Access token no header `Authorization: Bearer <token>`. É um JWT RS256 emitido pelo Authorization Server da Kobana (`account.kobana.com.br`), com `aud` igual a `https://api.dunning.kobana.com.br` e `exp` obrigatória — esta API só verifica tokens, não emite nenhum. Cada requisição exige UM nível de acesso: `GET` lê (`read`, `write` ou `all`), `DELETE` apaga (`delete` ou `all`), as importações e exportações em massa exigem `import`/`export` (ou `all`) e o resto escreve (`write` ou `all`) — um nível não substitui outro. Token sem escopo que esta API reconheça só alcança `GET /v1/me`; administração da conta (membros, roles, chaves) nunca é acessível via API."
       }
     }
   },
@@ -12471,13 +12471,13 @@
         "operationId": "get-people-id-statement-pdf"
       }
     },
-    "/v1/people/bulk-archive": {
-      "post": {
+    "/v1/people/bulk": {
+      "delete": {
         "tags": [
           "Clientes"
         ],
-        "summary": "Arquivar clientes em massa",
-        "description": "Arquiva (soft delete) até 100 clientes numa chamada. Cliente com cobrança em aberto (`pending`/`overdue`/`negotiated`) não é arquivável e volta em `failed` com `has_active_charges`. Resultado parcial não é erro.",
+        "summary": "Excluir clientes em massa",
+        "description": "Exclui (soft delete, irreversível) até 100 clientes numa chamada, com os ids no corpo JSON. Cliente com cobrança em aberto (`pending`/`overdue`/`negotiated`) não é excluível e volta em `failed` com `has_active_charges`. Resultado parcial não é erro. Exige o nível de acesso `delete` (ou `all`) — `write` não basta. Substituiu o `POST /people/bulk-archive`.",
         "security": [
           {
             "bearerAuth": [
@@ -12511,7 +12511,7 @@
         },
         "responses": {
           "200": {
-            "description": "Resultado por item do arquivamento em massa.",
+            "description": "Resultado por item da exclusão em massa.",
             "content": {
               "application/json": {
                 "schema": {
@@ -12599,7 +12599,7 @@
             }
           }
         },
-        "operationId": "post-people-bulk-archive",
+        "operationId": "delete-people-bulk",
         "parameters": [
           {
             "name": "User-Agent",
@@ -12611,16 +12611,6 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
-          },
-          {
-            "name": "X-Idempotency-Key",
-            "in": "header",
-            "required": false,
-            "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
           },
           {
             "name": "X-Workspace-Id",
@@ -13813,7 +13803,7 @@
           "Cobranças"
         ],
         "summary": "Atualizar cobrança",
-        "description": "Atualiza os dados de uma cobrança (parcial).",
+        "description": "Atualiza os dados de uma cobrança (parcial). `status`, `paid_amount` e `paid_at` são do motor: reenviar o valor gravado passa, mas mudá-los responde 422 `ENGINE_MANAGED_FIELD` — pagamento entra por `POST /charges/{id}/pay`. A única transição aceita aqui é `status: cancelled` (409 se o status atual não permite).",
         "security": [
           {
             "bearerAuth": [
@@ -14559,13 +14549,13 @@
         ]
       }
     },
-    "/v1/charges/bulk-archive": {
-      "post": {
+    "/v1/charges/bulk": {
+      "delete": {
         "tags": [
           "Cobranças"
         ],
-        "summary": "Arquivar cobranças em massa",
-        "description": "Arquiva (soft delete) até 100 cobranças numa chamada, cascateando para tarefas e ofertas relacionadas. Cobrança com registros associados (notificações, interações, negativações, protestos) não é arquivável e volta em `failed` com `has_related_records`.",
+        "summary": "Excluir cobranças em massa",
+        "description": "Exclui (soft delete, irreversível) até 100 cobranças numa chamada, com os ids no corpo JSON, cascateando para tarefas e ofertas relacionadas. Cobrança com registros associados (notificações, interações, negativações, protestos) não é excluível e volta em `failed` com `has_related_records`. Exige o nível de acesso `delete` (ou `all`) — `write` não basta. Substituiu o `POST /charges/bulk-archive`.",
         "security": [
           {
             "bearerAuth": [
@@ -14599,7 +14589,7 @@
         },
         "responses": {
           "200": {
-            "description": "Resultado por item do arquivamento em massa.",
+            "description": "Resultado por item da exclusão em massa.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14687,7 +14677,7 @@
             }
           }
         },
-        "operationId": "post-charges-bulk-archive",
+        "operationId": "delete-charges-bulk",
         "parameters": [
           {
             "name": "User-Agent",
@@ -14699,16 +14689,6 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
-          },
-          {
-            "name": "X-Idempotency-Key",
-            "in": "header",
-            "required": false,
-            "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
           },
           {
             "name": "X-Workspace-Id",
@@ -14729,7 +14709,7 @@
           "Cobranças"
         ],
         "summary": "Notificar cobrança",
-        "description": "Cria uma notificação manual para a cobrança e a envia para a fila de processamento. Atualiza `last_notification_at` e, quando `collection_rule_step_id` é informado, o `current_step` da cobrança.",
+        "description": "Cria uma notificação manual para a cobrança e a envia para a fila de processamento. O destinatário tem de ser um contato cadastrado da pessoa (422 `UNKNOWN_RECIPIENT` caso contrário). Atualiza `last_notification_at`; o progresso da régua (`current_step`) não muda — só o motor o avança.",
         "security": [
           {
             "bearerAuth": [
@@ -17733,120 +17713,6 @@
           }
         },
         "operationId": "put-tasks-id"
-      },
-      "delete": {
-        "tags": [
-          "Tarefas"
-        ],
-        "summary": "Excluir tarefa",
-        "description": "Exclui logicamente uma tarefa: o status passa a `cancelled` (o registro permanece).",
-        "security": [
-          {
-            "bearerAuth": [
-
-            ]
-          }
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "description": "Identificador (UUID) do recurso."
-            },
-            "required": true,
-            "description": "Identificador (UUID) do recurso.",
-            "name": "id",
-            "in": "path"
-          },
-          {
-            "name": "User-Agent",
-            "in": "header",
-            "required": true,
-            "description": "Identificação do integrador. Inclua nome e e-mail de contato — ex.: `Kevin Mitnick <kmitnick@kobana.com.br>`. Usado para suporte e auditoria.",
-            "schema": {
-              "type": "string",
-              "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
-            },
-            "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
-          },
-          {
-            "name": "X-Workspace-Id",
-            "in": "header",
-            "required": false,
-            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Tarefa cancelada."
-          },
-          "401": {
-            "description": "Token ausente, inválido, expirado ou revogado.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "O token não tem o escopo exigido pela operação.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Recurso inexistente ou fora da sua organização.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "Corpo da requisição acima de 2 MB.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Limite de requisições excedido (600 por minuto por chave; 60 tentativas inválidas por minuto por IP). Aguarde o `Retry-After`.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Erro interno. Tente novamente; persistindo, contate o suporte.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        },
-        "operationId": "delete-tasks-id"
       }
     },
     "/v1/tasks/{id}/complete": {
@@ -21066,7 +20932,7 @@
             }
           },
           "403": {
-            "description": "O token não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação, ou a organização não tem plano contratado (`ENTITLEMENT_REQUIRED`, com `details.reason` = `no_plan` ou `missing_product`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -21237,7 +21103,7 @@
             }
           },
           "403": {
-            "description": "O token não tem o escopo exigido pela operação.",
+            "description": "O token não tem o escopo exigido pela operação, ou a organização não tem plano contratado (`ENTITLEMENT_REQUIRED`, com `details.reason` = `no_plan` ou `missing_product`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -23511,13 +23377,13 @@
         ]
       }
     },
-    "/v1/negotiation-campaigns/{id}": {
-      "delete": {
+    "/v1/negotiation-campaigns/{id}/end": {
+      "post": {
         "tags": [
           "Campanhas de negociação"
         ],
         "summary": "Encerrar campanha",
-        "description": "Encerra a campanha (desativa; `activated_at` vira null). O registro é mantido e o portal deixa de oferecê-la.",
+        "description": "Encerra a campanha (desativa; `activated_at` vira null). O registro é mantido e o portal deixa de oferecê-la. É uma escrita (`write`), não uma exclusão — substituiu o `DELETE /negotiation-campaigns/{id}`.",
         "security": [
           {
             "bearerAuth": [
@@ -23547,6 +23413,16 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           },
           {
             "name": "X-Workspace-Id",
@@ -23624,7 +23500,7 @@
             }
           }
         },
-        "operationId": "delete-negotiation-campaigns-id"
+        "operationId": "post-negotiation-campaigns-id-end"
       }
     },
     "/v1/negativations": {
@@ -24303,120 +24179,6 @@
           }
         },
         "operationId": "put-negativations-id"
-      },
-      "delete": {
-        "tags": [
-          "Negativações"
-        ],
-        "summary": "Excluir negativação",
-        "description": "Baixa lógica: marca a negativação como `removed` e grava `removed_at`. O registro permanece para trilha de auditoria.",
-        "security": [
-          {
-            "bearerAuth": [
-
-            ]
-          }
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "description": "Identificador (UUID) do recurso."
-            },
-            "required": true,
-            "description": "Identificador (UUID) do recurso.",
-            "name": "id",
-            "in": "path"
-          },
-          {
-            "name": "User-Agent",
-            "in": "header",
-            "required": true,
-            "description": "Identificação do integrador. Inclua nome e e-mail de contato — ex.: `Kevin Mitnick <kmitnick@kobana.com.br>`. Usado para suporte e auditoria.",
-            "schema": {
-              "type": "string",
-              "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
-            },
-            "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
-          },
-          {
-            "name": "X-Workspace-Id",
-            "in": "header",
-            "required": false,
-            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Negativação removida."
-          },
-          "401": {
-            "description": "Token ausente, inválido, expirado ou revogado.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "O token não tem o escopo exigido pela operação.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Recurso inexistente ou fora da sua organização.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "Corpo da requisição acima de 2 MB.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Limite de requisições excedido (600 por minuto por chave; 60 tentativas inválidas por minuto por IP). Aguarde o `Retry-After`.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Erro interno. Tente novamente; persistindo, contate o suporte.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        },
-        "operationId": "delete-negativations-id"
       }
     },
     "/v1/negativations/{id}/remove": {
@@ -25244,120 +25006,6 @@
           }
         },
         "operationId": "put-protests-id"
-      },
-      "delete": {
-        "tags": [
-          "Protestos"
-        ],
-        "summary": "Excluir protesto",
-        "description": "Baixa lógica: marca o protesto como `cancelled` e grava `cancellation_date`. O registro permanece para trilha de auditoria.",
-        "security": [
-          {
-            "bearerAuth": [
-
-            ]
-          }
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "description": "Identificador (UUID) do recurso."
-            },
-            "required": true,
-            "description": "Identificador (UUID) do recurso.",
-            "name": "id",
-            "in": "path"
-          },
-          {
-            "name": "User-Agent",
-            "in": "header",
-            "required": true,
-            "description": "Identificação do integrador. Inclua nome e e-mail de contato — ex.: `Kevin Mitnick <kmitnick@kobana.com.br>`. Usado para suporte e auditoria.",
-            "schema": {
-              "type": "string",
-              "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
-            },
-            "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
-          },
-          {
-            "name": "X-Workspace-Id",
-            "in": "header",
-            "required": false,
-            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Protesto cancelado."
-          },
-          "401": {
-            "description": "Token ausente, inválido, expirado ou revogado.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "O token não tem o escopo exigido pela operação.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Recurso inexistente ou fora da sua organização.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "Corpo da requisição acima de 2 MB.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Limite de requisições excedido (600 por minuto por chave; 60 tentativas inválidas por minuto por IP). Aguarde o `Retry-After`.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Erro interno. Tente novamente; persistindo, contate o suporte.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        },
-        "operationId": "delete-protests-id"
       }
     },
     "/v1/protests/{id}/cancel": {
@@ -25637,7 +25285,7 @@
           "Importações"
         ],
         "summary": "Criar importação",
-        "description": "Sobe uma planilha CSV de clientes ou cobranças e agenda o processamento assíncrono (fila). O corpo é JSON com o CSV em texto puro no campo `content` (máx. 2 MB). Linhas inválidas não derrubam o lote: são registradas em `errors` (`[{ line, error }]`) e o restante é processado. Acompanhe pelo GET /imports/{id}. Responde 202.",
+        "description": "Sobe uma planilha CSV de clientes ou cobranças e agenda o processamento assíncrono (fila). O corpo é JSON com o CSV em texto puro no campo `content` (máx. 2 MB). Linhas inválidas não derrubam o lote: são registradas em `errors` (`[{ line, error }]`) e o restante é processado. Acompanhe pelo GET /imports/{id}. Responde 202. Exige o nível de acesso `import` (ou `all`) — `write` não basta.",
         "security": [
           {
             "bearerAuth": [
@@ -25917,7 +25565,7 @@
           "Exportações"
         ],
         "summary": "Exportar clientes (CSV síncrono)",
-        "description": "Gera e responde na hora o CSV de clientes (`text/csv; charset=utf-8` com BOM, `Content-Disposition: attachment`). Colunas: nome, documento, tipo_documento, email, telefone, classificacao, external_id, tags, criado_em. Teto de 10 mil linhas; acima disso use a exportação assíncrona (POST /exports/jobs).",
+        "description": "Gera e responde na hora o CSV de clientes (`text/csv; charset=utf-8` com BOM, `Content-Disposition: attachment`). Colunas: nome, documento, tipo_documento, email, telefone, classificacao, external_id, tags, criado_em. Teto de 10 mil linhas; acima disso use a exportação assíncrona (POST /exports/jobs). Exige o nível de acesso `export` (ou `all`) — `read` e `write` não bastam.",
         "security": [
           {
             "bearerAuth": [
@@ -26031,7 +25679,7 @@
           "Exportações"
         ],
         "summary": "Exportar cobranças (CSV síncrono)",
-        "description": "Gera e responde na hora o CSV de cobranças (`text/csv; charset=utf-8` com BOM, `Content-Disposition: attachment`), com filtros opcionais de status e período de vencimento. Colunas: cliente, documento_cliente, numero_documento, descricao, valor_original, valor_atual, vencimento, dias_atraso, status, origem, external_id. Teto de 10 mil linhas; acima disso use a exportação assíncrona (POST /exports/jobs).",
+        "description": "Gera e responde na hora o CSV de cobranças (`text/csv; charset=utf-8` com BOM, `Content-Disposition: attachment`), com filtros opcionais de status e período de vencimento. Colunas: cliente, documento_cliente, numero_documento, descricao, valor_original, valor_atual, vencimento, dias_atraso, status, origem, external_id. Teto de 10 mil linhas; acima disso use a exportação assíncrona (POST /exports/jobs). Exige o nível de acesso `export` (ou `all`) — `read` e `write` não bastam.",
         "security": [
           {
             "bearerAuth": [
@@ -26180,7 +25828,7 @@
           "Exportações"
         ],
         "summary": "Listar exportações assíncronas",
-        "description": "Histórico das 50 exportações assíncronas mais recentes da organização (sem paginação). Use esta rota para acompanhar o status dos jobs; o CSV em si não vem na listagem.",
+        "description": "Histórico das 50 exportações assíncronas mais recentes da organização (sem paginação). Use esta rota para acompanhar o status dos jobs; o CSV em si não vem na listagem. É uma leitura (`read`): o arquivo em si exige `export`.",
         "security": [
           {
             "bearerAuth": [
@@ -26290,7 +25938,7 @@
           "Exportações"
         ],
         "summary": "Criar exportação assíncrona",
-        "description": "Agenda a geração do CSV num worker, sem o teto de 10 mil linhas do modo síncrono e sem travar a request. Acompanhe o status em GET /exports/jobs e baixe o arquivo em GET /exports/jobs/{id}/download antes de `expires_at`. Responde 202.",
+        "description": "Agenda a geração do CSV num worker, sem o teto de 10 mil linhas do modo síncrono e sem travar a request. Acompanhe o status em GET /exports/jobs e baixe o arquivo em GET /exports/jobs/{id}/download antes de `expires_at`. Responde 202. Exige o nível de acesso `export` (ou `all`) — `read` e `write` não bastam.",
         "security": [
           {
             "bearerAuth": [
@@ -26439,7 +26087,7 @@
           "Exportações"
         ],
         "summary": "Baixar CSV da exportação",
-        "description": "Serve o CSV já gerado de uma exportação assíncrona (`text/csv; charset=utf-8` com BOM). Só entrega se o job estiver `completed` e dentro da validade (`expires_at`).",
+        "description": "Serve o CSV já gerado de uma exportação assíncrona (`text/csv; charset=utf-8` com BOM). Só entrega se o job estiver `completed` e dentro da validade (`expires_at`). Exige o nível de acesso `export` (ou `all`) — `read` e `write` não bastam.",
         "security": [
           {
             "bearerAuth": [

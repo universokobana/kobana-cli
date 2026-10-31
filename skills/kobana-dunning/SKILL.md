@@ -22,13 +22,17 @@ kobana dunning <resource> <method> [flags]
 Dunning is its own API (`api.dunning.kobana.com.br`) and does not share
 credentials with the banking product. `KOBANA_TOKEN` must hold an RS256 access
 token issued by the Kobana Authorization Server (`account.kobana.com.br`) with
-`aud=https://api.dunning.kobana.com.br`.
+`aud=https://api.dunning.kobana.com.br`. Scopes have two axes: `dunning/{resource}` limits what the token reaches, and an
+access level says what it may do there — `GET` needs `read`, `write` or `all`;
+`DELETE` (bulk included) needs `delete` or `all`; bulk imports need `import`
+and bulk exports `export` (or `all`); every other method needs `write` or
+`all`. One level never stands in for another.
 
 ## API Resources
 
 ### Debtors and charges
-- `people` — CRUD plus `statement-pdf`, `bulk-archive create`, `contact-points`
-- `charges` — CRUD plus `notify`, `settlement-pdf`, `bulk-archive create`,
+- `people` — CRUD plus `statement-pdf`, `bulk delete`, `contact-points`
+- `charges` — CRUD plus `notify`, `settlement-pdf`, `bulk delete`,
   `bulk-assign-rule create`, `bulk-cancel create`
 - `classifications` — CRUD
 - `interactions` — CRUD
@@ -40,14 +44,15 @@ token issued by the Kobana Authorization Server (`account.kobana.com.br`) with
 - `notifications` — CRUD plus `resend`
 - `notification-channels` — CRUD
 - `notification-preferences` — `list`, `update`
-- `negotiation-campaigns` — `list`, `create`, `delete`
+- `negotiation-campaigns` — `list`, `create`, `end`
 
 ### Recovery
 - `agreements` — CRUD plus `accept`, `cancel`, `pdf`, `installments get|update`
 - `disputes` — `list`, `create`, `get`, `update`
-- `negativations` — CRUD plus `remove`
-- `protests` — CRUD plus `cancel`
-- `tasks` — CRUD plus `complete`, `bulk-assign create`, `bulk-complete create`
+- `negativations` — `list`, `create`, `get`, `update`, `remove`
+- `protests` — `list`, `create`, `get`, `update`, `cancel`
+- `tasks` — `list`, `create`, `get`, `update` (cancel with `status: cancelled`), `complete`,
+  `bulk-assign create`, `bulk-complete create`
 
 ### Data and integration
 - `imports` — `list`, `create`, `get`

@@ -25,10 +25,13 @@ The Inbox API is **not** the banking API and does not share its credentials:
 
 - `KOBANA_TOKEN` must hold an **RS256 JWT** issued by the Kobana Authorization
   Server (`iss=https://account[.<env>].kobana.com.br`) with
-  `aud=https://api.inbox[.<env>].kobana.com.br`. Scopes have two axes: a
-  resource prefixed by the app (`inbox/emails`) and a global verb (`write`).
-  A resource alone reads; writing needs both (`inbox/emails write`), or the
-  granular form `inbox/emails:write`. `inbox/all` reads every resource.
+  `aud=https://api.inbox[.<env>].kobana.com.br`. Scopes have two axes: `inbox/{resource}` limits what the token reaches, and an
+  access level says what it may do there — `GET` needs `read`, `write` or `all`;
+  `DELETE` (bulk included) needs `delete` or `all`; bulk imports need `import`
+  and bulk exports `export` (or `all`); every other method needs `write` or
+  `all`. One level never stands in for another.
+  The granular form `inbox/emails:write` also works; `inbox/all` reaches every
+  resource.
 - `KOBANA_INBOX_CLIENT_CERT` must point at a PEM file holding a client
   certificate chain and its private key — the API sits behind mTLS. Without it
   the CLI warns and requests are rejected.
@@ -42,7 +45,7 @@ The Inbox API is **not** the banking API and does not share its credentials:
 
 ### inboxes
 - `list`, `create`, `get`, `update`, `delete`
-- `recipients create` / `recipients delete` — allowed recipients of an inbox
+- `recipients create` / `recipients remove create` — allowed recipients of an inbox
 
 ### emails
 - `list`, `get`

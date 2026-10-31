@@ -4270,7 +4270,7 @@
               "format": "uuid"
             },
             "minItems": 1,
-            "description": "IDs de produtos a excluir permanentemente."
+            "description": "IDs dos produtos a excluir."
           }
         },
         "required": [
@@ -8947,10 +8947,34 @@
             "properties": {
               "updated_count": {
                 "type": "integer"
+              },
+              "failed_count": {
+                "type": "integer"
+              },
+              "failed": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "error"
+                  ]
+                }
               }
             },
             "required": [
-              "updated_count"
+              "updated_count",
+              "failed_count",
+              "failed"
             ]
           }
         },
@@ -21544,7 +21568,7 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "Envie o cabeçalho `Authorization: Bearer <jwt>`. O token é um access token RS256 emitido pelo Authorization Server da Kobana (`account.kobana.com.br`), com `aud` igual a `https://api.billing.kobana.com.br` e `exp` obrigatória. A claim `org` (a conta Kobana) é o que escopa os dados e também é obrigatória; `sub` é a **pessoa** e serve para auditoria. Esta API só verifica o token — não emite nenhum. O claim `scope` também é verificado: `GET` exige `read`, `write` ou `all`, e qualquer outro método exige `write` ou `all` — sem isso a resposta é `403 insufficient_scope`, com `{ required, granted }` em `details`."
+        "description": "Envie o cabeçalho `Authorization: Bearer <jwt>`. O token é um access token RS256 emitido pelo Authorization Server da Kobana (`account.kobana.com.br`), com `aud` igual a `https://api.billing.kobana.com.br` e `exp` obrigatória. A claim `org` (a conta Kobana) é o que escopa os dados e também é obrigatória; `sub` é a **pessoa** e serve para auditoria. Esta API só verifica o token — não emite nenhum. O claim `scope` também é verificado, um nível de acesso por requisição: `GET` exige `read` (ou `write`/`all`), `DELETE` exige `delete`, a importação em massa exige `import`, a exportação em massa exige `export`, e qualquer outro método exige `write` — `all` vale por todos, e um nível nunca substitui outro (`write` não exclui, não importa e não exporta). Sem o nível a resposta é `403 insufficient_scope`, com `{ required, granted }` em `details`."
       }
     }
   },
@@ -23349,7 +23373,7 @@
             }
           },
           "403": {
-            "description": "Token válido, porém sem permissão para esta operação.",
+            "description": "Token sem permissão para esta operação, ou o plano contratado pela organização não cobre a ação: `code` `ENTITLEMENT_REQUIRED`, com `details.reason` `no_plan` (sem plano ativo) ou `missing_product` (o plano não inclui o produto em `details.required_product`). O mesmo bloqueio vale no dashboard e no MCP.",
             "content": {
               "application/json": {
                 "schema": {
@@ -25517,8 +25541,8 @@
         "tags": [
           "Contas de Cobrança"
         ],
-        "summary": "Fechar conta de cobrança",
-        "description": "Encerra a conta de cobrança (equivalente a `POST /billing_accounts/{id}/close`).",
+        "summary": "Excluir conta de cobrança",
+        "description": "Exclui a conta de cobrança (soft delete: `deleted_at`), junto com seus métodos de pagamento, cartões, usuários do portal e arquivos — tudo some de toda leitura; faturas, pagamentos e NFS-e já emitidos ficam no histórico. Exige o nível de acesso `delete`. Retorna 422 enquanto houver assinatura que não esteja cancelada, fatura em rascunho ou aberta, ou pagamento pendente. Até outubro de 2026 esta rota fechava a conta (e aceitava `?reason=`) — fechar é `POST /v1/billing_accounts/{id}/close`, reversível.",
         "security": [
           {
             "bearerAuth": [
@@ -25536,15 +25560,6 @@
             "required": true,
             "name": "id",
             "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "description": "Motivo do fechamento (registrado no audit log)."
-            },
-            "required": false,
-            "name": "reason",
-            "in": "query"
           },
           {
             "name": "User-Agent",
@@ -25598,11 +25613,11 @@
         ],
         "responses": {
           "200": {
-            "description": "Conta de cobrança fechada.",
+            "description": "Conta de cobrança excluída.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BillingAccountResponse"
+                  "$ref": "#/components/schemas/DeletedResponse"
                 }
               }
             }
@@ -25629,6 +25644,16 @@
           },
           "404": {
             "description": "Recurso não encontrado na organização atual.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Corpo da requisição falhou na validação.",
             "content": {
               "application/json": {
                 "schema": {
@@ -25666,7 +25691,7 @@
         "tags": [
           "Contas de Cobrança"
         ],
-        "summary": "Fechar conta de cobrança (POST /close)",
+        "summary": "Fechar conta de cobrança",
         "description": "Encerra a conta de cobrança. O motivo (`reason`) é registrado no audit log.",
         "security": [
           {
@@ -29242,8 +29267,8 @@
         "tags": [
           "Clientes"
         ],
-        "summary": "Remover usuário do portal",
-        "description": "Convites pendentes são removidos definitivamente; usuários ativos são suspensos.",
+        "summary": "Excluir usuário do portal",
+        "description": "Exclui o usuário do portal (soft delete: `deleted_at`) — um convite pendente e um usuário ativo da mesma forma: ele perde o acesso na hora, as sessões e os links pendentes deixam de valer, e o e-mail pode ser convidado de novo. Exige o nível de acesso `delete`. Até outubro de 2026 esta rota apagava o convite pendente e só suspendia o usuário ativo.",
         "security": [
           {
             "bearerAuth": [
@@ -29322,7 +29347,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Confirmação de remoção.",
+            "description": "Usuário do portal excluído.",
             "content": {
               "application/json": {
                 "schema": {
@@ -30716,8 +30741,8 @@
         "tags": [
           "Planos"
         ],
-        "summary": "Arquivar ou excluir plano",
-        "description": "Por padrão arquiva o plano (soft delete). Use `?hard=true` para excluir permanentemente um plano em rascunho.",
+        "summary": "Excluir plano",
+        "description": "Exclui o plano (soft delete: `deleted_at`, ele some de toda leitura; as regras de mudança de plano que o citam são removidas). Exige o nível de acesso `delete`. Retorna 422 enquanto houver assinatura no plano que não esteja cancelada. Até outubro de 2026 esta rota arquivava o plano, ou excluía um rascunho com `?hard=true` (o parâmetro deixou de existir) — arquivar é `POST /v1/plans/{id}/archive`, reversível.",
         "security": [
           {
             "bearerAuth": [
@@ -30735,18 +30760,6 @@
             "required": true,
             "name": "id",
             "in": "path"
-          },
-          {
-            "schema": {
-              "type": [
-                "boolean",
-                "null"
-              ],
-              "description": "Quando `true`, exclui o plano permanentemente (apenas rascunhos)."
-            },
-            "required": false,
-            "name": "hard",
-            "in": "query"
           },
           {
             "name": "User-Agent",
@@ -30800,7 +30813,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Confirmação de arquivamento ou exclusão.",
+            "description": "Plano excluído.",
             "content": {
               "application/json": {
                 "schema": {
@@ -30839,6 +30852,16 @@
               }
             }
           },
+          "422": {
+            "description": "Corpo da requisição falhou na validação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
           "429": {
             "description": "Limite de requisições excedido.",
             "content": {
@@ -30861,6 +30884,156 @@
           }
         },
         "operationId": "delete-plans-id"
+      }
+    },
+    "/v1/plans/{id}/archive": {
+      "post": {
+        "tags": [
+          "Planos"
+        ],
+        "summary": "Arquivar plano",
+        "description": "Arquiva o plano: ele continua listado e pode ser restaurado, mas não aceita novas assinaturas; as existentes seguem cobrando. Retorna 422 enquanto houver assinaturas ativas no plano. Exige o nível de acesso `write`.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID do plano."
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "description": "Identificação do integrador. Inclua nome e e-mail de contato — ex.: `Kevin Mitnick <kmitnick@kobana.com.br>`. Usado para suporte e auditoria.",
+            "schema": {
+              "type": "string",
+              "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+            },
+            "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Request-Source",
+            "in": "header",
+            "required": false,
+            "description": "Superfície que faz a chamada: `dashboard`, `api`, `cli`, `mcp` ou `other`. Fica gravada em `created_via` / `updated_via` dos registros criados ou alterados. Sem o cabeçalho, vale `api`. Valor desconhecido retorna 400.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dashboard",
+                "api",
+                "cli",
+                "mcp",
+                "other"
+              ],
+              "default": "api"
+            }
+          },
+          {
+            "name": "X-Request-Source-Other",
+            "in": "header",
+            "required": false,
+            "description": "Nome do aplicativo que faz a chamada. Obrigatório quando `X-Request-Source` é `other` (até 100 caracteres); ignorado nos demais casos. Fica gravado em `created_via_other` / `updated_via_other`.",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "example": "Zapier"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plano arquivado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token bearer ausente ou inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Token válido, porém sem permissão para esta operação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado na organização atual.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Corpo da requisição falhou na validação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro inesperado no servidor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post-plans-id-archive"
       }
     },
     "/v1/plans/{id}/duplicate": {
@@ -31447,13 +31620,13 @@
         ]
       }
     },
-    "/v1/plans/bulk-delete": {
-      "post": {
+    "/v1/plans/bulk": {
+      "delete": {
         "tags": [
           "Planos"
         ],
         "summary": "Excluir planos em lote",
-        "description": "Exclui permanentemente os planos informados. Planos com assinaturas ativas são pulados e retornados em `skipped_ids`.",
+        "description": "Exclui os planos informados (soft delete: `deleted_at`, mesmo efeito de `DELETE /v1/plans/{id}` em cada um). Planos com assinatura que não esteja cancelada são pulados e retornados em `skipped_ids`. Exige o nível de acesso `delete`. Substitui `POST /v1/plans/bulk-delete`, removido.",
         "security": [
           {
             "bearerAuth": [
@@ -31542,7 +31715,7 @@
             }
           }
         },
-        "operationId": "post-plans-bulk-delete",
+        "operationId": "delete-plans-bulk",
         "parameters": [
           {
             "name": "User-Agent",
@@ -34051,8 +34224,8 @@
         "tags": [
           "Produtos"
         ],
-        "summary": "Arquivar produto (soft delete)",
-        "description": "Arquiva o produto. Retorna 422 quando o produto está em uso por assinaturas ativas.",
+        "summary": "Excluir produto",
+        "description": "Exclui o produto (soft delete: `deleted_at`, ele some de toda leitura e sai de todos os planos; as assinaturas e faturas que o citam guardam a referência). Exige o nível de acesso `delete`. Retorna 422 quando o produto está em uso por assinaturas ativas. Até outubro de 2026 esta rota arquivava o produto — arquivar é `POST /v1/products/{id}/archive`, reversível.",
         "security": [
           {
             "bearerAuth": [
@@ -34123,7 +34296,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Confirmação de soft delete.",
+            "description": "Produto excluído.",
             "content": {
               "application/json": {
                 "schema": {
@@ -35121,13 +35294,13 @@
         ]
       }
     },
-    "/v1/products/bulk-delete": {
-      "post": {
+    "/v1/products/bulk": {
+      "delete": {
         "tags": [
           "Produtos"
         ],
         "summary": "Excluir produtos em lote",
-        "description": "Exclui permanentemente múltiplos produtos. IDs em uso por assinaturas ativas são ignorados e reportados na resposta.",
+        "description": "Exclui vários produtos (soft delete: `deleted_at`, mesmo efeito de `DELETE /v1/products/{id}` em cada um). IDs em uso por assinaturas ativas são ignorados e reportados na resposta. Exige o nível de acesso `delete`. Substitui `POST /v1/products/bulk-delete`, removido.",
         "security": [
           {
             "bearerAuth": [
@@ -35226,7 +35399,7 @@
             }
           }
         },
-        "operationId": "post-products-bulk-delete",
+        "operationId": "delete-products-bulk",
         "parameters": [
           {
             "name": "User-Agent",
@@ -36909,12 +37082,15 @@
           }
         },
         "operationId": "post-product-groups-id-archive"
-      },
-      "delete": {
+      }
+    },
+    "/v1/product_groups/{id}/unarchive": {
+      "post": {
         "tags": [
           "Grupos de Produto"
         ],
         "summary": "Desarquivar grupo de produto",
+        "description": "Traz de volta ao catálogo um grupo de produto arquivado. Exige o nível de acesso `write`. Substitui `DELETE /v1/product_groups/{id}/archive`, removido: um `DELETE` é sempre uma exclusão.",
         "security": [
           {
             "bearerAuth": [
@@ -37045,7 +37221,7 @@
             }
           }
         },
-        "operationId": "delete-product-groups-id-archive"
+        "operationId": "post-product-groups-id-unarchive"
       }
     },
     "/v1/product_groups/reorder": {
@@ -38802,8 +38978,8 @@
         "tags": [
           "Empresas"
         ],
-        "summary": "Desativar empresa",
-        "description": "Desativa a empresa (soft delete — equivalente a `POST /companies/{id}/deactivate`). Não é possível desativar a única empresa ativa nem uma empresa com assinaturas ativas ou em período de teste.",
+        "summary": "Excluir empresa",
+        "description": "Exclui a empresa (soft delete: `deleted_at`, ela some de toda leitura; faturas e NFS-e emitidas seguem citando-a). Exige o nível de acesso `delete`. Não é possível excluir a única empresa ativa nem uma empresa com assinaturas ativas ou em período de teste. Até outubro de 2026 esta rota só desativava a empresa — desativar é `POST /v1/companies/{id}/deactivate`, reversível.",
         "security": [
           {
             "bearerAuth": [
@@ -38874,7 +39050,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Empresa desativada.",
+            "description": "Empresa excluída.",
             "content": {
               "application/json": {
                 "schema": {
@@ -39092,7 +39268,7 @@
         "tags": [
           "Empresas"
         ],
-        "summary": "Desativar empresa (POST /deactivate)",
+        "summary": "Desativar empresa",
         "description": "Desativa a empresa. Não é possível desativar a única empresa ativa, nem uma empresa com assinaturas ativas ou em período de teste. Se a empresa desativada era a padrão, outra empresa ativa é promovida automaticamente.",
         "security": [
           {
@@ -44505,6 +44681,7 @@
           "Faturas"
         ],
         "summary": "Atualizar fatura",
+        "description": "Atualização parcial: campos ausentes mantêm o valor atual. Uma fatura `paid`, `void` ou `uncollectible` mantém as condições travadas e aceita só `subscription_id`, `description`, `line_items`, `metadata`, `custom_metadata` e `external_id` — e, quando `paid`, também `nfe_issuance_policy` e `nfe_description_line`. Mudar o valor de qualquer outro campo nesses status (empresa, método de cobrança, política de juros e multa, vencimento, competência, rodapé) responde 422 com o código `INVOICE_FIELD_LOCKED` e, em `details`, `status`, `locked_fields` (os campos recusados) e `editable_fields`. Um campo travado enviado com o valor já gravado não é mudança: é ignorado, então reenviar o objeto inteiro lido da API funciona. `line_items` continua recusado (409) enquanto a fatura tiver NF-e emitida ou em processamento. A mesma regra vale para o `PUT /invoices` quando ele encontra uma fatura existente.",
         "security": [
           {
             "bearerAuth": [
@@ -44671,7 +44848,7 @@
           "Faturas"
         ],
         "summary": "Excluir fatura",
-        "description": "Exclui uma fatura em rascunho (`draft`). Faturas finalizadas devem ser canceladas via `POST /invoices/{id}/void`.",
+        "description": "Exclui uma fatura `draft`, `open` ou `void` (os créditos aplicados a uma fatura `open` voltam ao saldo do cliente). Uma fatura `paid` ou `uncollectible` não pode ser excluída — desfaça o pagamento ou anule-a antes.",
         "security": [
           {
             "bearerAuth": [
@@ -44902,7 +45079,7 @@
             }
           },
           "403": {
-            "description": "Token válido, porém sem permissão para esta operação.",
+            "description": "Token sem permissão para esta operação, ou o plano contratado pela organização não cobre a ação: `code` `ENTITLEMENT_REQUIRED`, com `details.reason` `no_plan` (sem plano ativo) ou `missing_product` (o plano não inclui o produto em `details.required_product`). O mesmo bloqueio vale no dashboard e no MCP.",
             "content": {
               "application/json": {
                 "schema": {
@@ -45649,7 +45826,7 @@
             }
           },
           "403": {
-            "description": "Token válido, porém sem permissão para esta operação.",
+            "description": "Token sem permissão para esta operação, ou o plano contratado pela organização não cobre a ação: `code` `ENTITLEMENT_REQUIRED`, com `details.reason` `no_plan` (sem plano ativo) ou `missing_product` (o plano não inclui o produto em `details.required_product`). O mesmo bloqueio vale no dashboard e no MCP.",
             "content": {
               "application/json": {
                 "schema": {
@@ -47518,7 +47695,7 @@
           "Pagamentos"
         ],
         "summary": "Reatribuir pagamentos a outra fatura",
-        "description": "Atualiza em massa a fatura associada aos pagamentos informados. Útil para corrigir vínculos quando pagamentos chegaram apontando para a fatura errada.",
+        "description": "Atualiza em massa a fatura associada aos pagamentos informados. Útil para corrigir vínculos quando pagamentos chegaram apontando para a fatura errada. Um pagamento que já quita mais de uma fatura não é movido: volta em `failed` (com `id` e `error`), e `failed_count` conta esses casos.",
         "security": [
           {
             "bearerAuth": [
@@ -49950,7 +50127,7 @@
           "Métodos de Pagamento"
         ],
         "summary": "Remover método de pagamento",
-        "description": "Soft delete do método de pagamento (marca como `removed`). Falha quando há pagamentos pendentes ou em processamento. Se era o padrão, outro método ativo é promovido automaticamente.",
+        "description": "Exclui o método de pagamento (soft delete: `deleted_at`, e o status vira `removed` onde ele ainda aparece por relação — nos pagamentos que pagou). Exige o nível de acesso `delete`. Falha quando há pagamentos pendentes ou em processamento. Se era o padrão, outro método ativo é promovido automaticamente.",
         "security": [
           {
             "bearerAuth": [
@@ -51317,15 +51494,13 @@
             }
           }
         ]
-      }
-    },
-    "/v1/nfes/bulk-delete": {
-      "post": {
+      },
+      "delete": {
         "tags": [
           "NF-e"
         ],
         "summary": "Excluir NFes em lote",
-        "description": "Exclui até 100 NFes de uma vez. Todas devem estar em status `draft` e pertencer à organização atual.",
+        "description": "Exclui até 100 NFes de uma vez. Todas devem estar em status `draft` e pertencer à organização atual. Exige o nível de acesso `delete`. Substitui `POST /v1/nfes/bulk-delete`, removido.",
         "security": [
           {
             "bearerAuth": [
@@ -51424,7 +51599,7 @@
             }
           }
         },
-        "operationId": "post-nfes-bulk-delete",
+        "operationId": "delete-nfes-bulk",
         "parameters": [
           {
             "name": "User-Agent",
@@ -51977,7 +52152,7 @@
           "NF-e"
         ],
         "summary": "Importar NFS-e Barueri",
-        "description": "Importa uma NFS-e de Barueri para o banco. Aceita um XML cru (retornado por `POST /nfes/fetch-barueri`) ou o `codigo_autenticidade` + `cnpj_tomador` para re-buscar antes de importar. Cria a `BillingAccount` do tomador quando ainda não existir.",
+        "description": "Importa uma NFS-e de Barueri para o banco. Aceita um XML cru (retornado por `POST /nfes/fetch-barueri`) ou o `codigo_autenticidade` + `cnpj_tomador` para re-buscar antes de importar. Cria a `BillingAccount` do tomador quando ainda não existir. Exige o nível de acesso `import` — `write` não basta.",
         "security": [
           {
             "bearerAuth": [
@@ -52681,7 +52856,7 @@
             }
           },
           "403": {
-            "description": "Token válido, porém sem permissão para esta operação.",
+            "description": "Token sem permissão para esta operação, ou o plano contratado pela organização não cobre a ação: `code` `ENTITLEMENT_REQUIRED`, com `details.reason` `no_plan` (sem plano ativo) ou `missing_product` (o plano não inclui o produto em `details.required_product`). O mesmo bloqueio vale no dashboard e no MCP.",
             "content": {
               "application/json": {
                 "schema": {
@@ -55211,13 +55386,13 @@
         ]
       }
     },
-    "/v1/proposals/bulk-delete": {
-      "post": {
+    "/v1/proposals/bulk": {
+      "delete": {
         "tags": [
           "Propostas"
         ],
         "summary": "Excluir propostas em lote",
-        "description": "Exclui várias propostas de uma vez (até 100). Retorna contagens de sucesso/falha e erros por id.",
+        "description": "Exclui várias propostas de uma vez (até 100). Retorna contagens de sucesso/falha e erros por id. Exige o nível de acesso `delete`. Substitui `POST /v1/proposals/bulk-delete`, removido.",
         "security": [
           {
             "bearerAuth": [
@@ -55316,7 +55491,7 @@
             }
           }
         },
-        "operationId": "post-proposals-bulk-delete",
+        "operationId": "delete-proposals-bulk",
         "parameters": [
           {
             "name": "User-Agent",
@@ -56686,7 +56861,7 @@
             }
           },
           "403": {
-            "description": "Token válido, porém sem permissão para esta operação.",
+            "description": "Token sem permissão para esta operação, ou o plano contratado pela organização não cobre a ação: `code` `ENTITLEMENT_REQUIRED`, com `details.reason` `no_plan` (sem plano ativo) ou `missing_product` (o plano não inclui o produto em `details.required_product`). O mesmo bloqueio vale no dashboard e no MCP.",
             "content": {
               "application/json": {
                 "schema": {
@@ -62337,13 +62512,15 @@
           }
         },
         "operationId": "get-subscription-item-changes-id"
-      },
-      "delete": {
+      }
+    },
+    "/v1/subscription_item_changes/{id}/cancel": {
+      "post": {
         "tags": [
           "Mudanças de Assinatura"
         ],
         "summary": "Cancela uma mudança agendada",
-        "description": "Cancela uma mudança de itens ainda agendada (`timing=end_of_period`). Mudanças já aplicadas não podem ser canceladas. Devolve o registro com o novo status.",
+        "description": "Cancela uma mudança de itens ainda agendada (`timing=end_of_period`). Mudanças já aplicadas não podem ser canceladas. Devolve o registro com o novo status. Exige o nível de acesso `write`. Substitui `DELETE /v1/subscription_item_changes/{id}`, removido.",
         "security": [
           {
             "bearerAuth": [
@@ -62484,7 +62661,7 @@
             }
           }
         },
-        "operationId": "delete-subscription-item-changes-id"
+        "operationId": "post-subscription-item-changes-id-cancel"
       }
     },
     "/v1/usage": {
@@ -72654,7 +72831,7 @@
           "Itens de Serviço (LC 116)"
         ],
         "summary": "Excluir item de serviço",
-        "description": "Exclui o item de serviço permanentemente. Para preservar o histórico em faturas ou NFS-e já emitidas, prefira desativar o item (`PATCH` com `is_active=false`).",
+        "description": "Exclui o item de serviço (soft delete: `deleted_at`, ele some de toda leitura; regras tributárias, produtos e NFS-e já emitidas que o citam guardam a referência). Exige o nível de acesso `delete`. Para só deixar de usá-lo, desative-o (`PATCH` com `is_active=false`). Até outubro de 2026 esta rota excluía o item definitivamente, ou só o desativava quando uma regra tributária o usava.",
         "security": [
           {
             "bearerAuth": [

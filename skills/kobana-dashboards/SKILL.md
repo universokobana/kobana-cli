@@ -26,8 +26,11 @@ credentials with the banking product:
 
 - `KOBANA_TOKEN` must hold an RS256 access token issued by the Kobana
   Authorization Server (`account.kobana.com.br`) with
-  `aud=https://api.dashboards.kobana.com.br`. `GET` needs the `read`, `write` or
-  `all` scope; every other method needs `write` or `all`.
+  `aud=https://api.dashboards.kobana.com.br`. Scopes have two axes: `dashboards/{resource}` limits what the token reaches, and an
+  access level says what it may do there — `GET` needs `read`, `write` or `all`;
+  `DELETE` (bulk included) needs `delete` or `all`; bulk imports need `import`
+  and bulk exports `export` (or `all`); every other method needs `write` or
+  `all`. One level never stands in for another.
 - `X-Workspace-Id` picks the workspace. It may be omitted while the organization
   has a single workspace; with two or more the API answers `400 workspace_required`.
   Set `KOBANA_WORKSPACE_ID`, or pass `"X-Workspace-Id"` in `--params` for one call.
@@ -41,7 +44,7 @@ credentials with the banking product:
   `test create`
 - `entities` — CRUD plus `aggregate`, `usage`, `records get|create|delete`,
   `records import create`, `join`, `preview create`, `sync`, `tenant-syncs`, `logs get`
-- `imports`, `exports` (`download`), `data-purges`, `backups` (`cancel`,
+- `imports`, `exports` (`download`), `data-purges` (`list`, `get`, `delete`), `backups` (`cancel`,
   `download`, `restore create`)
 
 ### Portal

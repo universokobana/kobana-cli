@@ -112,13 +112,32 @@
             }
           },
           {
-            "name": "sort",
+            "name": "sort_by",
             "in": "query",
             "required": false,
-            "description": "Chaves de ordenação separadas por vírgula, prefixo `-` para decrescente. Permitidas: `created_at`, `updated_at`, `label`, `slug`. Padrão `-created_at`.",
+            "description": "Campo de ordenação. Permitidos: `created_at`, `updated_at`, `label`, `slug`. Sem ele, a ordem é `created_at` decrescente.",
             "schema": {
               "type": "string",
-              "default": "-created_at"
+              "enum": [
+                "created_at",
+                "updated_at",
+                "label",
+                "slug"
+              ]
+            }
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "description": "`asc` (padrão) ou `desc`. Exige `sort_by`.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
             }
           },
           {
@@ -320,7 +339,7 @@
             "name": "X-Idempotency-Key",
             "in": "header",
             "required": false,
-            "description": "Opcional. 8-255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em 24h devolve a resposta original; a mesma chave com corpo diferente devolve 409 `conflict`.",
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -458,7 +477,7 @@
             "name": "X-Idempotency-Key",
             "in": "header",
             "required": false,
-            "description": "Opcional. 8-255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em 24h devolve a resposta original; a mesma chave com corpo diferente devolve 409 `conflict`.",
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -710,7 +729,7 @@
             "name": "X-Idempotency-Key",
             "in": "header",
             "required": false,
-            "description": "Opcional. 8-255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em 24h devolve a resposta original; a mesma chave com corpo diferente devolve 409 `conflict`.",
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -830,7 +849,7 @@
           {
             "bearerAuth": [
               "inbox/workspaces",
-              "write"
+              "delete"
             ]
           }
         ],
@@ -857,7 +876,7 @@
             "name": "X-Idempotency-Key",
             "in": "header",
             "required": false,
-            "description": "Opcional. 8-255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em 24h devolve a resposta original; a mesma chave com corpo diferente devolve 409 `conflict`.",
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -876,8 +895,39 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "Sem conteúdo."
+          "200": {
+            "description": "Excluído (soft delete).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "deleted"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "deleted": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "401": {
             "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
@@ -916,7 +966,7 @@
       "get": {
         "operationId": "list-inboxes",
         "summary": "Listar inboxes",
-        "description": "Paginação keyset. Filtros são query params tipados (`campo=valor`, `campo[op]=valor`); filtros desconhecidos, campos não ordenáveis e valores malformados são rejeitados com 400 `validation_failed`.",
+        "description": "Paginação keyset. Filtros são query params tipados (`campo=valor`, `campo[op]=valor`); filtros desconhecidos, campos não ordenáveis e valores malformados são rejeitados com 400 `VALIDATION_ERROR`.",
         "tags": [
           "Inboxes"
         ],
@@ -967,13 +1017,32 @@
             }
           },
           {
-            "name": "sort",
+            "name": "sort_by",
             "in": "query",
             "required": false,
-            "description": "Chaves de ordenação separadas por vírgula, prefixo `-` para decrescente. Permitidas: `created_at`, `updated_at`, `label`, `slug`. Padrão `-created_at`.",
+            "description": "Campo de ordenação. Permitidos: `created_at`, `updated_at`, `label`, `slug`. Sem ele, a ordem é `created_at` decrescente.",
             "schema": {
               "type": "string",
-              "default": "-created_at"
+              "enum": [
+                "created_at",
+                "updated_at",
+                "label",
+                "slug"
+              ]
+            }
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "description": "`asc` (padrão) ou `desc`. Exige `sort_by`.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
             }
           },
           {
@@ -1198,7 +1267,7 @@
             "name": "X-Idempotency-Key",
             "in": "header",
             "required": false,
-            "description": "Opcional. 8-255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em 24h devolve a resposta original; a mesma chave com corpo diferente devolve 409 `conflict`.",
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -1335,7 +1404,7 @@
             "name": "X-Idempotency-Key",
             "in": "header",
             "required": false,
-            "description": "Opcional. 8-255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em 24h devolve a resposta original; a mesma chave com corpo diferente devolve 409 `conflict`.",
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -1587,7 +1656,7 @@
             "name": "X-Idempotency-Key",
             "in": "header",
             "required": false,
-            "description": "Opcional. 8-255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em 24h devolve a resposta original; a mesma chave com corpo diferente devolve 409 `conflict`.",
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -1707,7 +1776,7 @@
           {
             "bearerAuth": [
               "inbox/inboxes",
-              "write"
+              "delete"
             ]
           }
         ],
@@ -1734,7 +1803,7 @@
             "name": "X-Idempotency-Key",
             "in": "header",
             "required": false,
-            "description": "Opcional. 8-255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em 24h devolve a resposta original; a mesma chave com corpo diferente devolve 409 `conflict`.",
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -1753,8 +1822,39 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "Sem conteúdo."
+          "200": {
+            "description": "Excluído (soft delete).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "deleted"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "deleted": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "401": {
             "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
@@ -1793,7 +1893,7 @@
       "get": {
         "operationId": "list-agents",
         "summary": "Listar agents",
-        "description": "Paginação keyset. Filtros são query params tipados (`campo=valor`, `campo[op]=valor`); filtros desconhecidos, campos não ordenáveis e valores malformados são rejeitados com 400 `validation_failed`.",
+        "description": "Paginação keyset. Filtros são query params tipados (`campo=valor`, `campo[op]=valor`); filtros desconhecidos, campos não ordenáveis e valores malformados são rejeitados com 400 `VALIDATION_ERROR`.",
         "tags": [
           "Agents"
         ],
@@ -1844,13 +1944,32 @@
             }
           },
           {
-            "name": "sort",
+            "name": "sort_by",
             "in": "query",
             "required": false,
-            "description": "Chaves de ordenação separadas por vírgula, prefixo `-` para decrescente. Permitidas: `created_at`, `updated_at`, `label`, `version`. Padrão `-created_at`.",
+            "description": "Campo de ordenação. Permitidos: `created_at`, `updated_at`, `label`, `version`. Sem ele, a ordem é `created_at` decrescente.",
             "schema": {
               "type": "string",
-              "default": "-created_at"
+              "enum": [
+                "created_at",
+                "updated_at",
+                "label",
+                "version"
+              ]
+            }
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "description": "`asc` (padrão) ou `desc`. Exige `sort_by`.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
             }
           },
           {
@@ -2043,7 +2162,7 @@
             "name": "X-Idempotency-Key",
             "in": "header",
             "required": false,
-            "description": "Opcional. 8-255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em 24h devolve a resposta original; a mesma chave com corpo diferente devolve 409 `conflict`.",
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -2180,7 +2299,7 @@
             "name": "X-Idempotency-Key",
             "in": "header",
             "required": false,
-            "description": "Opcional. 8-255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em 24h devolve a resposta original; a mesma chave com corpo diferente devolve 409 `conflict`.",
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -2432,7 +2551,7 @@
             "name": "X-Idempotency-Key",
             "in": "header",
             "required": false,
-            "description": "Opcional. 8-255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em 24h devolve a resposta original; a mesma chave com corpo diferente devolve 409 `conflict`.",
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -2552,7 +2671,7 @@
           {
             "bearerAuth": [
               "inbox/agents",
-              "write"
+              "delete"
             ]
           }
         ],
@@ -2579,7 +2698,7 @@
             "name": "X-Idempotency-Key",
             "in": "header",
             "required": false,
-            "description": "Opcional. 8-255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em 24h devolve a resposta original; a mesma chave com corpo diferente devolve 409 `conflict`.",
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -2598,8 +2717,39 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "Sem conteúdo."
+          "200": {
+            "description": "Excluído (soft delete).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "deleted"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "deleted": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "401": {
             "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
@@ -2638,7 +2788,7 @@
       "get": {
         "operationId": "list-webhooks",
         "summary": "Listar webhooks",
-        "description": "Paginação keyset. Filtros são query params tipados (`campo=valor`, `campo[op]=valor`); filtros desconhecidos, campos não ordenáveis e valores malformados são rejeitados com 400 `validation_failed`.",
+        "description": "Paginação keyset. Filtros são query params tipados (`campo=valor`, `campo[op]=valor`); filtros desconhecidos, campos não ordenáveis e valores malformados são rejeitados com 400 `VALIDATION_ERROR`.",
         "tags": [
           "Webhooks"
         ],
@@ -2689,13 +2839,31 @@
             }
           },
           {
-            "name": "sort",
+            "name": "sort_by",
             "in": "query",
             "required": false,
-            "description": "Chaves de ordenação separadas por vírgula, prefixo `-` para decrescente. Permitidas: `created_at`, `updated_at`, `label`. Padrão `-created_at`.",
+            "description": "Campo de ordenação. Permitidos: `created_at`, `updated_at`, `label`. Sem ele, a ordem é `created_at` decrescente.",
             "schema": {
               "type": "string",
-              "default": "-created_at"
+              "enum": [
+                "created_at",
+                "updated_at",
+                "label"
+              ]
+            }
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "description": "`asc` (padrão) ou `desc`. Exige `sort_by`.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
             }
           },
           {
@@ -2902,7 +3070,7 @@
             "name": "X-Idempotency-Key",
             "in": "header",
             "required": false,
-            "description": "Opcional. 8-255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em 24h devolve a resposta original; a mesma chave com corpo diferente devolve 409 `conflict`.",
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -3039,7 +3207,7 @@
             "name": "X-Idempotency-Key",
             "in": "header",
             "required": false,
-            "description": "Opcional. 8-255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em 24h devolve a resposta original; a mesma chave com corpo diferente devolve 409 `conflict`.",
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -3291,7 +3459,7 @@
             "name": "X-Idempotency-Key",
             "in": "header",
             "required": false,
-            "description": "Opcional. 8-255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em 24h devolve a resposta original; a mesma chave com corpo diferente devolve 409 `conflict`.",
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -3411,7 +3579,7 @@
           {
             "bearerAuth": [
               "inbox/webhooks",
-              "write"
+              "delete"
             ]
           }
         ],
@@ -3438,7 +3606,7 @@
             "name": "X-Idempotency-Key",
             "in": "header",
             "required": false,
-            "description": "Opcional. 8-255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em 24h devolve a resposta original; a mesma chave com corpo diferente devolve 409 `conflict`.",
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -3457,8 +3625,39 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "Sem conteúdo."
+          "200": {
+            "description": "Excluído (soft delete).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "deleted"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "deleted": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "401": {
             "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
@@ -3548,13 +3747,31 @@
             }
           },
           {
-            "name": "sort",
+            "name": "sort_by",
             "in": "query",
             "required": false,
-            "description": "Chaves de ordenação separadas por vírgula, prefixo `-` para decrescente. Permitidas: `created_at`, `updated_at`, `label`. Padrão `-created_at`.",
+            "description": "Campo de ordenação. Permitidos: `created_at`, `updated_at`, `key`. Sem ele, a ordem é `created_at` decrescente.",
             "schema": {
               "type": "string",
-              "default": "-created_at"
+              "enum": [
+                "created_at",
+                "updated_at",
+                "key"
+              ]
+            }
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "description": "`asc` (padrão) ou `desc`. Exige `sort_by`.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
             }
           },
           {
@@ -3625,7 +3842,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Page of results.",
+            "description": "Página de resultados.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3650,7 +3867,7 @@
                         "next_cursor": {
                           "type": "string",
                           "nullable": true,
-                          "description": "Opaque keyset cursor for the next page; `null` on the last page."
+                          "description": "Cursor keyset opaco da próxima página; `null` na última página."
                         }
                       }
                     }
@@ -3738,7 +3955,7 @@
             "name": "X-Idempotency-Key",
             "in": "header",
             "required": false,
-            "description": "Opcional. 8-255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em 24h devolve a resposta original; a mesma chave com corpo diferente devolve 409 `conflict`.",
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -3758,7 +3975,7 @@
         },
         "responses": {
           "201": {
-            "description": "Success.",
+            "description": "Sucesso.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3836,7 +4053,7 @@
             }
           }
         },
-        "description": "Guarda um secret que um workflow do agente pode referenciar como `${{secrets.KEY}}`. Uma `key` duplicada no workspace é recusada com 409 `conflict`. O valor é somente escrita: guardado criptografado e nunca devolvido."
+        "description": "Guarda um secret que um workflow do agente pode referenciar como `${{secrets.KEY}}`. Uma `key` duplicada no workspace é recusada com 409 `CONFLICT`. O valor é somente escrita: guardado criptografado e nunca devolvido."
       },
       "put": {
         "operationId": "upsert-secret",
@@ -3876,7 +4093,7 @@
             "name": "X-Idempotency-Key",
             "in": "header",
             "required": false,
-            "description": "Opcional. 8-255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em 24h devolve a resposta original; a mesma chave com corpo diferente devolve 409 `conflict`.",
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -3896,7 +4113,7 @@
         },
         "responses": {
           "200": {
-            "description": "Success.",
+            "description": "Sucesso.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3914,7 +4131,7 @@
             }
           },
           "201": {
-            "description": "Success.",
+            "description": "Sucesso.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3998,7 +4215,7 @@
       "get": {
         "operationId": "get-secret",
         "summary": "Obter secret",
-        "description": "Accepts either the internal UUID or the resource `external_id`.",
+        "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso.",
         "tags": [
           "Secrets"
         ],
@@ -4041,7 +4258,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Success.",
+            "description": "Sucesso.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4128,7 +4345,7 @@
             "name": "X-Idempotency-Key",
             "in": "header",
             "required": false,
-            "description": "Opcional. 8-255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em 24h devolve a resposta original; a mesma chave com corpo diferente devolve 409 `conflict`.",
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -4158,7 +4375,7 @@
         },
         "responses": {
           "200": {
-            "description": "Success.",
+            "description": "Sucesso.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4248,7 +4465,7 @@
           {
             "bearerAuth": [
               "inbox/secrets",
-              "write"
+              "delete"
             ]
           }
         ],
@@ -4275,7 +4492,7 @@
             "name": "X-Idempotency-Key",
             "in": "header",
             "required": false,
-            "description": "Opcional. 8-255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em 24h devolve a resposta original; a mesma chave com corpo diferente devolve 409 `conflict`.",
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -4294,8 +4511,39 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "No content."
+          "200": {
+            "description": "Excluído (soft delete).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "deleted"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "deleted": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "401": {
             "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
@@ -4385,13 +4633,31 @@
             }
           },
           {
-            "name": "sort",
+            "name": "sort_by",
             "in": "query",
             "required": false,
-            "description": "Chaves de ordenação separadas por vírgula, prefixo `-` para decrescente. Permitidas: `created_at`, `updated_at`, `label`. Padrão `-created_at`.",
+            "description": "Campo de ordenação. Permitidos: `created_at`, `updated_at`, `status`. Sem ele, a ordem é `created_at` decrescente.",
             "schema": {
               "type": "string",
-              "default": "-created_at"
+              "enum": [
+                "created_at",
+                "updated_at",
+                "status"
+              ]
+            }
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "description": "`asc` (padrão) ou `desc`. Exige `sort_by`.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
             }
           },
           {
@@ -4508,7 +4774,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Page of results.",
+            "description": "Página de resultados.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4533,7 +4799,7 @@
                         "next_cursor": {
                           "type": "string",
                           "nullable": true,
-                          "description": "Opaque keyset cursor for the next page; `null` on the last page."
+                          "description": "Cursor keyset opaco da próxima página; `null` na última página."
                         }
                       }
                     }
@@ -4632,7 +4898,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Success.",
+            "description": "Sucesso.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4686,7 +4952,7 @@
       "get": {
         "operationId": "list-emails",
         "summary": "Listar emails",
-        "description": "Paginação keyset. Filtros são query params tipados (`campo=valor`, `campo[op]=valor`); filtros desconhecidos, campos não ordenáveis e valores malformados são rejeitados com 400 `validation_failed`.",
+        "description": "Paginação keyset. Filtros são query params tipados (`campo=valor`, `campo[op]=valor`); filtros desconhecidos, campos não ordenáveis e valores malformados são rejeitados com 400 `VALIDATION_ERROR`.",
         "tags": [
           "Emails"
         ],
@@ -4737,13 +5003,32 @@
             }
           },
           {
-            "name": "sort",
+            "name": "sort_by",
             "in": "query",
             "required": false,
-            "description": "Chaves de ordenação separadas por vírgula, prefixo `-` para decrescente. Permitidas: `created_at`, `updated_at`, `from`, `status`. Padrão `-created_at`.",
+            "description": "Campo de ordenação. Permitidos: `created_at`, `updated_at`, `from`, `status`. Sem ele, a ordem é `created_at` decrescente.",
             "schema": {
               "type": "string",
-              "default": "-created_at"
+              "enum": [
+                "created_at",
+                "updated_at",
+                "from",
+                "status"
+              ]
+            }
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "description": "`asc` (padrão) ou `desc`. Exige `sort_by`.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
             }
           },
           {
@@ -5004,7 +5289,7 @@
       "post": {
         "operationId": "create-email",
         "summary": "Enviar um .eml bruto",
-        "description": "Armazena uma mensagem RFC 5322 exatamente como a ingestão SES faria: objeto bruto no bucket raw, `Email` em `received` e um job `process-email` — filtros, agente e webhooks rodam como para um e-mail real. Envie a mensagem como `multipart/form-data` (campo `file`, `inbox_id` opcional) ou como corpo da requisição com `Content-Type: message/rfc822` (`?inbox_id=` opcional). Sem `inbox_id`, a caixa é resolvida pelo cabeçalho `To:` entre as caixas do workspace do token. Um `Message-ID` já armazenado é rejeitado com 409 (`error.details.email_id` aponta para o e-mail existente).",
+        "description": "Armazena uma mensagem RFC 5322 exatamente como a ingestão SES faria: objeto bruto no bucket raw, `Email` em `received` e um job `process-email` — filtros, agente e webhooks rodam como para um e-mail real. Envie a mensagem como `multipart/form-data` (campo `file`, `inbox_id` opcional) ou como corpo da requisição com `Content-Type: message/rfc822` (`?inbox_id=` opcional). Sem `inbox_id`, a caixa é resolvida pelo cabeçalho `To:` entre as caixas do workspace do token. Um `Message-ID` já armazenado na mesma caixa é rejeitado com 409 (`error.details.email_id` aponta para o e-mail existente); o mesmo `Message-ID` em outra caixa é outro e-mail.",
         "tags": [
           "Emails"
         ],
@@ -5084,16 +5369,27 @@
                 "schema": {
                   "type": "object",
                   "required": [
-                    "data",
-                    "queued"
+                    "data"
                   ],
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/Email"
-                    },
-                    "queued": {
-                      "type": "boolean",
-                      "description": "`false` quando a linha foi armazenada mas o job de processamento não pôde ser enfileirado; reprocesse depois."
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Email"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "queued"
+                          ],
+                          "properties": {
+                            "queued": {
+                              "type": "boolean",
+                              "description": "`false` quando a linha foi armazenada mas o job de processamento não pôde ser enfileirado; reprocesse depois."
+                            }
+                          }
+                        }
+                      ]
                     }
                   }
                 }
@@ -5131,7 +5427,7 @@
             }
           },
           "404": {
-            "description": "`inbox_id` não existe no workspace do token (`inbox_not_found`).",
+            "description": "`inbox_id` não existe no workspace do token (`INBOX_NOT_FOUND`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -5141,7 +5437,7 @@
             }
           },
           "409": {
-            "description": "`duplicate_message_id`: o `Message-ID` já está armazenado.",
+            "description": "`DUPLICATE_MESSAGE_ID`: o `Message-ID` já está armazenado na caixa de destino.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5151,7 +5447,7 @@
             }
           },
           "413": {
-            "description": "`payload_too_large`: mensagem acima de 20 MB.",
+            "description": "`PAYLOAD_TOO_LARGE`: mensagem acima de 20 MB.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5161,7 +5457,7 @@
             }
           },
           "415": {
-            "description": "`unsupported_media_type`: o corpo não é multipart nem `message/rfc822`.",
+            "description": "`UNSUPPORTED_MEDIA_TYPE`: o corpo não é multipart nem `message/rfc822`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5171,7 +5467,7 @@
             }
           },
           "422": {
-            "description": "`no_inbox_matches_to_header` (nenhuma caixa do workspace corresponde aos destinatários do `To:`) ou `missing_recipient` (sem cabeçalho `To:` utilizável; informe `inbox_id`).",
+            "description": "`NO_INBOX_MATCHES_TO_HEADER` (nenhuma caixa do workspace corresponde aos destinatários do `To:`), `MISSING_RECIPIENT` (sem cabeçalho `To:` utilizável; informe `inbox_id`) ou `INVALID_MESSAGE_ID` (caracteres de controle ou mais de 998 caracteres).",
             "content": {
               "application/json": {
                 "schema": {
@@ -5289,7 +5585,7 @@
           {
             "bearerAuth": [
               "inbox/emails",
-              "write"
+              "delete"
             ]
           }
         ],
@@ -5324,8 +5620,39 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "Sem conteúdo."
+          "200": {
+            "description": "Excluído (soft delete).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "deleted"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "deleted": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "401": {
             "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
@@ -5453,7 +5780,7 @@
       "post": {
         "operationId": "reprocess-email",
         "summary": "Reprocessar email",
-        "description": "Reenfileira o processamento do email independentemente do status atual.",
+        "description": "Devolve o e-mail ao processamento (filtros, agente, webhooks). Só é elegível um e-mail em status terminal — `processed`, `rejected` ou `failed`; um e-mail ainda `received`, `approved` ou `processing` é recusado com 409 `CONFLICT`, para que um agente (e seu workflow) nunca rode duas vezes para o mesmo e-mail. Rodar o agente exige um plano ativo: sem ele a chamada é recusada com 403 `ENTITLEMENT_REQUIRED` (`error.details.reason` = `no_plan`) e nada é enfileirado.",
         "tags": [
           "Emails"
         ],
@@ -5487,7 +5814,7 @@
             "name": "X-Idempotency-Key",
             "in": "header",
             "required": false,
-            "description": "Opcional. 8-255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em 24h devolve a resposta original; a mesma chave com corpo diferente devolve 409 `conflict`.",
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -5551,7 +5878,7 @@
             }
           },
           "403": {
-            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance — ou `ENTITLEMENT_REQUIRED`: a organização não tem um plano ativo (`error.details` = `{ reason: \"no_plan\" | \"missing_product\", required_product }`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -5562,6 +5889,16 @@
           },
           "404": {
             "description": "Recurso não encontrado ou filtrado por soft-delete.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`CONFLICT`: o e-mail ainda está `received`, `approved` ou `processing`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5621,7 +5958,7 @@
             "name": "to",
             "in": "query",
             "required": false,
-            "description": "Último dia UTC (inclusive), `YYYY-MM-DD`. Padrão: hoje.",
+            "description": "Último dia UTC (inclusive), `YYYY-MM-DD`. Padrão: hoje. `from`–`to` pode abranger no máximo 366 dias; um intervalo maior é 400 `VALIDATION_ERROR`.",
             "schema": {
               "type": "string",
               "format": "date"
@@ -5718,7 +6055,7 @@
             "name": "to",
             "in": "query",
             "required": false,
-            "description": "Último dia UTC (inclusive), `YYYY-MM-DD`. Padrão: hoje.",
+            "description": "Último dia UTC (inclusive), `YYYY-MM-DD`. Padrão: hoje. `from`–`to` pode abranger no máximo 366 dias; um intervalo maior é 400 `VALIDATION_ERROR`.",
             "schema": {
               "type": "string",
               "format": "date"
@@ -5756,6 +6093,83 @@
           },
           "403": {
             "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me": {
+      "get": {
+        "operationId": "get-me",
+        "summary": "Identidade por trás do token",
+        "description": "Quem o token Bearer representa: a pessoa (`null` para um token de máquina), a organização e o alcance do próprio token. Use para testar se um token configurado é válido. Não exige escopo de recurso: qualquer token que seja verificado recebe resposta. O token em si nunca é devolvido.",
+        "tags": [
+          "Identity"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
+            "in": "header",
+            "required": true,
+            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Identidade.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Me"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas a organização ou o vínculo do token é desconhecido aqui.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5845,7 +6259,7 @@
             }
           },
           "502": {
-            "description": "`gateway_error`: não foi possível obter o catálogo do AI Gateway.",
+            "description": "`GATEWAY_ERROR`: não foi possível obter o catálogo do AI Gateway.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5861,7 +6275,7 @@
       "get": {
         "operationId": "list-agent-versions",
         "summary": "Listar versões do prompt do agente",
-        "description": "Paginação keyset. Filtros são query params tipados (`campo=valor`, `campo[op]=valor`); filtros desconhecidos, campos não ordenáveis e valores malformados são rejeitados com 400 `validation_failed`.",
+        "description": "Paginação keyset. Filtros são query params tipados (`campo=valor`, `campo[op]=valor`); filtros desconhecidos, campos não ordenáveis e valores malformados são rejeitados com 400 `VALIDATION_ERROR`.",
         "tags": [
           "Agents"
         ],
@@ -5912,13 +6326,30 @@
             }
           },
           {
-            "name": "sort",
+            "name": "sort_by",
             "in": "query",
             "required": false,
-            "description": "Chaves de ordenação separadas por vírgula, prefixo `-` para decrescente. Permitidas: `created_at`, `version`. Padrão `-version`.",
+            "description": "Campo de ordenação. Permitidos: `created_at`, `version`. Sem ele, a ordem é `version` decrescente.",
             "schema": {
               "type": "string",
-              "default": "-version"
+              "enum": [
+                "created_at",
+                "version"
+              ]
+            }
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "description": "`asc` (padrão) ou `desc`. Exige `sort_by`.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
             }
           },
           {
@@ -6068,7 +6499,7 @@
       "get": {
         "operationId": "list-agent-runs",
         "summary": "Listar agent runs",
-        "description": "Paginação keyset. Filtros são query params tipados (`campo=valor`, `campo[op]=valor`); filtros desconhecidos, campos não ordenáveis e valores malformados são rejeitados com 400 `validation_failed`.",
+        "description": "Paginação keyset. Filtros são query params tipados (`campo=valor`, `campo[op]=valor`); filtros desconhecidos, campos não ordenáveis e valores malformados são rejeitados com 400 `VALIDATION_ERROR`.",
         "tags": [
           "Agent runs"
         ],
@@ -6119,13 +6550,32 @@
             }
           },
           {
-            "name": "sort",
+            "name": "sort_by",
             "in": "query",
             "required": false,
-            "description": "Chaves de ordenação separadas por vírgula, prefixo `-` para decrescente. Permitidas: `created_at`, `updated_at`, `total_cost`, `status`. Padrão `-created_at`.",
+            "description": "Campo de ordenação. Permitidos: `created_at`, `updated_at`, `total_cost`, `status`. Sem ele, a ordem é `created_at` decrescente.",
             "schema": {
               "type": "string",
-              "default": "-created_at"
+              "enum": [
+                "created_at",
+                "updated_at",
+                "total_cost",
+                "status"
+              ]
+            }
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "description": "`asc` (padrão) ou `desc`. Exige `sort_by`.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
             }
           },
           {
@@ -6589,11 +7039,13 @@
             }
           }
         }
-      },
-      "delete": {
+      }
+    },
+    "/v1/inboxes/{id}/recipients/remove": {
+      "post": {
         "operationId": "remove-allowed-recipient",
         "summary": "Remover destinatário permitido",
-        "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso. Remove um email de `allowed_recipients`. Aceita o email no corpo JSON ou como o parâmetro de query `email`.",
+        "description": "Aceita tanto o UUID interno quanto o `external_id` do recurso. Remove um email de `allowed_recipients`. 404 quando o endereço não está na lista. Substitui `DELETE /v1/inboxes/{id}/recipients`: remover um endereço é uma alteração da inbox (`write`), não uma exclusão.",
         "tags": [
           "Inboxes"
         ],
@@ -6625,6 +7077,17 @@
             }
           },
           {
+            "name": "X-Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 255
+            }
+          },
+          {
             "name": "id",
             "in": "path",
             "required": true,
@@ -6633,19 +7096,10 @@
               "type": "string",
               "minLength": 1
             }
-          },
-          {
-            "name": "email",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "format": "email"
-            }
           }
         ],
         "requestBody": {
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -6687,6 +7141,16 @@
                       }
                     }
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`email` ausente ou não é um endereço válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
@@ -6763,7 +7227,7 @@
             "name": "X-Idempotency-Key",
             "in": "header",
             "required": false,
-            "description": "Opcional. 8-255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em 24h devolve a resposta original; a mesma chave com corpo diferente devolve 409 `conflict`.",
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -6893,7 +7357,7 @@
             "name": "X-Idempotency-Key",
             "in": "header",
             "required": false,
-            "description": "Opcional. 8-255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em 24h devolve a resposta original; a mesma chave com corpo diferente devolve 409 `conflict`.",
+            "description": "Opcional. 8 a 255 caracteres de [A-Za-z0-9_-:.]. Um replay com a mesma chave em até 24h devolve a resposta original; a mesma chave com outro body devolve 409 `IDEMPOTENCY_KEY_REUSED`; um replay traz `X-Idempotent-Replay: true`.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -6943,23 +7407,11 @@
                 "schema": {
                   "type": "object",
                   "required": [
-                    "data",
-                    "signing_secret",
-                    "previous_secret_expires_at"
+                    "data"
                   ],
                   "properties": {
                     "data": {
                       "$ref": "#/components/schemas/Webhook"
-                    },
-                    "signing_secret": {
-                      "type": "string",
-                      "example": "whsec_..."
-                    },
-                    "previous_secret_expires_at": {
-                      "type": "string",
-                      "format": "date-time",
-                      "nullable": true,
-                      "description": "Quando o secret anterior deixa de assinar; `null` se revogado imediatamente."
                     }
                   }
                 }
@@ -7064,13 +7516,31 @@
             }
           },
           {
-            "name": "sort",
+            "name": "sort_by",
             "in": "query",
             "required": false,
-            "description": "Chaves de ordenação separadas por vírgula, prefixo `-` para decrescente. Permitidas: `created_at`, `attempt`, `status`. Padrão `-created_at`.",
+            "description": "Campo de ordenação. Permitidos: `created_at`, `attempt`, `status`. Sem ele, a ordem é `created_at` decrescente.",
             "schema": {
               "type": "string",
-              "default": "-created_at"
+              "enum": [
+                "created_at",
+                "attempt",
+                "status"
+              ]
+            }
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "description": "`asc` (padrão) ou `desc`. Exige `sort_by`.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
             }
           },
           {
@@ -7526,7 +7996,7 @@
       "get": {
         "operationId": "list-system-events",
         "summary": "Listar system events",
-        "description": "Paginação keyset. Filtros são query params tipados (`campo=valor`, `campo[op]=valor`); filtros desconhecidos, campos não ordenáveis e valores malformados são rejeitados com 400 `validation_failed`.",
+        "description": "Paginação keyset. Filtros são query params tipados (`campo=valor`, `campo[op]=valor`); filtros desconhecidos, campos não ordenáveis e valores malformados são rejeitados com 400 `VALIDATION_ERROR`.",
         "tags": [
           "System events"
         ],
@@ -7577,13 +8047,30 @@
             }
           },
           {
-            "name": "sort",
+            "name": "sort_by",
             "in": "query",
             "required": false,
-            "description": "Chaves de ordenação separadas por vírgula, prefixo `-` para decrescente. Permitidas: `created_at`, `slug`. Padrão `-created_at`.",
+            "description": "Campo de ordenação. Permitidos: `created_at`, `slug`. Sem ele, a ordem é `created_at` decrescente.",
             "schema": {
               "type": "string",
-              "default": "-created_at"
+              "enum": [
+                "created_at",
+                "slug"
+              ]
+            }
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "description": "`asc` (padrão) ou `desc`. Exige `sort_by`.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
             }
           },
           {
@@ -7818,83 +8305,6 @@
           }
         }
       }
-    },
-    "/v1/me": {
-      "get": {
-        "operationId": "get-me",
-        "summary": "Identidade por trás do token",
-        "description": "Quem o token Bearer representa: a pessoa (`null` para um token de máquina), a organização e o alcance do próprio token. Use para testar se um token configurado é válido. Não exige escopo de recurso: qualquer token que seja verificado recebe resposta. O token em si nunca é devolvido.",
-        "tags": [
-          "Identity"
-        ],
-        "security": [
-          {
-            "bearerAuth": [
-
-            ]
-          }
-        ],
-        "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "mTLS fingerprint. In production CloudFront injects it from viewer mTLS.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "x-origin-shared-secret",
-            "in": "header",
-            "required": false,
-            "description": "Shared secret between CloudFront and the origin. Required in production; ignored in development unless `CF_ORIGIN_SHARED_SECRET` is set.",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Identidade.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/Me"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Autenticado, mas a organização ou o vínculo do token é desconhecido aqui.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
     }
   },
   "components": {
@@ -7914,7 +8324,8 @@
             "properties": {
               "code": {
                 "type": "string",
-                "example": "validation_failed"
+                "example": "VALIDATION_ERROR",
+                "description": "Código UPPER_SNAKE estável (`VALIDATION_ERROR`, `NOT_FOUND`, `CONFLICT`, `INSUFFICIENT_SCOPE`, `RATE_LIMITED`, `IDEMPOTENCY_KEY_REUSED`…). A `message` pode mudar; decida pelo `code`."
               },
               "message": {
                 "type": "string"
@@ -8237,7 +8648,7 @@
           "email": {
             "type": "string",
             "format": "email",
-            "description": "Opcional. Deve usar o domínio de caixa configurado (`SES_DOMAIN`); caso contrário retorna 422. Endereços duplicados retornam 409. Quando omitido, o servidor compõe como \"{organization-slug}.{workspace-slug}.{inbox-slug}@<domain>\"."
+            "description": "Opcional. Deve usar o domínio de inbox configurado (`SES_DOMAIN`) e uma parte local que comece com \"{organization-slug}.{workspace-slug}.\" de quem chama; caso contrário retorna 422. Endereços duplicados retornam 409. Quando omitido, o servidor o compõe como \"{organization-slug}.{workspace-slug}.{inbox-slug}@<domain>\"."
           },
           "slug": {
             "type": "string",
@@ -8582,6 +8993,12 @@
             "format": "date-time",
             "nullable": true
           },
+          "entitlement_held_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Preenchido enquanto a execução do agente está retida porque a organização não tem um plano ativo: o e-mail fica guardado e permanece `approved`, e o agente roda automaticamente quando um plano (ou uma cortesia) estiver vigente. `null` quando não está retido."
+          },
           "received_at": {
             "type": "string",
             "format": "date-time"
@@ -8816,6 +9233,100 @@
           }
         }
       },
+      "Me": {
+        "type": "object",
+        "description": "Identidade por trás do token Bearer. Nunca inclui o token nem nada que o identifique.",
+        "required": [
+          "user",
+          "organization",
+          "token"
+        ],
+        "properties": {
+          "user": {
+            "type": "object",
+            "nullable": true,
+            "description": "A pessoa por trás do token. `null` quando o token não é de uma pessoa.",
+            "required": [
+              "id",
+              "name",
+              "email"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string",
+                "nullable": true
+              },
+              "email": {
+                "type": "string",
+                "format": "email"
+              }
+            }
+          },
+          "organization": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "external_id"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              },
+              "external_id": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          "token": {
+            "type": "object",
+            "required": [
+              "type",
+              "scopes",
+              "access_level",
+              "expires_at"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "oauth",
+                  "api_key"
+                ],
+                "description": "`oauth` para um token emitido por um fluxo de autorização; `api_key` para um criado manualmente no servidor de autorização."
+              },
+              "scopes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "access_level": {
+                "type": "string",
+                "enum": [
+                  "read",
+                  "write",
+                  "all"
+                ]
+              },
+              "expires_at": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              }
+            }
+          }
+        }
+      },
       "Model": {
         "type": "object",
         "description": "Um modelo LLM que um agente pode usar: o catálogo do AI Gateway restrito a modelos com preço conhecido.",
@@ -8915,6 +9426,13 @@
             "format": "uri",
             "nullable": true
           },
+          "workflow_allowed_hosts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Hosts (exatos, ex.: `api.example.com`) para os quais um workflow devolvido por este agente pode enviar `${{secrets.*}}`, `${{email.attachments.*}}` ou a saída de um passo derivada deles. Vazio (o padrão) bloqueia todos os destinos para esses valores; passos sem eles não são afetados."
+          },
           "version": {
             "type": "integer",
             "description": "Versão atual do prompt. Incrementada toda vez que `system_message` muda; cada versão é um snapshot imutável listado em `/agents/{id}/versions`."
@@ -9002,6 +9520,14 @@
             "format": "uri",
             "nullable": true
           },
+          "workflow_allowed_hosts": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "type": "string"
+            },
+            "description": "Hosts (exatos, ex.: `api.example.com`) para os quais um workflow devolvido por este agente pode enviar `${{secrets.*}}`, `${{email.attachments.*}}` ou a saída de um passo derivada deles. Vazio (o padrão) bloqueia todos os destinos para esses valores; passos sem eles não são afetados."
+          },
           "custom_metadata": {
             "type": "object",
             "additionalProperties": true,
@@ -9031,6 +9557,14 @@
             "type": "string",
             "format": "uri",
             "nullable": true
+          },
+          "workflow_allowed_hosts": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "type": "string"
+            },
+            "description": "Substitui a lista inteira. Veja `AgentCreate.workflow_allowed_hosts`."
           },
           "custom_metadata": {
             "type": "object",
@@ -9149,9 +9683,393 @@
           }
         }
       },
+      "Secret": {
+        "type": "object",
+        "description": "Um secret do workspace. O valor é somente escrita: nenhum endpoint, em nenhuma superfície, o devolve.",
+        "required": [
+          "id",
+          "workspace_id",
+          "key"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "key": {
+            "type": "string",
+            "description": "Identificador que um passo de workflow escreve dentro de `${{secrets.KEY}}`. Letras maiúsculas, dígitos e underscores, começando por letra.",
+            "example": "FINANCE_TOKEN"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "last_used_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Última vez que um passo de workflow de fato interpolou este secret."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SecretCreate": {
+        "type": "object",
+        "required": [
+          "key",
+          "value"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{0,62}$",
+            "example": "FINANCE_TOKEN"
+          },
+          "value": {
+            "type": "string",
+            "maxLength": 65536,
+            "description": "Guardado criptografado; nunca devolvido."
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "SecretUpsert": {
+        "type": "object",
+        "required": [
+          "key",
+          "value"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{0,62}$",
+            "description": "Chave de busca do upsert."
+          },
+          "value": {
+            "type": "string",
+            "maxLength": 65536
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "SecretUpdate": {
+        "type": "object",
+        "required": [
+
+        ],
+        "properties": {
+          "value": {
+            "type": "string",
+            "maxLength": 65536,
+            "description": "Substitui o valor guardado."
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "WorkflowStep": {
+        "type": "object",
+        "required": [
+          "id",
+          "workflow_run_id",
+          "position",
+          "type",
+          "status",
+          "request",
+          "response"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workflow_run_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "position": {
+            "type": "integer",
+            "description": "Índice base 0 no workflow, que também é a ordem de execução."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "request"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "running",
+              "success",
+              "failed",
+              "skipped"
+            ]
+          },
+          "request": {
+            "type": "object",
+            "required": [
+              "method",
+              "url",
+              "headers",
+              "body",
+              "form"
+            ],
+            "properties": {
+              "method": {
+                "type": "string",
+                "nullable": true
+              },
+              "url": {
+                "type": "string",
+                "nullable": true,
+                "description": "URL como enviada, com valores de secrets substituídos por `[REDACTED]`."
+              },
+              "headers": {
+                "type": "object",
+                "nullable": true,
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "body": {
+                "type": "string",
+                "nullable": true,
+                "description": "Truncado em 4000 caracteres. Um anexo do e-mail referenciado aparece como `[attachment N: nome, content type, tamanho]`, não como os bytes."
+              },
+              "form": {
+                "type": "object",
+                "nullable": true,
+                "description": "Campos multipart de um passo com `form`, como enviados. Um campo de arquivo é um descritor `{ attachment, filename, content_type, size }` do anexo do e-mail que foi enviado.",
+                "additionalProperties": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "attachment",
+                        "filename",
+                        "content_type",
+                        "size"
+                      ],
+                      "properties": {
+                        "attachment": {
+                          "type": "integer",
+                          "description": "Índice base 0 no e-mail."
+                        },
+                        "filename": {
+                          "type": "string"
+                        },
+                        "content_type": {
+                          "type": "string"
+                        },
+                        "size": {
+                          "type": "integer",
+                          "description": "Bytes."
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "response": {
+            "type": "object",
+            "required": [
+              "status",
+              "headers",
+              "body",
+              "expected_status"
+            ],
+            "properties": {
+              "status": {
+                "type": "integer",
+                "nullable": true
+              },
+              "headers": {
+                "type": "object",
+                "nullable": true,
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "body": {
+                "type": "string",
+                "nullable": true,
+                "description": "Truncado em 4000 caracteres."
+              },
+              "expected_status": {
+                "type": "integer",
+                "nullable": true,
+                "description": "Status que conta como sucesso. Null significa qualquer 2xx."
+              }
+            }
+          },
+          "error": {
+            "type": "string",
+            "nullable": true
+          },
+          "duration_ms": {
+            "type": "integer",
+            "nullable": true
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "finished_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "WorkflowRun": {
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "status",
+          "definition",
+          "summary"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "inbox_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "email_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "agent_run_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "running",
+              "success",
+              "failed"
+            ]
+          },
+          "definition": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "O array `workflow` exatamente como o agente devolveu, com os placeholders NÃO resolvidos."
+          },
+          "summary": {
+            "type": "object",
+            "required": [
+              "total",
+              "succeeded",
+              "error"
+            ],
+            "properties": {
+              "total": {
+                "type": "integer"
+              },
+              "succeeded": {
+                "type": "integer"
+              },
+              "error": {
+                "type": "integer",
+                "description": "Passos que não tiveram sucesso (`total - succeeded`): os `failed` mais os `skipped` por referenciarem um passo que não teve sucesso. Uma execução pode ter vários de cada."
+              }
+            }
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Preenchido quando a execução falhou: todos os passos que falharam, um por linha, cada um como `step <posição>: <erro>`."
+          },
+          "duration_ms": {
+            "type": "integer",
+            "nullable": true
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "finished_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkflowStep"
+            },
+            "description": "Só em `GET /v1/workflow-runs/{id}` — a listagem os omite."
+          }
+        }
+      },
       "Webhook": {
         "type": "object",
-        "description": "Registro de webhook. Segredos nunca aparecem nas respostas: os signing secrets e os cifrados `auth_basic_password`, `auth_bearer_token` e `auth_header_value`. O `signing_secret` em texto claro é retornado ao lado de `data` exatamente uma vez, na criação e na rotação.",
+        "description": "Registro de webhook. Segredos nunca aparecem nas respostas: os signing secrets e os cifrados `auth_basic_password`, `auth_bearer_token` e `auth_header_value`. O `signing_secret` em texto claro é retornado dentro de `data` exatamente uma vez, na criação e na rotação (com `previous_secret_expires_at` na rotação).",
         "required": [
           "id",
           "external_id",
@@ -9231,6 +10149,17 @@
             "format": "date-time",
             "nullable": true,
             "description": "Até quando o signing secret anterior ainda assina entregas após uma rotação; `null` quando não há janela de carência aberta."
+          },
+          "signing_secret": {
+            "type": "string",
+            "example": "whsec_...",
+            "description": "Signing secret em texto claro. Presente só na resposta que o cria ou rotaciona — nunca mais legível."
+          },
+          "previous_secret_expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Só numa resposta de rotação: quando o secret anterior para de assinar; `null` se revogado na hora."
           },
           "metadata": {
             "type": "object",
@@ -9591,484 +10520,6 @@
           }
         ],
         "description": "Corpo do PUT /webhooks: o corpo do POST mais as chaves de busca `id` / `external_id`."
-      },
-      "Secret": {
-        "type": "object",
-        "description": "Um secret do workspace. O valor é somente escrita: nenhum endpoint, em nenhuma superfície, o devolve.",
-        "required": [
-          "id",
-          "workspace_id",
-          "key"
-        ],
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "workspace_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "key": {
-            "type": "string",
-            "description": "Identificador que um passo de workflow escreve dentro de `${{secrets.KEY}}`. Letras maiúsculas, dígitos e underscores, começando por letra.",
-            "example": "FINANCE_TOKEN"
-          },
-          "notes": {
-            "type": "string",
-            "nullable": true
-          },
-          "last_used_at": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true,
-            "description": "Última vez que um passo de workflow de fato interpolou este secret."
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "SecretCreate": {
-        "type": "object",
-        "required": [
-          "key",
-          "value"
-        ],
-        "properties": {
-          "key": {
-            "type": "string",
-            "pattern": "^[A-Z][A-Z0-9_]{0,62}$",
-            "example": "FINANCE_TOKEN"
-          },
-          "value": {
-            "type": "string",
-            "maxLength": 65536,
-            "description": "Guardado criptografado; nunca devolvido."
-          },
-          "notes": {
-            "type": "string",
-            "nullable": true
-          }
-        }
-      },
-      "SecretUpsert": {
-        "type": "object",
-        "required": [
-          "key",
-          "value"
-        ],
-        "properties": {
-          "key": {
-            "type": "string",
-            "pattern": "^[A-Z][A-Z0-9_]{0,62}$",
-            "description": "Chave de busca do upsert."
-          },
-          "value": {
-            "type": "string",
-            "maxLength": 65536
-          },
-          "notes": {
-            "type": "string",
-            "nullable": true
-          }
-        }
-      },
-      "SecretUpdate": {
-        "type": "object",
-        "required": [
-
-        ],
-        "properties": {
-          "value": {
-            "type": "string",
-            "maxLength": 65536,
-            "description": "Substitui o valor guardado."
-          },
-          "notes": {
-            "type": "string",
-            "nullable": true
-          }
-        }
-      },
-      "WorkflowRun": {
-        "type": "object",
-        "required": [
-          "id",
-          "workspace_id",
-          "status",
-          "definition",
-          "summary"
-        ],
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "workspace_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "inbox_id": {
-            "type": "string",
-            "format": "uuid",
-            "nullable": true
-          },
-          "email_id": {
-            "type": "string",
-            "format": "uuid",
-            "nullable": true
-          },
-          "agent_id": {
-            "type": "string",
-            "format": "uuid",
-            "nullable": true
-          },
-          "agent_run_id": {
-            "type": "string",
-            "format": "uuid",
-            "nullable": true
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "running",
-              "success",
-              "failed"
-            ]
-          },
-          "definition": {
-            "type": "array",
-            "items": {
-              "type": "object"
-            },
-            "description": "O array `workflow` exatamente como o agente devolveu, com os placeholders NÃO resolvidos."
-          },
-          "summary": {
-            "type": "object",
-            "required": [
-              "total",
-              "succeeded",
-              "error"
-            ],
-            "properties": {
-              "total": {
-                "type": "integer"
-              },
-              "succeeded": {
-                "type": "integer"
-              },
-              "error": {
-                "type": "integer",
-                "description": "Passos que não tiveram sucesso (`total - succeeded`): os `failed` mais os `skipped` por referenciarem um passo que não teve sucesso. Uma execução pode ter vários de cada."
-              }
-            }
-          },
-          "error": {
-            "type": "string",
-            "nullable": true,
-            "description": "Preenchido quando a execução falhou: todos os passos que falharam, um por linha, cada um como `step <posição>: <erro>`."
-          },
-          "duration_ms": {
-            "type": "integer",
-            "nullable": true
-          },
-          "started_at": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "finished_at": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "steps": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WorkflowStep"
-            },
-            "description": "Só em `GET /v1/workflow-runs/{id}` — a listagem os omite."
-          }
-        }
-      },
-      "WorkflowStep": {
-        "type": "object",
-        "required": [
-          "id",
-          "workflow_run_id",
-          "position",
-          "type",
-          "status",
-          "request",
-          "response"
-        ],
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "workflow_run_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "position": {
-            "type": "integer",
-            "description": "Índice base 0 no workflow, que também é a ordem de execução."
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "request"
-            ]
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "running",
-              "success",
-              "failed",
-              "skipped"
-            ]
-          },
-          "request": {
-            "type": "object",
-            "required": [
-              "method",
-              "url",
-              "headers",
-              "body",
-              "form"
-            ],
-            "properties": {
-              "method": {
-                "type": "string",
-                "nullable": true
-              },
-              "url": {
-                "type": "string",
-                "nullable": true,
-                "description": "URL como enviada, com valores de secrets substituídos por `[REDACTED]`."
-              },
-              "headers": {
-                "type": "object",
-                "nullable": true,
-                "additionalProperties": {
-                  "type": "string"
-                }
-              },
-              "body": {
-                "type": "string",
-                "nullable": true,
-                "description": "Truncado em 4000 caracteres. Um anexo do e-mail referenciado aparece como `[attachment N: nome, content type, tamanho]`, não como os bytes."
-              },
-              "form": {
-                "type": "object",
-                "nullable": true,
-                "description": "Campos multipart de um passo com `form`, como enviados. Um campo de arquivo é um descritor `{ attachment, filename, content_type, size }` do anexo do e-mail que foi enviado.",
-                "additionalProperties": {
-                  "oneOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "object",
-                      "required": [
-                        "attachment",
-                        "filename",
-                        "content_type",
-                        "size"
-                      ],
-                      "properties": {
-                        "attachment": {
-                          "type": "integer",
-                          "description": "Índice base 0 no e-mail."
-                        },
-                        "filename": {
-                          "type": "string"
-                        },
-                        "content_type": {
-                          "type": "string"
-                        },
-                        "size": {
-                          "type": "integer",
-                          "description": "Bytes."
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "response": {
-            "type": "object",
-            "required": [
-              "status",
-              "headers",
-              "body",
-              "expected_status"
-            ],
-            "properties": {
-              "status": {
-                "type": "integer",
-                "nullable": true
-              },
-              "headers": {
-                "type": "object",
-                "nullable": true,
-                "additionalProperties": {
-                  "type": "string"
-                }
-              },
-              "body": {
-                "type": "string",
-                "nullable": true,
-                "description": "Truncado em 4000 caracteres."
-              },
-              "expected_status": {
-                "type": "integer",
-                "nullable": true,
-                "description": "Status que conta como sucesso. Null significa qualquer 2xx."
-              }
-            }
-          },
-          "error": {
-            "type": "string",
-            "nullable": true
-          },
-          "duration_ms": {
-            "type": "integer",
-            "nullable": true
-          },
-          "started_at": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "finished_at": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "Me": {
-        "type": "object",
-        "description": "Identidade por trás do token Bearer. Nunca inclui o token nem nada que o identifique.",
-        "required": [
-          "user",
-          "organization",
-          "token"
-        ],
-        "properties": {
-          "user": {
-            "type": "object",
-            "nullable": true,
-            "description": "A pessoa por trás do token. `null` quando o token não é de uma pessoa.",
-            "required": [
-              "id",
-              "name",
-              "email"
-            ],
-            "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "name": {
-                "type": "string",
-                "nullable": true
-              },
-              "email": {
-                "type": "string",
-                "format": "email"
-              }
-            }
-          },
-          "organization": {
-            "type": "object",
-            "required": [
-              "id",
-              "name",
-              "external_id"
-            ],
-            "properties": {
-              "id": {
-                "type": "string",
-                "format": "uuid"
-              },
-              "name": {
-                "type": "string"
-              },
-              "external_id": {
-                "type": "string",
-                "nullable": true
-              }
-            }
-          },
-          "token": {
-            "type": "object",
-            "required": [
-              "type",
-              "scopes",
-              "access_level",
-              "expires_at"
-            ],
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": [
-                  "oauth",
-                  "api_key"
-                ],
-                "description": "`oauth` para um token emitido por um fluxo de autorização; `api_key` para um criado manualmente no servidor de autorização."
-              },
-              "scopes": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "access_level": {
-                "type": "string",
-                "enum": [
-                  "read",
-                  "write",
-                  "all"
-                ]
-              },
-              "expires_at": {
-                "type": "string",
-                "format": "date-time",
-                "nullable": true
-              }
-            }
-          }
-        }
       }
     },
     "securitySchemes": {
@@ -10076,7 +10527,7 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "JWT RS256 emitido pelo Authorization Server da Kobana (`iss` = `https://account[.<env>].kobana.com.br`), verificado contra as chaves públicas que ele publica — esta API não guarda chave de assinatura e não consegue emitir token. Claims: `iss`, `aud=https://api.inbox[.<env>].kobana.com.br` (pode ser uma lista; a regra é *contém*), `sub`, `jti`, `exp` (obrigatória), `scope` (lista separada por espaços) e `src` opcional (`user`|`system`). Scopes têm dois eixos: um recurso, sempre prefixado pelo app (`inbox/emails`), e um verbo global (`write`). Recurso sem verbo lê; escrita precisa dos dois (`inbox/emails write`). `inbox/all` é o coringa de recurso — lê todos os recursos e não concede verbo. A forma granular `inbox/emails:write` satisfaz os dois eixos para aquele recurso sozinha."
+        "description": "JWT RS256 emitido pelo Authorization Server da Kobana (`iss` = `https://account[.<env>].kobana.com.br`), verificado contra as chaves públicas que ele publica — esta API não guarda chave de assinatura e não consegue emitir token. Claims: `iss`, `aud=https://api.inbox[.<env>].kobana.com.br` (pode ser uma lista; a regra é *contém*), `sub`, `jti`, `exp` (obrigatória), `scope` (lista separada por espaços) e `src` opcional (`user`|`system`). Scopes têm dois eixos: um recurso, sempre prefixado pelo app (`inbox/emails`), e um nível de acesso — `read`, `write`, `delete`, `import`, `export` ou `all`. Cada requisição precisa de um verbo, dado pelo método: `GET` lê (só o recurso), `POST`/`PUT`/`PATCH` escrevem (`inbox/emails write`), `DELETE` exclui (`inbox/emails delete`). Nenhum verbo substitui outro — `write` não exclui — e `all` concede todos. `inbox/all` é o coringa de recurso — alcança todos os recursos e não concede verbo. A forma granular `inbox/emails:write` (ou `:delete`) satisfaz os dois eixos para aquele recurso sozinha. Um token sem nenhum scope `inbox/…` fica limitado ao nível de acesso. Nenhum endpoint importa ou exporta em massa, então `import`/`export` ainda não liberam nada. `GET /v1/me` responde a qualquer token válido."
       }
     }
   }

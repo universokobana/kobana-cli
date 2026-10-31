@@ -25,8 +25,13 @@ Finance is its own API (`api.finance.kobana.com.br`) and does not share
 credentials with the banking product. Every request needs **two** things:
 
 - `KOBANA_TOKEN` — an RS256 access token issued by the Kobana Authorization
-  Server. Its `org` claim is the tenant; scopes look like
-  `finance.payables finance.people.write` (`.write` also grants read).
+  Server. Its `org` claim is the tenant. Scopes have two axes: `finance/{resource}` limits what the token reaches, and an
+  access level says what it may do there — `GET` needs `read`, `write` or `all`;
+  `DELETE` (bulk included) needs `delete` or `all`; bulk imports need `import`
+  and bulk exports `export` (or `all`); every other method needs `write` or
+  `all`. One level never stands in for another.
+  Sending a payment to the bank or charging needs `write` on
+  `finance/payable_dispatches` / `finance/receivable_charges`.
 - `X-Workspace-Id` — the workspace inside that organization. **Required on every
   route** (`400 WORKSPACE_REQUIRED` without it). Set `KOBANA_WORKSPACE_ID`, or
   pass `"X-Workspace-Id"` in `--params` to override it for one call.
@@ -50,7 +55,8 @@ credentials with the banking product. Every request needs **two** things:
 - `categories`, `classification-centers`, `people`, `companies`, `taxes` — CRUD
 - `custom-classifiers` — CRUD plus `values create|update|delete`
 - `automatic-rules` — CRUD plus `reorder`
-- `attachments` — `list`, `create`, `get`, `delete`, plus `download`, `links`
+- `attachments` — `list`, `create`, `get`, `delete`, plus `download`, `links`, `unlink`
+- `ai-agents` — CRUD plus `triggers` (CRUD and `token`); `ai-skills` — CRUD
 
 ### Fiscal and identity
 - `fiscal-documents` — `list`, `get` (received fiscal documents)

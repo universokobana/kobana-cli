@@ -22,8 +22,11 @@ kobana billing <resource> <method> [flags]
 Billing is its own API (`api.billing.kobana.com.br`) and does not share
 credentials with the banking product. `KOBANA_TOKEN` must hold an RS256 access
 token issued by the Kobana Authorization Server (`account.kobana.com.br`) with
-`aud=https://api.billing.kobana.com.br`. `GET` needs the `read`, `write` or `all`
-scope; every other method needs `write` or `all`.
+`aud=https://api.billing.kobana.com.br`. Scopes have two axes: `billing/{resource}` limits what the token reaches, and an
+access level says what it may do there — `GET` needs `read`, `write` or `all`;
+`DELETE` (bulk included) needs `delete` or `all`; bulk imports need `import`
+and bulk exports `export` (or `all`); every other method needs `write` or
+`all`. One level never stands in for another.
 
 ## API Resources
 
@@ -31,15 +34,15 @@ scope; every other method needs `write` or `all`.
 - `subscriptions` — `list`, `create`, `get`, `update`, `delete`, plus `activate`,
   `pause`, `resume`, `cancel`, `change-plan`, `change-anniversary`, `create-invoice`, `items`,
   `revert-to-confirmed`, `sync-plan-items`
-- `subscription-changes config`, `subscription-item-changes list|get`
-- `plans` — CRUD plus `duplicate`, `items`, `bulk-archive`, `bulk-delete`, `bulk-move-group`
+- `subscription-changes config`, `subscription-item-changes list|get|cancel`
+- `plans` — CRUD plus `archive`, `duplicate`, `items`, `bulk-archive`, `bulk delete`, `bulk-move-group`
 - `plan-groups` — CRUD plus `archive`, `reorder`
 - `plan-changes` — `list`, `create`, `get`, `config`, `rules`, `stats`
 
 ### Catalog
 - `products` — CRUD plus `archive`, `publish`, `restore`, `reorder`, and the
   `bulk-*` operations
-- `product-groups` — CRUD plus `archive`, `reorder`
+- `product-groups` — CRUD plus `archive`, `unarchive`, `reorder`
 - `service-items` — CRUD
 
 ### Invoicing

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Agentes e skills de IA no `finance`** — `kobana finance ai-agents` (com `triggers` e o `token` do gatilho) e `kobana finance ai-skills`
+
+### Changed
+
+- **Specs de todos os produtos atualizadas** com o `main` de cada repositório, e traduções en/es refeitas. As APIs passaram a exigir um nível de acesso por operação — `read`, `write`, `delete`, `import`, `export` ou `all`, e um não vale por outro: `DELETE` exige `delete`, importação em volume exige `import` e exportação em volume exige `export`. Um token emitido antes precisa ser emitido de novo com esses níveis
+- **Comandos que mudaram porque a rota mudou** (incompatível):
+  - `billing`: exclusão em lote de `nfes`, `plans`, `products` e `proposals` é `bulk delete` (`DELETE /v1/<recurso>/bulk`), no lugar de `bulk-delete`; desarquivar grupo de produtos é `product-groups unarchive`; cancelar item de mudança de assinatura é `subscription-item-changes cancel`; arquivar plano ganhou `plans archive`
+  - `dunning`: exclusão em lote de `people` e `charges` é `bulk delete` (`DELETE /v1/<recurso>/bulk`), no lugar de `bulk-archive create`; encerrar campanha é `negotiation-campaigns end`; `negativations`, `protests` e `tasks` não têm mais `delete` — use `remove`, `cancel` e `update` com `status: cancelled`
+  - `dashboards`: o expurgo é `data-purges delete` (`DELETE /v1/data_purges`), no lugar de `data-purges create`
+  - `inbox`: remover destinatário é `inboxes recipients remove create` (`POST /v1/inboxes/{id}/recipients/remove`), no lugar de `recipients delete`
+  - `finance`: desvincular anexo é `attachments unlink` (`POST /v1/attachments/{id}/unlink`), no lugar do `DELETE` em `attachments links`
+- **Publique a versão só depois que os apps estiverem em produção com essas rotas**: a CLI fala com produção, e até a promoção as rotas novas respondem `404`/`405` lá
+
 ## [0.7.0] - 2026-10-28
 
 ### Added
