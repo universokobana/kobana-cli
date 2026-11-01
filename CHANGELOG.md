@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-01
+
 ### Added
 
 - **Agentes e skills de IA no `finance`** — `kobana finance ai-agents` (com `triggers` e o `token` do gatilho) e `kobana finance ai-skills`
@@ -25,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `dashboards`: o expurgo é `data-purges delete` (`DELETE /v1/data_purges`), no lugar de `data-purges create`
   - `inbox`: remover destinatário é `inboxes recipients remove create` (`POST /v1/inboxes/{id}/recipients/remove`), no lugar de `recipients delete`
   - `finance`: desvincular anexo é `attachments unlink` (`POST /v1/attachments/{id}/unlink`), no lugar do `DELETE` em `attachments links`
-- **Publique a versão só depois que os apps estiverem em produção com essas rotas**: a CLI fala com produção, e até a promoção as rotas novas respondem `404`/`405` lá
+- **Rotas ainda em promoção**: no lançamento, `dashboards data-purges delete` e as exclusões em lote do `billing` (`bulk delete`) respondem `405` em produção até esses apps serem promovidos com as rotas novas
 
 ## [0.7.0] - 2026-10-28
 
