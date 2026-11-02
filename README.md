@@ -147,7 +147,8 @@ Recursos principais: `tasks` (`run`, `readiness`, `endpoint`), `executions`
 (`cancel`, `continue`, `consolidate-memories`, `logs`, `events`, `todos`,
 `search`), `environments`, `secrets`, `schedules`, `mcp-servers`, `files`,
 `memories` (`versions`, `rollback`, `consolidate`), `webhooks`,
-`webhook-deliveries`, `repository` (`sync`), `usage`, `operation-approvals`.
+`webhook-deliveries`, `repository` (`sync`), `volumes` (`files`, `syncs`),
+`sources` (`check`), `usage`, `operation-approvals`.
 
 ```bash
 kobana kadu tasks list --fields "id,slug,label"

@@ -58,6 +58,12 @@ other product:
   period; `{"dry_run": true}` only counts)
 - `webhooks` — CRUD plus `rotate-secret`; `webhook-deliveries list|get|replay`
 - `repository` — `get`, `sync` (skills repository)
+- `volumes` — CRUD plus `files` and `syncs` (structure only, never the content)
+- `sources` — CRUD plus `check`: source repositories a task reads in a fresh
+  read-only clone on every run (`task.sources`). `create` with
+  `{"name", "repository": "owner/repo", "ref"}`; without the organization's
+  GitHub App on the repo, the answer carries `deploy_key_public_key` to add
+  as a read-only Deploy Key, then `check` records `access_status`
 
 ### Organization
 - `organization` — `get`, `update`: **only the token's organization** (the
