@@ -61,6 +61,11 @@ other product:
 - `volumes` — CRUD plus `files` (the volume's file index) and `syncs` (what each
   execution mounted and committed); read only besides the CRUD — content never
   goes through the API, it is synced by the runner
+- `sources` — CRUD plus `check`: source repositories a task reads in a fresh
+  read-only clone on every run (`task.sources`). `create` with
+  `{"name", "repository": "owner/repo", "ref"}`; without the organization's
+  GitHub App on the repo, the answer carries `deploy_key_public_key` to add
+  as a read-only Deploy Key, then `check` records `access_status`
 
 ### Organization
 - `organization` — `get`, `update`: **only the token's organization** (the

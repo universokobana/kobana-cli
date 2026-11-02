@@ -3,7 +3,7 @@
   "info": {
     "title": "API do Kadu",
     "version": "1.0.0",
-    "description": "API multi-tenant para orquestração de agentes.\n\n## Autenticação\n\nToda rota exige `Authorization: Bearer <token>`, onde o token é um access token RS256 emitido pelo Authorization Server da Kobana (Conta Kobana) para o recurso `kadu`. O Kadu só verifica o token, com as chaves públicas que o AS publica; não emite token. A organização é a claim `org`.\n\n## Escopos\n\nOs escopos são exigidos em toda rota, exceto `GET /v1/me`. Cada requisição exige um único nível de acesso, e um nível nunca substitui outro:\n\n| Nível | Concede |\n| --- | --- |\n| `read` | leitura (`GET`) |\n| `write` | criação e alteração (`POST`, `PATCH`, `PUT`) — e leitura |\n| `delete` | remoção (`DELETE`) |\n| `import` | importação em massa (nenhum endpoint hoje) |\n| `export` | exportação em massa (nenhum endpoint hoje) |\n| `all` | todos os níveis acima |\n\nUm token com escopos `kadu/{recurso}` (ex.: `kadu/tasks`) fica restrito a esses recursos, e o nível vale só dentro deles; `kadu/all` alcança todos os recursos. O recurso de uma rota é o primeiro segmento depois de `/v1` (`/executions/{id}/logs` → `executions`). Recursos: `activities`, `environments`, `executions`, `files`, `memberships`, `memories`, `organizations`, `repository`, `roles`, `schedules`, `secrets`, `system_events`, `tasks`, `todos`, `usage`, `users`, `volumes`, `webhook_deliveries`, `webhooks`, `workspaces`.\n\n## Permissões do usuário\n\nAlém dos escopos, um token emitido para uma pessoa (com `email`) fica limitado ao papel dela na organização (`Role.permissions`): cada rota exige `agent.<recurso>.<ação>` (`list`, `read`, `create`, `update`, `delete`, e as ações `executions.run`, `webhook_deliveries.replay` e `repository.sync`), com curingas `*`, `agent.*` e `agent.<recurso>.*`. Papel que não concede responde `403 USER_PERMISSION_DENIED` (`details.required`); pessoa sem vínculo com a organização, `403 NOT_A_MEMBER`. Token de integração, sem pessoa, vale só pelos escopos. `GET /v1/me` não confere papel.\n\n## Permissões da organização\n\nAs rotas de disparo, logs, webhooks, entregas, ambientes, secrets, agendamentos, endpoint da Task, repositório e uso respeitam também as liberações que a Kobana dá à organização para as telas do console. Operação não liberada responde `403 FEATURE_NOT_ENABLED`, com `details.permission`.\n\nToken sem escopo que o Kadu reconheça não alcança nada além do `/me`. Escopo insuficiente responde `403 INSUFFICIENT_SCOPE`, com `details.required` (os níveis que bastariam).\n\n## Contrato\n\n- Wire em `snake_case`; mapas livres (`custom_metadata`, `payload`, `parameters`…) são opacos.\n- Valores monetários e de custo são `number` (USD em `*_usd`, reais em `*_brl`).\n- Sucesso: `{ data }` ou `{ data, meta }`; erro: `{ error: { code, message, details? } }` com `code` em UPPER_SNAKE.\n- Listagens por cursor: `cursor` + `limit` (máx. 100), ordenação por `sort_by` + `sort_order`; `meta: { next_cursor, limit }`.\n- `X-Idempotency-Key` em todo `POST`/`PUT`/`PATCH` (24h por organização).\n- Corpo de `POST`/`PUT`/`PATCH` até 1 MiB; acima disso, `413 PAYLOAD_TOO_LARGE`."
+    "description": "API multi-tenant para orquestração de agentes.\n\n## Autenticação\n\nToda rota exige `Authorization: Bearer <token>`, onde o token é um access token RS256 emitido pelo Authorization Server da Kobana (Conta Kobana) para o recurso `kadu`. O Kadu só verifica o token, com as chaves públicas que o AS publica; não emite token. A organização é a claim `org`.\n\n## Escopos\n\nOs escopos são exigidos em toda rota, exceto `GET /v1/me`. Cada requisição exige um único nível de acesso, e um nível nunca substitui outro:\n\n| Nível | Concede |\n| --- | --- |\n| `read` | leitura (`GET`) |\n| `write` | criação e alteração (`POST`, `PATCH`, `PUT`) — e leitura |\n| `delete` | remoção (`DELETE`) |\n| `import` | importação em massa (nenhum endpoint hoje) |\n| `export` | exportação em massa (nenhum endpoint hoje) |\n| `all` | todos os níveis acima |\n\nUm token com escopos `kadu/{recurso}` (ex.: `kadu/tasks`) fica restrito a esses recursos, e o nível vale só dentro deles; `kadu/all` alcança todos os recursos. O recurso de uma rota é o primeiro segmento depois de `/v1` (`/executions/{id}/logs` → `executions`). Recursos: `activities`, `environments`, `executions`, `files`, `memberships`, `memories`, `organizations`, `repository`, `roles`, `schedules`, `secrets`, `sources`, `system_events`, `tasks`, `todos`, `usage`, `users`, `volumes`, `webhook_deliveries`, `webhooks`, `workspaces`.\n\n## Permissões do usuário\n\nAlém dos escopos, um token emitido para uma pessoa (com `email`) fica limitado ao papel dela na organização (`Role.permissions`): cada rota exige `agent.<recurso>.<ação>` (`list`, `read`, `create`, `update`, `delete`, e as ações `executions.run`, `webhook_deliveries.replay` e `repository.sync`), com curingas `*`, `agent.*` e `agent.<recurso>.*`. Papel que não concede responde `403 USER_PERMISSION_DENIED` (`details.required`); pessoa sem vínculo com a organização, `403 NOT_A_MEMBER`. Token de integração, sem pessoa, vale só pelos escopos. `GET /v1/me` não confere papel.\n\n## Permissões da organização\n\nAs rotas de disparo, logs, webhooks, entregas, ambientes, secrets, agendamentos, endpoint da Task, repositório e uso respeitam também as liberações que a Kobana dá à organização para as telas do console. Operação não liberada responde `403 FEATURE_NOT_ENABLED`, com `details.permission`.\n\nToken sem escopo que o Kadu reconheça não alcança nada além do `/me`. Escopo insuficiente responde `403 INSUFFICIENT_SCOPE`, com `details.required` (os níveis que bastariam).\n\n## Contrato\n\n- Wire em `snake_case`; mapas livres (`custom_metadata`, `payload`, `parameters`…) são opacos.\n- Valores monetários e de custo são `number` (USD em `*_usd`, reais em `*_brl`).\n- Sucesso: `{ data }` ou `{ data, meta }`; erro: `{ error: { code, message, details? } }` com `code` em UPPER_SNAKE.\n- Listagens por cursor: `cursor` + `limit` (máx. 100), ordenação por `sort_by` + `sort_order`; `meta: { next_cursor, limit }`.\n- `X-Idempotency-Key` em todo `POST`/`PUT`/`PATCH` (24h por organização).\n- Corpo de `POST`/`PUT`/`PATCH` até 1 MiB; acima disso, `413 PAYLOAD_TOO_LARGE`."
   },
   "servers": [
     {
@@ -1200,6 +1200,151 @@
           "created_at",
           "finished_at"
         ]
+      },
+      "Source": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "public_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "workspace_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Restringe o repositório às Tasks do workspace; null = qualquer Task da organização."
+          },
+          "name": {
+            "type": "string",
+            "example": "apps-billing",
+            "description": "Slug referenciado em `task.sources`."
+          },
+          "label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "repository": {
+            "type": "string",
+            "example": "acme/backend",
+            "description": "`owner/repo` no GitHub, em minúsculas. Não muda depois de cadastrado."
+          },
+          "ref": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "main",
+            "description": "Branch ou tag clonada; null = a branch padrão."
+          },
+          "auth_method": {
+            "type": "string",
+            "enum": [
+              "github_app",
+              "deploy_key"
+            ],
+            "description": "`github_app`: a instalação do GitHub App da organização cobre o repositório. `deploy_key`: o Kadu gerou uma deploy key só para este repositório."
+          },
+          "deploy_key_public_key": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Chave pública a cadastrar como Deploy Key (somente leitura) no GitHub. Só em `deploy_key`."
+          },
+          "deploy_key_settings_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Página do GitHub onde cadastrar a deploy key. Só em `deploy_key`."
+          },
+          "access_status": {
+            "type": "string",
+            "enum": [
+              "unchecked",
+              "ok",
+              "failed"
+            ]
+          },
+          "last_checked_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last_check_error": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "access_denied",
+            "description": "`access_denied`, `ref_not_found`, `credential_unavailable` ou `unreachable`."
+          },
+          "last_commit_sha": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Commit da ref na última verificação."
+          },
+          "next_step": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "O que falta para o repositório funcionar, quando falta algo."
+          },
+          "repo_managed": {
+            "type": "boolean",
+            "description": "Declarado no `kadu.yaml`. Não pode ser apagado pela API enquanto estiver lá."
+          },
+          "custom_metadata": {
+            "type": "object",
+            "additionalProperties": {
+            }
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "public_id",
+          "organization_id",
+          "workspace_id",
+          "name",
+          "label",
+          "repository",
+          "ref",
+          "auth_method",
+          "deploy_key_public_key",
+          "deploy_key_settings_url",
+          "access_status",
+          "last_checked_at",
+          "last_check_error",
+          "last_commit_sha",
+          "next_step",
+          "repo_managed",
+          "custom_metadata",
+          "created_at",
+          "updated_at"
+        ],
+        "description": "Repositório git que uma Task lê numa cópia clonada a cada execução (`task.sources`). Só o endereço e a credencial: o código nunca passa pela API, e a chave privada da deploy key nunca é devolvida."
       },
       "SlackInstallation": {
         "type": "object",
@@ -7958,6 +8103,710 @@
         "operationId": "get-volumes-id-syncs"
       }
     },
+    "/v1/sources": {
+      "get": {
+        "tags": [
+          "Repositórios de código"
+        ],
+        "summary": "Lista repositórios de código",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Campo em snake_case: created_at (padrão), updated_at ou um campo filtrável."
+            },
+            "required": false,
+            "description": "Campo em snake_case: created_at (padrão), updated_at ou um campo filtrável.",
+            "name": "sort_by",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "description": "Padrão: desc."
+            },
+            "required": false,
+            "description": "Padrão: desc.",
+            "name": "sort_order",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Source"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PaginationMeta"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_TOKEN / INVALID_AUDIENCE / INVALID_ISSUER / TOKEN_EXPIRED / TOKEN_REVOKED / MTLS_REQUIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "INSUFFICIENT_SCOPE — o token não tem o nível de acesso (ou o recurso `kadu/…`) que a operação exige; `details: { required, granted }`. USER_PERMISSION_DENIED — o papel da pessoa dona do token não concede a operação; `details: { required }`. NOT_A_MEMBER — a pessoa não é membro da organização. FEATURE_NOT_ENABLED — a operação não está liberada para a organização; `details: { permission }`. UNKNOWN_ORGANIZATION — o `org` do token não é uma organização do Kadu.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AS_UNAVAILABLE — a verificação do token está indisponível (Authorization Server fora do ar ou configuração ausente). Tente de novo (`Retry-After`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get-sources"
+      },
+      "post": {
+        "tags": [
+          "Repositórios de código"
+        ],
+        "summary": "Cadastra repositório de código",
+        "description": "Se a instalação do GitHub App da organização cobre o repositório, o acesso é verificado na hora. Senão, a resposta traz a deploy key a cadastrar no GitHub antes de verificar o acesso.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "description": "Chave opaca (até 255 caracteres), válida por 24h na organização. Mesma chave + mesma requisição devolve a resposta original com `X-Idempotent-Replay: true`; mesma chave com corpo diferente → 409 IDEMPOTENCY_KEY_REUSED. Segredo de uso único (`signing_secret` na criação e na rotação de webhook) não é guardado: no replay ele volta `null`."
+            },
+            "required": false,
+            "description": "Chave opaca (até 255 caracteres), válida por 24h na organização. Mesma chave + mesma requisição devolve a resposta original com `X-Idempotent-Replay: true`; mesma chave com corpo diferente → 409 IDEMPOTENCY_KEY_REUSED. Segredo de uso único (`signing_secret` na criação e na rotação de webhook) não é guardado: no replay ele volta `null`.",
+            "name": "X-Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+                  },
+                  "repository": {
+                    "type": "string",
+                    "example": "acme/backend",
+                    "description": "`owner/repo` ou a URL do repositório no GitHub."
+                  },
+                  "ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "description": "Branch ou tag; null = a branch padrão."
+                  },
+                  "label": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1
+                  },
+                  "workspace_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "uuid"
+                  },
+                  "custom_metadata": {
+                    "type": "object",
+                    "additionalProperties": {
+                    }
+                  }
+                },
+                "required": [
+                  "name",
+                  "repository"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Source"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_TOKEN / INVALID_AUDIENCE / INVALID_ISSUER / TOKEN_EXPIRED / TOKEN_REVOKED / MTLS_REQUIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "INSUFFICIENT_SCOPE (ver acima) ou FEATURE_NOT_ENABLED — a operação não está liberada para a organização (a mesma permissão que libera a tela no console); `details: { permission }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT — já existe repositório vivo com este nome / IDEMPOTENCY_KEY_REUSED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR — repositório, ref ou workspace inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "GITHUB_UNAVAILABLE — o GitHub não respondeu",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post-sources"
+      }
+    },
+    "/v1/sources/{id}": {
+      "get": {
+        "tags": [
+          "Repositórios de código"
+        ],
+        "summary": "Detalha o repositório de código",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Source"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_TOKEN / INVALID_AUDIENCE / INVALID_ISSUER / TOKEN_EXPIRED / TOKEN_REVOKED / MTLS_REQUIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "INSUFFICIENT_SCOPE — o token não tem o nível de acesso (ou o recurso `kadu/…`) que a operação exige; `details: { required, granted }`. USER_PERMISSION_DENIED — o papel da pessoa dona do token não concede a operação; `details: { required }`. NOT_A_MEMBER — a pessoa não é membro da organização. FEATURE_NOT_ENABLED — a operação não está liberada para a organização; `details: { permission }`. UNKNOWN_ORGANIZATION — o `org` do token não é uma organização do Kadu.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AS_UNAVAILABLE — a verificação do token está indisponível (Authorization Server fora do ar ou configuração ausente). Tente de novo (`Retry-After`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get-sources-id"
+      },
+      "patch": {
+        "tags": [
+          "Repositórios de código"
+        ],
+        "summary": "Atualiza repositório de código",
+        "description": "Nome e repositório não mudam: as skills referenciam o nome e a deploy key é do repositório. Mudar a ref zera a verificação de acesso.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "description": "Chave opaca (até 255 caracteres), válida por 24h na organização. Mesma chave + mesma requisição devolve a resposta original com `X-Idempotent-Replay: true`; mesma chave com corpo diferente → 409 IDEMPOTENCY_KEY_REUSED. Segredo de uso único (`signing_secret` na criação e na rotação de webhook) não é guardado: no replay ele volta `null`."
+            },
+            "required": false,
+            "description": "Chave opaca (até 255 caracteres), válida por 24h na organização. Mesma chave + mesma requisição devolve a resposta original com `X-Idempotent-Replay: true`; mesma chave com corpo diferente → 409 IDEMPOTENCY_KEY_REUSED. Segredo de uso único (`signing_secret` na criação e na rotação de webhook) não é guardado: no replay ele volta `null`.",
+            "name": "X-Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ref": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "description": "Branch ou tag; null = a branch padrão."
+                  },
+                  "label": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1
+                  },
+                  "workspace_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "uuid"
+                  },
+                  "custom_metadata": {
+                    "type": "object",
+                    "additionalProperties": {
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Source"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_TOKEN / INVALID_AUDIENCE / INVALID_ISSUER / TOKEN_EXPIRED / TOKEN_REVOKED / MTLS_REQUIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "INSUFFICIENT_SCOPE (ver acima) ou FEATURE_NOT_ENABLED — a operação não está liberada para a organização (a mesma permissão que libera a tela no console); `details: { permission }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "IDEMPOTENCY_KEY_REUSED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR — ref ou workspace inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AS_UNAVAILABLE — a verificação do token está indisponível (Authorization Server fora do ar ou configuração ausente). Tente de novo (`Retry-After`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "patch-sources-id"
+      },
+      "delete": {
+        "tags": [
+          "Repositórios de código"
+        ],
+        "summary": "Remove repositório de código (soft delete)",
+        "description": "As Tasks que o declaram falham na próxima execução. Recusado enquanto o `kadu.yaml` declarar o repositório.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Source"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_TOKEN / INVALID_AUDIENCE / INVALID_ISSUER / TOKEN_EXPIRED / TOKEN_REVOKED / MTLS_REQUIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "INSUFFICIENT_SCOPE (ver acima) ou FEATURE_NOT_ENABLED — a operação não está liberada para a organização (a mesma permissão que libera a tela no console); `details: { permission }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "REPO_MANAGED — declarado no `kadu.yaml`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AS_UNAVAILABLE — a verificação do token está indisponível (Authorization Server fora do ar ou configuração ausente). Tente de novo (`Retry-After`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "delete-sources-id"
+      }
+    },
+    "/v1/sources/{id}/check": {
+      "post": {
+        "tags": [
+          "Repositórios de código"
+        ],
+        "summary": "Verifica o acesso ao repositório",
+        "description": "Lista a ref no GitHub com a credencial do repositório, sem clonar, e grava o resultado. Falta de acesso não é erro HTTP: vem em `access_status` e `last_check_error`.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Source"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_TOKEN / INVALID_AUDIENCE / INVALID_ISSUER / TOKEN_EXPIRED / TOKEN_REVOKED / MTLS_REQUIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "INSUFFICIENT_SCOPE (ver acima) ou FEATURE_NOT_ENABLED — a operação não está liberada para a organização (a mesma permissão que libera a tela no console); `details: { permission }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AS_UNAVAILABLE — a verificação do token está indisponível (Authorization Server fora do ar ou configuração ausente). Tente de novo (`Retry-After`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post-sources-id-check"
+      }
+    },
     "/v1/secrets": {
       "get": {
         "tags": [
@@ -11397,6 +12246,369 @@
         "operationId": "get-usage"
       }
     },
+    "/v1/usage/performance": {
+      "get": {
+        "tags": [
+          "Uso"
+        ],
+        "summary": "Desempenho: duração, sucesso e erro, memória, arquivos e volumes",
+        "description": "Série diária (no fuso da organização) com a duração média das execuções (total, bootstrap e execução efetiva), as execuções terminadas por resultado e as memórias existentes no fim do dia (quantidade e bytes de conteúdo + resumo) e o tamanho acumulado dos arquivos de entrada e saída, filtrável pela extensão (`file_type`), e o dos volumes (`volume_id`). Padrão: últimos 30 dias; período máximo de 366 dias. Memórias não têm tarefa nem origem: só workspace e atividade filtram a memória. Exige Analytics › Desempenho liberado.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "required": false,
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "required": false,
+            "name": "to",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "workspace_id",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "activity_id",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "task_id",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "source",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Extensão dos arquivos no gráfico de arquivos (ex.: `pdf`); `__none__` = sem extensão. Omitido = todas."
+            },
+            "required": false,
+            "description": "Extensão dos arquivos no gráfico de arquivos (ex.: `pdf`); `__none__` = sem extensão. Omitido = todas.",
+            "name": "file_type",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Só este volume na série de volumes. Id fora dos volumes da organização = todos."
+            },
+            "required": false,
+            "description": "Só este volume na série de volumes. Id fora dos volumes da organização = todos.",
+            "name": "volume_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "from": {
+                          "type": "string"
+                        },
+                        "to": {
+                          "type": "string"
+                        },
+                        "time_zone": {
+                          "type": "string"
+                        },
+                        "file_type": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "volume_id": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "description": "Só com a tela Volumes liberada, o escopo `kadu/volumes` e, em token de pessoa, `agent.volumes.list`."
+                        },
+                        "totals": {
+                          "type": "object",
+                          "properties": {
+                            "executions": {
+                              "type": "number"
+                            },
+                            "success": {
+                              "type": "number"
+                            },
+                            "failed": {
+                              "type": "number"
+                            },
+                            "cancelled": {
+                              "type": "number"
+                            },
+                            "success_rate": {
+                              "type": [
+                                "number",
+                                "null"
+                              ],
+                              "description": "`success ÷ (success + failed)`, de 0 a 1; canceladas não contam."
+                            },
+                            "avg_total_seconds": {
+                              "type": [
+                                "number",
+                                "null"
+                              ],
+                              "description": "Duração média (s) do disparo ao fim. Só execuções terminadas em `success`/`failed`."
+                            },
+                            "avg_bootstrap_seconds": {
+                              "type": [
+                                "number",
+                                "null"
+                              ],
+                              "description": "Bootstrap médio (s): do disparo ao primeiro evento `execution.started` do agente. Execuções sem o evento ficam de fora da divisão bootstrap/efetivo."
+                            },
+                            "avg_effective_seconds": {
+                              "type": [
+                                "number",
+                                "null"
+                              ],
+                              "description": "Execução efetiva média (s): do `execution.started` ao fim."
+                            },
+                            "memories": {
+                              "type": "number"
+                            },
+                            "memory_bytes": {
+                              "type": "number"
+                            },
+                            "memory_growth_count": {
+                              "type": "number"
+                            },
+                            "memory_growth_bytes": {
+                              "type": "number"
+                            },
+                            "file_input_bytes": {
+                              "type": "number"
+                            },
+                            "file_output_bytes": {
+                              "type": "number"
+                            },
+                            "file_input_count": {
+                              "type": "number"
+                            },
+                            "file_output_count": {
+                              "type": "number"
+                            },
+                            "file_growth_bytes": {
+                              "type": "number"
+                            },
+                            "volume_bytes": {
+                              "type": "number",
+                              "description": "Só com a tela Volumes liberada, o escopo `kadu/volumes` e, em token de pessoa, `agent.volumes.list`."
+                            },
+                            "volume_files": {
+                              "type": "number"
+                            },
+                            "volume_quota_bytes": {
+                              "type": "number"
+                            },
+                            "volume_growth_bytes": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "executions",
+                            "success",
+                            "failed",
+                            "cancelled",
+                            "success_rate",
+                            "avg_total_seconds",
+                            "avg_bootstrap_seconds",
+                            "avg_effective_seconds",
+                            "memories",
+                            "memory_bytes",
+                            "memory_growth_count",
+                            "memory_growth_bytes",
+                            "file_input_bytes",
+                            "file_output_bytes",
+                            "file_input_count",
+                            "file_output_count",
+                            "file_growth_bytes"
+                          ]
+                        },
+                        "days": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "date": {
+                                "type": "string"
+                              },
+                              "success": {
+                                "type": "number"
+                              },
+                              "failed": {
+                                "type": "number"
+                              },
+                              "cancelled": {
+                                "type": "number"
+                              },
+                              "avg_total_seconds": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ],
+                                "description": "Duração média (s) do disparo ao fim. Só execuções terminadas em `success`/`failed`."
+                              },
+                              "avg_bootstrap_seconds": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ],
+                                "description": "Bootstrap médio (s): do disparo ao primeiro evento `execution.started` do agente. Execuções sem o evento ficam de fora da divisão bootstrap/efetivo."
+                              },
+                              "avg_effective_seconds": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ],
+                                "description": "Execução efetiva média (s): do `execution.started` ao fim."
+                              },
+                              "memories": {
+                                "type": "number"
+                              },
+                              "memory_bytes": {
+                                "type": "number"
+                              },
+                              "file_input_bytes": {
+                                "type": "number",
+                                "description": "Bytes dos arquivos de entrada (enviados, não apagados) no fim do dia."
+                              },
+                              "file_output_bytes": {
+                                "type": "number"
+                              },
+                              "volume_bytes": {
+                                "type": "number",
+                                "description": "Bytes dos arquivos dos volumes no fim do dia (índice do volume; o filtro de workspace inclui os volumes compartilhados)."
+                              },
+                              "volume_files": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "date",
+                              "success",
+                              "failed",
+                              "cancelled",
+                              "avg_total_seconds",
+                              "avg_bootstrap_seconds",
+                              "avg_effective_seconds",
+                              "memories",
+                              "memory_bytes",
+                              "file_input_bytes",
+                              "file_output_bytes"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "from",
+                        "to",
+                        "time_zone",
+                        "file_type",
+                        "totals",
+                        "days"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_TOKEN / INVALID_AUDIENCE / INVALID_ISSUER / TOKEN_EXPIRED / TOKEN_REVOKED / MTLS_REQUIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "INSUFFICIENT_SCOPE (ver acima) ou FEATURE_NOT_ENABLED — a operação não está liberada para a organização (a mesma permissão que libera a tela no console); `details: { permission }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AS_UNAVAILABLE — a verificação do token está indisponível (Authorization Server fora do ar ou configuração ausente). Tente de novo (`Retry-After`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get-usage-performance"
+      }
+    },
     "/v1/organization/slack_installations": {
       "get": {
         "tags": [
@@ -13934,6 +15146,10 @@
     {
       "name": "Volumes",
       "description": "Pastas persistentes que uma tarefa monta entre execuções (`task.volumes`). Só a estrutura: o conteúdo nunca passa pela API."
+    },
+    {
+      "name": "Repositórios de código",
+      "description": "Repositórios git que uma tarefa lê numa cópia clonada a cada execução (`task.sources`). Só o endereço e a credencial: o código nunca passa pela API."
     },
     {
       "name": "Memórias",
