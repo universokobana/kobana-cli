@@ -220,9 +220,8 @@ Product {
         development: Some("http://localhost:3028/api"),
     },
     specs: &[spec!("inbox-v1", "/v1")],
-    // The inbox edge terminates mTLS and forwards the certificate fingerprint
-    // to the origin, so requests must present a client certificate.
-    client_cert_env: Some("KOBANA_INBOX_CLIENT_CERT"),
+    // The inbox API dropped mTLS on 2026-10-31: the Bearer token is enough
+    client_cert_env: None,
     header_env: &[],
 },
 Product {
@@ -840,12 +839,11 @@ mod tests {
     }
 
     #[test]
-    fn only_inbox_requires_a_client_certificate() {
+    fn no_product_requires_a_client_certificate() {
+        // The inbox was the last one behind mTLS, until 2026-10-31. The
+        // mechanism stays (`client_cert_env`) for a product that needs it again.
         for p in REGISTRY {
-            match p.slug {
-                "inbox" => assert_eq!(p.client_cert_env, Some("KOBANA_INBOX_CLIENT_CERT")),
-                _ => assert_eq!(p.client_cert_env, None, "{} should not need mTLS", p.slug),
-            }
+            assert_eq!(p.client_cert_env, None, "{} should not need mTLS", p.slug);
         }
     }
 

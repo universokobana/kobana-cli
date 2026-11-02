@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`kadu`: a organização é só a do token** (incompatível) — `kobana kadu organization get` e `organization update` (`GET`/`PATCH /v1/organization`), no singular e sem id, no lugar de `organizations list|get|update`. Não há mais listagem de organizações. As instalações do bot do Slack entram como `organization slack-installations list|update|delete`, só com o id da instalação. Spec e traduções do `kadu` atualizadas
 - **GET de um registro só vira `get`** — uma rota sem id e sem paginação cuja resposta é `{ data: { … } }` (objeto, não lista) é um singular e agora se chama `get`: `me get` (`banking`, `inbox`, `dunning`, `kadu`), `kadu organization get`, `kadu repository get`, `kadu usage get`, `inbox usage cost get`/`usage summary get`, `finance cash-flow get` e os `aggregates get` do `finance`, `dunning metrics recovery get`. O nome antigo, `list`, continua respondendo como alias oculto (inclusive em `kobana schema`), então scripts existentes não quebram
 
+### Removed
+
+- **mTLS no `inbox`** — a API do Inbox deixou de usar mTLS em 31/10/2026, e o CLI não pede mais certificado de cliente: `KOBANA_INBOX_CLIENT_CERT` não é lida, e o aviso em stderr a cada chamada sem ela some. O suporte genérico (`client_cert_env`, `KobanaClient::with_client_cert`) continua para um produto que precise
+
 ### Fixed
 
 - **Singular com envelope em `$ref`** — a inferência do `get` agora segue o `$ref` local da resposta (`#/components/schemas/OrganizationResponse`), como publicam `billing`, `dashboards` e `finance`: `me get`, `organization get`, `settings get`, `usage get` e os demais singulares desses produtos deixam de aparecer como `list` (alias oculto mantido). Um singular ao lado de uma rota de item (`dashboards data-purges` e `data-purges get <id>`) segue `list`, para não esconder o `get` por id

@@ -106,9 +106,6 @@ kobana inbox emails list --fields "id,subject,received_at"
 kobana inbox emails reprocess --params '{"id": "EMAIL_ID"}'
 ```
 
-Este produto exige mTLS além do token — veja
-[mTLS no Inbox Autônomo](#mtls-no-inbox-autônomo).
-
 ### Régua de Cobrança — `dunning`
 
 Recuperação de inadimplência: clientes devedores, cobranças, réguas de
@@ -223,7 +220,7 @@ obtê-lo muda:
 | `banking` | Token de API ou OAuth | Interface da Kobana ou `kobana auth login` |
 | `finance` | JWT (RS256) + `X-Workspace-Id` | Conta Kobana (`account.kobana.com.br`) |
 | `billing` | JWT (RS256) | Conta Kobana (`account.kobana.com.br`) |
-| `inbox` | JWT (RS256) + certificado mTLS | Conta Kobana (`account.kobana.com.br`) |
+| `inbox` | JWT (RS256) | Conta Kobana (`account.kobana.com.br`) |
 | `dunning` | JWT (RS256) | Conta Kobana (`account.kobana.com.br`) |
 | `dashboards` | JWT (RS256), `X-Workspace-Id` opcional | Conta Kobana (`account.kobana.com.br`) |
 | `kadu` | JWT (RS256) | Conta Kobana (`account.kobana.com.br`) |
@@ -307,22 +304,14 @@ kobana finance payables list --params '{"X-Workspace-Id": "outro-uuid"}'
 O `--dry-run` mostra os cabeçalhos enviados (sem o token), e
 `kobana schema` lista os cabeçalhos de cada endpoint em `header_params`.
 
-#### mTLS no Inbox Autônomo
+#### Inbox Autônomo: só o token
 
-O `inbox` é o único produto atrás de **mTLS**: além do JWT, o CLI precisa
-apresentar um certificado de cliente no handshake TLS. Aponte
-`KOBANA_INBOX_CLIENT_CERT` para um arquivo PEM contendo a cadeia do certificado
-e sua chave privada:
-
-```bash
-export KOBANA_INBOX_CLIENT_CERT=~/.config/kobana/inbox-client.pem
-kobana inbox emails list
-```
-
-Sem essa variável o CLI avisa em stderr e segue — desenvolvimento local não usa
-mTLS, e em produção a API responde `401` explicando. Os escopos do Inbox têm
-dois eixos: o recurso, prefixado pelo app (`inbox/emails`), e o verbo global
-(`write`) — escrever exige os dois.
+Desde 31/10/2026 a API do `inbox` não usa mais **mTLS**: o JWT no
+`Authorization: Bearer` basta, como nos outros produtos, e o CLI não pede
+certificado de cliente (a variável `KOBANA_INBOX_CLIENT_CERT`, das versões até a
+0.8.0, deixou de ser lida). Os escopos do Inbox têm dois eixos: o recurso,
+prefixado pelo app (`inbox/emails`), e o verbo global (`write`) — escrever exige
+os dois.
 
 ### Prioridade de resolução
 
@@ -620,7 +609,6 @@ OpenAPI specs embutidos. O caminho segue a mesma forma do comando:
 | Variável | Descrição |
 |----------|-----------|
 | `KOBANA_TOKEN` | Token do produto que você vai chamar (Bearer). Não é compartilhado entre produtos |
-| `KOBANA_INBOX_CLIENT_CERT` | Caminho para o PEM (certificado + chave) usado no mTLS do `inbox` |
 | `KOBANA_WORKSPACE_ID` | Espaço de trabalho enviado em `X-Workspace-Id` pelo `finance` (obrigatório), pelo `dashboards` e pelo `dunning` |
 | `KOBANA_CREDENTIALS_FILE` | Caminho para arquivo JSON de credenciais |
 | `KOBANA_CLIENT_ID` | OAuth client ID (Gateway Bancário) |

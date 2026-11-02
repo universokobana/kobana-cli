@@ -112,7 +112,9 @@ own domain (`api.kadu.ia.br`) and has staging, not a sandbox, so its `sandbox`
 is `None`; `development` is its local dev server (`localhost:3030/api`).
 
 `Product::client_cert_env` names the env var holding a PEM client certificate,
-for products whose edge terminates mTLS. `inbox` sets it; `banking` does not.
+for products whose edge terminates mTLS. No product sets it today: `inbox` did
+until its API dropped mTLS on 2026-10-31 (`KOBANA_INBOX_CLIENT_CERT` is no
+longer read). The mechanism stays for a product that needs it again.
 `product::client_for()` loads it and is the only place clients are built —
 never call `KobanaClient::new` directly from a command.
 
@@ -394,7 +396,6 @@ Current helpers:
 | `KOBANA_CREDENTIALS_FILE` | Path to OAuth credentials JSON file |
 | `KOBANA_CLIENT_ID` | OAuth client ID (for `kobana auth login`) |
 | `KOBANA_CLIENT_SECRET` | OAuth client secret |
-| `KOBANA_INBOX_CLIENT_CERT` | Path to a PEM client certificate (chain + private key) for the `inbox` product, which sits behind mTLS |
 | `KOBANA_WORKSPACE_ID` | Workspace sent as `X-Workspace-Id` by `finance` (required) and `dashboards` (optional). A value in `--params` wins |
 
 > [!NOTE]

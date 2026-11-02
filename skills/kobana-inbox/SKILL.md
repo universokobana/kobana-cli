@@ -32,9 +32,8 @@ The Inbox API is **not** the banking API and does not share its credentials:
   `all`. One level never stands in for another.
   The granular form `inbox/emails:write` also works; `inbox/all` reaches every
   resource.
-- `KOBANA_INBOX_CLIENT_CERT` must point at a PEM file holding a client
-  certificate chain and its private key — the API sits behind mTLS. Without it
-  the CLI warns and requests are rejected.
+- No client certificate: the API dropped mTLS on 2026-10-31, the Bearer token
+  is enough.
 
 `kobana auth login` is for the banking product and does not produce an inbox token.
 
