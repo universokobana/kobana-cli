@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-11-02
+
 ### Changed
 
 - **Página de retorno do login com a marca Kobana** — a aba que abre depois de autorizar o acesso no navegador agora segue o branding (fundo preto, verde-limão, Syne e Work Sans, a cegonha da marca ilustrada) no idioma do CLI. Os erros (autorização negada, retorno inválido) usam o mesmo layout, em roxo, com o código e a descrição do erro
