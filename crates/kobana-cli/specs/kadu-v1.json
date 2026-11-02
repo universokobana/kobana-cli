@@ -8385,7 +8385,7 @@
         "tags": [
           "Repositórios de código"
         ],
-        "summary": "Detalha repositórios de código",
+        "summary": "Detalha o repositório de código",
         "security": [
           {
             "bearerAuth": [
