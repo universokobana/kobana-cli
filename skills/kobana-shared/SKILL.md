@@ -23,17 +23,24 @@ Or download from [Releases](https://github.com/universokobana/kobana-cli/release
 
 ## Authentication
 
+Each product has its own token, issued by the Conta Kobana with the product's
+API as `aud`. A token never serves another product.
+
 ```bash
-# Token direto (mais simples)
-export KOBANA_TOKEN=seu_token_aqui
+# Token per product (highest priority)
+export KOBANA_BANKING_TOKEN=...
+export KOBANA_FINANCE_TOKEN=...
+export KOBANA_KADU_TOKEN=...      # or KADU_TOKEN
 
-# OAuth — Client Credentials
-kobana auth login --client-id <ID> --client-secret <SECRET>
+# Browser login (OAuth + PKCE): the scopes the product publishes, then the
+# access levels (read, write, delete, import, export)
+kobana billing auth login
+kobana billing auth login --scopes "billing/customers,read,write"
 
-# OAuth — Authorization Code (abre browser)
-export KOBANA_CLIENT_ID=seu_client_id
-export KOBANA_CLIENT_SECRET=seu_client_secret
-kobana auth login
+# Client credentials — banking only
+kobana banking auth login --client-id <ID> --client-secret <SECRET>
+
+kobana billing auth status
 ```
 
 ## Global Flags
@@ -89,7 +96,7 @@ kobana banking charge pix list --params '{"per_page": 5}'
 
 | Variable | Description |
 |----------|-------------|
-| `KOBANA_TOKEN` | Bearer access token (highest priority) |
+| `KOBANA_<PRODUCT>_TOKEN` | A product's Bearer token (highest priority), e.g. `KOBANA_BILLING_TOKEN`; Kadu also reads `KADU_TOKEN` |
 | `KOBANA_CREDENTIALS_FILE` | Path to OAuth credentials JSON file |
 | `KOBANA_CLIENT_ID` | OAuth client ID |
 | `KOBANA_CLIENT_SECRET` | OAuth client secret |

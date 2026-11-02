@@ -23,7 +23,7 @@ kobana inbox <resource> <method> [flags]
 
 The Inbox API is **not** the banking API and does not share its credentials:
 
-- `KOBANA_TOKEN` must hold an **RS256 JWT** issued by the Kobana Authorization
+- `KOBANA_INBOX_TOKEN` — or the credentials saved by `kobana inbox auth login` — must hold an **RS256 JWT** issued by the Kobana Authorization
   Server (`iss=https://account[.<env>].kobana.com.br`) with
   `aud=https://api.inbox[.<env>].kobana.com.br`. Scopes have two axes: `inbox/{resource}` limits what the token reaches, and an
   access level says what it may do there — `GET` needs `read`, `write` or `all`;
@@ -35,7 +35,7 @@ The Inbox API is **not** the banking API and does not share its credentials:
 - No client certificate: the API dropped mTLS on 2026-10-31, the Bearer token
   is enough.
 
-`kobana auth login` is for the banking product and does not produce an inbox token.
+`kobana inbox auth login` logs in through the Conta Kobana and saves an inbox token.
 
 ## API Resources
 

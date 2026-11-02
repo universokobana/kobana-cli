@@ -19,10 +19,11 @@ Produtos disponíveis: `banking` (Gateway Bancário), `inbox` (Inbox Autônomo),
 `dunning` (Régua de Cobrança), `dashboards` (Dashboard Mágico) e `kadu`
 (Agente Kadu).
 
-Cada produto é uma API separada com host e credenciais próprios — um
-`KOBANA_TOKEN` do banking não vale para os outros. O `inbox` ainda exige
-`KOBANA_INBOX_CLIENT_CERT` apontando para um PEM de certificado de cliente
-(a API fica atrás de mTLS). O `finance` exige o espaço de trabalho em
+Cada produto é uma API separada com host e credenciais próprios — o token
+de um produto não vale para os outros. Cada um lê o seu em
+`KOBANA_<PRODUTO>_TOKEN` (`KOBANA_BANKING_TOKEN`, `KOBANA_FINANCE_TOKEN`…; o
+kadu também aceita `KADU_TOKEN`), ou entra com `kobana <produto> auth login`
+pela Conta Kobana. O `finance` exige o espaço de trabalho em
 `X-Workspace-Id` — exporte `KOBANA_WORKSPACE_ID` ou passe
 `{"X-Workspace-Id": "..."}` em `--params`; no `dashboards` ele é opcional.
 

@@ -42,7 +42,7 @@ kobana-cli/
 │           ├── executor.rs       # Construcao de HTTP request, response handling
 │           ├── schema.rs         # `kobana schema` — introspecao de endpoints
 │           ├── auth.rs           # Token resolution (env var -> file -> OAuth)
-│           ├── auth_commands.rs  # `kobana auth login/logout/status/export`
+│           ├── auth_commands.rs  # `kobana <produto> auth login/logout/status/export`
 │           ├── credential_store.rs # AES-256-GCM encrypt/decrypt de credenciais
 │           ├── oauth.rs          # OAuth2 flows (authorization code, client credentials)
 │           ├── formatter.rs      # Output: JSON (default), table, CSV
@@ -153,17 +153,17 @@ Regras de inferencia de metodo:
 ### Precedencia
 
 ```
-1. KOBANA_TOKEN (env var)           -> Bearer token direto
+1. KOBANA_<PRODUTO>_TOKEN (env var)  -> Bearer token do produto
 2. KOBANA_CREDENTIALS_FILE (env var) -> Arquivo JSON com tokens OAuth
-3. Client Credentials (env vars)     -> KOBANA_CLIENT_ID + KOBANA_CLIENT_SECRET
-4. Credenciais salvas                -> ~/.config/kobana/credentials.enc
+3. Credenciais salvas                -> ~/.config/kobana/credentials-<produto>-<ambiente>.enc (renovadas com o refresh token)
 ```
 
 ### OAuth2 Flows
 
 **Authorization Code** (para acessar contas de terceiros):
 ```
-1. CLI abre browser -> https://app.kobana.com.br/oauth/authorize?client_id=...&redirect_uri=...&response_type=code
+1. CLI pergunta o produto e le os escopos em /.well-known/oauth-protected-resource do host MCP dele
+   CLI abre browser -> https://account.kobana.com.br/oauth/authorize?client_id=kobana-cli&resource=<API do produto>&scope=...&code_challenge=...
 2. Usuario autoriza
 3. Callback em http://localhost:PORT com ?code=...
 4. CLI troca code por access_token via POST /oauth/token
@@ -181,7 +181,7 @@ Regras de inferencia de metodo:
 
 ```
 ~/.config/kobana/
-├── credentials.enc        # AES-256-GCM encrypted OAuth tokens
+├── credentials-<produto>-<ambiente>.enc  # AES-256-GCM encrypted OAuth tokens
 ├── config.json            # environment, defaults
 └── client_secret.json     # OAuth client config (opcional)
 ```
@@ -228,14 +228,14 @@ Alimentado pelo OpenAPI spec embutido. Sem chamadas de rede.
 3. `kobana-cli`: main.rs com two-phase parsing
 4. `commands.rs`: build clap tree a partir do OpenAPI spec
 5. `executor.rs`: executar requests, formatar response
-6. `auth.rs`: Bearer token via env var (`KOBANA_TOKEN`)
+6. `auth.rs`: Bearer token por produto (`KOBANA_<PRODUTO>_TOKEN`, credenciais salvas com refresh)
 7. `schema.rs`: introspecao de endpoints
 8. Flags globais: `--params`, `--json`, `--fields`, `--dry-run`, `--env <production|sandbox|development>`
 9. Exit codes estruturados
 
 ### Fase 2 — Auth Completa
 10. `credential_store.rs`: AES-256-GCM encryption
-11. `auth_commands.rs`: `kobana auth login/logout/status/export`
+11. `auth_commands.rs`: `kobana <produto> auth login/logout/status/export`
 12. `oauth.rs`: Authorization Code + Client Credentials flows
 13. Config dir management (`~/.config/kobana/`)
 

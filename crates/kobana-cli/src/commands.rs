@@ -103,7 +103,7 @@ fn build_product_command(loaded: &LoadedProduct) -> Command {
         cmd = cmd.subcommand(build_method_command(endpoint, &path));
     }
 
-    cmd
+    cmd.subcommand(auth_command(&format!("{path} auth")))
 }
 
 /// Build the top-level kobana Command with all services
@@ -357,70 +357,6 @@ pub fn build_root_command(products: &[LoadedProduct]) -> Command {
             ),
     );
 
-    root = root.subcommand(
-        clap_i18n::command("auth", node_usage("kobana auth"))
-            .about(tr!(
-                pt: "Gerencia a autenticação",
-                en: "Authentication management",
-                es: "Gestiona la autenticación",
-            ))
-            .subcommand_required(true)
-            .arg_required_else_help(true)
-            .subcommand(
-                clap_i18n::command("login", leaf_usage("kobana auth login"))
-                    .about(tr!(
-                        pt: "Entra na Kobana (OAuth + PKCE)",
-                        en: "Login to Kobana (OAuth + PKCE)",
-                        es: "Inicia sesión en Kobana (OAuth + PKCE)",
-                    ))
-                    .arg(
-                        Arg::new("client-id")
-                            .long("client-id")
-                            .help(tr!(
-                                pt: "Client ID OAuth (padrão: kobana-cli)",
-                                en: "OAuth client ID (default: kobana-cli)",
-                                es: "Client ID OAuth (predeterminado: kobana-cli)",
-                            ))
-                            .value_name("ID"),
-                    )
-                    .arg(
-                        Arg::new("client-secret")
-                            .long("client-secret")
-                            .help(tr!(
-                                pt: "Client secret OAuth (só para o fluxo Client Credentials)",
-                                en: "OAuth client secret (only for Client Credentials flow)",
-                                es: "Client secret OAuth (solo para el flujo Client Credentials)",
-                            ))
-                            .value_name("SECRET"),
-                    )
-                    .arg(
-                        Arg::new("scopes")
-                            .long("scopes")
-                            .help(tr!(
-                                pt: "Escopos OAuth, separados por vírgula (padrão: todos)",
-                                en: "OAuth scopes (comma-separated, default: all)",
-                                es: "Alcances OAuth, separados por comas (predeterminado: todos)",
-                            ))
-                            .value_name(tr!(pt: "ESCOPOS", en: "SCOPES", es: "ALCANCES")),
-                    ),
-            )
-            .subcommand(clap_i18n::command("logout", leaf_usage("kobana auth logout")).about(tr!(
-                pt: "Remove as credenciais salvas",
-                en: "Remove saved credentials",
-                es: "Elimina las credenciales guardadas",
-            )))
-            .subcommand(clap_i18n::command("status", leaf_usage("kobana auth status")).about(tr!(
-                pt: "Mostra o estado da autenticação",
-                en: "Show authentication status",
-                es: "Muestra el estado de la autenticación",
-            )))
-            .subcommand(clap_i18n::command("export", leaf_usage("kobana auth export")).about(tr!(
-                pt: "Exporta as credenciais em JSON",
-                en: "Export credentials as JSON",
-                es: "Exporta las credenciales en JSON",
-            ))),
-    );
-
     // `kobana update` — check for new releases and self-update standalone installs
     root = root.subcommand(
         clap_i18n::command("update", leaf_usage("kobana update"))
@@ -493,4 +429,70 @@ fn resolve_in_tree<'a>(
     }
 
     None
+}
+
+/// `<path> login|logout|status|export` — the product's credentials. `path`
+/// is the command line that reaches it, e.g. `kobana billing auth`.
+pub fn auth_command(path: &str) -> Command {
+    clap_i18n::command("auth", node_usage(path))
+        .about(tr!(
+            pt: "Entra, sai e mostra as credenciais deste produto",
+            en: "Log in, log out and show this product's credentials",
+            es: "Inicia sesión, cierra sesión y muestra las credenciales de este producto",
+        ))
+        .subcommand_required(true)
+        .arg_required_else_help(true)
+        .subcommand(
+            clap_i18n::command("login", leaf_usage(&format!("{path} login")))
+                .about(tr!(
+                    pt: "Entra pela Conta Kobana (OAuth + PKCE)",
+                    en: "Log in through the Conta Kobana (OAuth + PKCE)",
+                    es: "Inicia sesión con la Conta Kobana (OAuth + PKCE)",
+                ))
+                .arg(
+                    Arg::new("client-id")
+                        .long("client-id")
+                        .help(tr!(
+                            pt: "Client ID OAuth (padrão: kobana-cli)",
+                            en: "OAuth client ID (default: kobana-cli)",
+                            es: "Client ID OAuth (predeterminado: kobana-cli)",
+                        ))
+                        .value_name("ID"),
+                )
+                .arg(
+                    Arg::new("client-secret")
+                        .long("client-secret")
+                        .help(tr!(
+                            pt: "Client secret OAuth (só para o fluxo Client Credentials, no banking)",
+                            en: "OAuth client secret (only for the Client Credentials flow, in banking)",
+                            es: "Client secret OAuth (solo para el flujo Client Credentials, en banking)",
+                        ))
+                        .value_name("SECRET"),
+                )
+                .arg(
+                    Arg::new("scopes")
+                        .long("scopes")
+                        .help(tr!(
+                            pt: "Escopos OAuth separados por vírgula, ex.: billing/customers,write (padrão: os publicados pelo produto)",
+                            en: "Comma-separated OAuth scopes, e.g. billing/customers,write (default: the ones the product publishes)",
+                            es: "Alcances OAuth separados por comas, p. ej. billing/customers,write (predeterminado: los que publica el producto)",
+                        ))
+                        .value_name(tr!(pt: "ESCOPOS", en: "SCOPES", es: "ALCANCES")),
+                ),
+        )
+        .subcommand(clap_i18n::command("logout", leaf_usage(&format!("{path} logout"))).about(tr!(
+            pt: "Remove as credenciais salvas",
+            en: "Remove saved credentials",
+            es: "Elimina las credenciales guardadas",
+        )))
+        .subcommand(clap_i18n::command("status", leaf_usage(&format!("{path} status"))).about(tr!(
+            pt: "Mostra o estado da autenticação",
+            en: "Show the authentication status",
+            es: "Muestra el estado de la autenticación",
+        )))
+        .subcommand(clap_i18n::command("export", leaf_usage(&format!("{path} export"))).about(tr!(
+            pt: "Exporta as credenciais em JSON",
+            en: "Export the credentials as JSON",
+            es: "Exporta las credenciales en JSON",
+        )))
 }

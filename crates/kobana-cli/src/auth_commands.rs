@@ -1,20 +1,25 @@
 use kobana::error::KobanaError;
 use kobana::{tr, trf};
 
-use crate::config;
+use crate::auth::{self, TokenSource};
+use crate::config::{self, Environment};
 use crate::credential_store::{self, StoredCredentials};
 use crate::oauth;
+use crate::product::Product;
 
-/// Wrapper around a (name, description) tuple so inquire can display it nicely.
+/// A (name, description) pair laid out in two columns for inquire
 #[derive(Clone)]
 struct LabeledOption {
-    name: &'static str,
-    description: &'static str,
+    name: String,
+    description: String,
     width: usize,
 }
 
 impl std::fmt::Display for LabeledOption {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.description.is_empty() {
+            return write!(f, "{}", self.name);
+        }
         write!(
             f,
             "{:<width$}  {}",
@@ -25,189 +30,208 @@ impl std::fmt::Display for LabeledOption {
     }
 }
 
+fn labeled(items: Vec<(String, String)>) -> Vec<LabeledOption> {
+    let width = items.iter().map(|(name, _)| name.len()).max().unwrap_or(0);
+    items
+        .into_iter()
+        .map(|(name, description)| LabeledOption { name, description, width })
+        .collect()
+}
+
+/// Confirmation line of a multi-select: the names only, not the columns
+fn names_only(options: &[inquire::list_option::ListOption<&LabeledOption>]) -> String {
+    options.iter().map(|o| o.value.name.as_str()).collect::<Vec<_>>().join(", ")
+}
+
 fn multi_select_help() -> &'static str {
     tr!(
-        pt: "↑↓ Navegar · Espaço Selecionar · →/← Todos/Nenhum · Enter Confirmar · Esc Cancelar",
-        en: "↑↓ Move · Space Select · →/← All/None · Enter Confirm · Esc Cancel",
-        es: "↑↓ Navegar · Espacio Seleccionar · →/← Todos/Ninguno · Enter Confirmar · Esc Cancelar",
+        pt: "↑↓ Navegar · Espaço Selecionar · →/← Todos/Nenhum · Digite para filtrar · Enter Confirmar · Esc Cancelar",
+        en: "↑↓ Move · Space Select · →/← All/None · Type to filter · Enter Confirm · Esc Cancel",
+        es: "↑↓ Navegar · Espacio Seleccionar · →/← Todos/Ninguno · Escribe para filtrar · Enter Confirmar · Esc Cancelar",
     )
 }
 
-fn selection_cancelled(e: inquire::InquireError) -> String {
-    trf!(
-        pt: "seleção de escopos cancelada: {e}",
-        en: "scope selection cancelled: {e}",
-        es: "selección de alcances cancelada: {e}",
-    )
+fn selection_cancelled(e: inquire::InquireError) -> KobanaError {
+    KobanaError::Auth(trf!(
+        pt: "seleção cancelada: {e}",
+        en: "selection cancelled: {e}",
+        es: "selección cancelada: {e}",
+    ))
 }
 
-/// Interactive scope selection with drill-down:
-/// 1. Pick top-level resource groups (admin, charge, payment, etc.)
-/// 2. For each selected group with sub-scopes, pick which sub-scopes to include
-/// 3. Pick permission level (read or write)
-fn prompt_scopes() -> Result<String, KobanaError> {
-    // --- Screen 1: top-level resource groups ---
-    let group_width = oauth::TOP_LEVEL_GROUPS
-        .iter()
-        .map(|(name, _)| name.len())
-        .max()
-        .unwrap_or(0);
+fn is_terminal() -> bool {
+    std::io::IsTerminal::is_terminal(&std::io::stdin())
+}
 
-    let group_options: Vec<LabeledOption> = oauth::TOP_LEVEL_GROUPS
-        .iter()
-        .map(|(name, description)| LabeledOption {
-            name,
-            description: kobana::i18n::pick(*description),
-            width: group_width,
-        })
-        .collect();
+/// The part of `{product}/{group}.{rest}` before the first `.`
+fn scope_group<'a>(product: &str, scope: &'a str) -> &'a str {
+    let resource = scope
+        .strip_prefix(product)
+        .and_then(|s| s.strip_prefix('/'))
+        .unwrap_or(scope);
+    resource.split('.').next().unwrap_or(resource)
+}
 
-    let all_group_indices: Vec<usize> = (0..group_options.len()).collect();
-
-    let selected_groups = inquire::MultiSelect::new(
-        tr!(
-            pt: "Selecione os grupos de recursos",
-            en: "Select the resource groups",
-            es: "Selecciona los grupos de recursos",
-        ),
-        group_options,
-    )
-    .with_default(&all_group_indices)
-    .with_page_size(20)
-    .with_help_message(multi_select_help())
-    .prompt()
-    .map_err(|e| KobanaError::Auth(selection_cancelled(e)))?;
-
-    if selected_groups.is_empty() {
-        return Err(KobanaError::Auth(
-            tr!(
-                pt: "nenhum escopo selecionado — escolha pelo menos um grupo",
-                en: "no scopes selected — at least one group is required",
-                es: "ningún alcance seleccionado — elige al menos un grupo",
-            )
-            .into(),
-        ));
+/// Description of a resource scope, when the CLI knows one
+fn scope_label(product: &str, scope: &str) -> String {
+    if product != "banking" {
+        return String::new();
     }
+    let legacy = scope.strip_prefix("banking/").unwrap_or(scope);
+    oauth::BANKING_SCOPE_LABELS
+        .iter()
+        .find(|(name, _)| *name == legacy)
+        .map(|(_, labels)| kobana::i18n::pick(*labels).to_string())
+        .unwrap_or_default()
+}
 
-    // --- Screens 2..N: drill-down per group ---
-    let mut final_scopes: Vec<&'static str> = Vec::new();
+fn group_label(product: &str, group: &str) -> String {
+    if product != "banking" {
+        return String::new();
+    }
+    oauth::BANKING_GROUP_LABELS
+        .iter()
+        .find(|(name, _)| *name == group)
+        .map(|(_, labels)| kobana::i18n::pick(*labels).to_string())
+        .unwrap_or_default()
+}
 
-    for group in &selected_groups {
-        // Find all scopes under this group
-        let sub_scopes: Vec<(&'static str, [&'static str; 3])> = oauth::ALL_SCOPES
-            .iter()
-            .filter(|(name, _)| {
-                let top = name.split('.').next().unwrap_or(name);
-                top == group.name
-            })
-            .copied()
-            .collect();
-
-        // Leaf group (like `login`): just include it, no drill-down screen
-        if sub_scopes.len() <= 1 {
-            for (name, _) in sub_scopes {
-                final_scopes.push(name);
-            }
-            continue;
-        }
-
-        // Compute column width for this group's sub-scopes
-        let sub_width = sub_scopes
-            .iter()
-            .map(|(name, _)| name.len())
-            .max()
-            .unwrap_or(0);
-
-        let sub_options: Vec<LabeledOption> = sub_scopes
-            .iter()
-            .map(|(name, description)| LabeledOption {
-                name,
-                description: kobana::i18n::pick(*description),
-                width: sub_width,
-            })
-            .collect();
-
-        let all_sub_indices: Vec<usize> = (0..sub_options.len()).collect();
-
-        let selected_subs = inquire::MultiSelect::new(
-            &trf!(
-                pt: "  └─ {}: selecione os sub-escopos",
-                en: "  └─ {}: select the sub-scopes",
-                es: "  └─ {}: selecciona los sub-alcances",
-                group.name
-            ),
-            sub_options,
-        )
-        .with_default(&all_sub_indices)
+fn pick_many(
+    message: &str,
+    options: Vec<LabeledOption>,
+) -> Result<Vec<LabeledOption>, KobanaError> {
+    let all: Vec<usize> = (0..options.len()).collect();
+    inquire::MultiSelect::new(message, options)
+        .with_default(&all)
         .with_page_size(20)
+        .with_formatter(&names_only)
         .with_help_message(multi_select_help())
         .prompt()
-        .map_err(|e| KobanaError::Auth(selection_cancelled(e)))?;
+        .map_err(selection_cancelled)
+}
 
-        for opt in selected_subs {
-            final_scopes.push(opt.name);
+/// Screens 2..N: the product's published resource scopes, grouped by the
+/// segment before the first `.` when a group has more than one scope
+/// (banking's `charge.*`, `payment.*`…), then the access levels.
+fn prompt_scopes(product: &Product, catalog: &oauth::ScopeCatalog) -> Result<Vec<String>, KobanaError> {
+    let slug = product.slug;
+    let mut groups: Vec<(String, Vec<String>)> = Vec::new();
+    for scope in &catalog.resources {
+        let group = scope_group(slug, scope).to_string();
+        match groups.iter_mut().find(|(g, _)| *g == group) {
+            Some((_, scopes)) => scopes.push(scope.clone()),
+            None => groups.push((group, vec![scope.clone()])),
         }
     }
 
-    if final_scopes.is_empty() {
+    let mut chosen: Vec<String> = Vec::new();
+    if groups.iter().any(|(_, scopes)| scopes.len() > 1) {
+        let options = labeled(
+            groups
+                .iter()
+                .map(|(g, _)| (g.clone(), group_label(slug, g)))
+                .collect(),
+        );
+        let selected = pick_many(
+            &trf!(
+                pt: "{slug}: selecione os grupos de recursos",
+                en: "{slug}: select the resource groups",
+                es: "{slug}: selecciona los grupos de recursos",
+            ),
+            options,
+        )?;
+        for group in selected {
+            let scopes = &groups.iter().find(|(g, _)| *g == group.name).expect("listed").1;
+            if scopes.len() == 1 {
+                chosen.extend(scopes.iter().cloned());
+                continue;
+            }
+            let options = labeled(
+                scopes
+                    .iter()
+                    .map(|s| (s.clone(), scope_label(slug, s)))
+                    .collect(),
+            );
+            let subs = pick_many(
+                &trf!(
+                    pt: "  └─ {}: selecione os sub-escopos",
+                    en: "  └─ {}: select the sub-scopes",
+                    es: "  └─ {}: selecciona los sub-alcances",
+                    group.name
+                ),
+                options,
+            )?;
+            chosen.extend(subs.into_iter().map(|o| o.name));
+        }
+    } else {
+        let options = labeled(
+            catalog
+                .resources
+                .iter()
+                .map(|s| (s.clone(), scope_label(slug, s)))
+                .collect(),
+        );
+        let selected = pick_many(
+            &trf!(
+                pt: "{slug}: selecione os recursos",
+                en: "{slug}: select the resources",
+                es: "{slug}: selecciona los recursos",
+            ),
+            options,
+        )?;
+        chosen.extend(selected.into_iter().map(|o| o.name));
+    }
+
+    if chosen.is_empty() {
         return Err(KobanaError::Auth(
             tr!(
-                pt: "nenhum escopo selecionado — escolha pelo menos um",
-                en: "no scopes selected — at least one scope is required",
-                es: "ningún alcance seleccionado — elige al menos uno",
+                pt: "nenhum escopo selecionado — escolha pelo menos um recurso",
+                en: "no scopes selected — at least one resource is required",
+                es: "ningún alcance seleccionado — elige al menos un recurso",
             )
             .into(),
         ));
     }
 
-    // --- Final screen: permission level ---
-    let permission_options = vec![
-        LabeledOption {
-            name: "read",
-            description: tr!(pt: "Somente leitura", en: "Read only", es: "Solo lectura"),
-            width: 5,
-        },
-        LabeledOption {
-            name: "write",
-            description: tr!(pt: "Leitura e escrita", en: "Read and write", es: "Lectura y escritura"),
-            width: 5,
-        },
-    ];
-
-    let permission = inquire::Select::new(
-        tr!(pt: "Nível de permissão", en: "Permission level", es: "Nivel de permiso"),
-        permission_options,
+    // --- Final screen: access levels (global wildcards) ---
+    let options = labeled(
+        oauth::ACCESS_LEVELS
+            .iter()
+            .map(|(name, labels)| (name.to_string(), kobana::i18n::pick(*labels).to_string()))
+            .collect(),
+    );
+    let levels = inquire::MultiSelect::new(
+        tr!(
+            pt: "Níveis de acesso (valem para todos os recursos escolhidos)",
+            en: "Access levels (apply to every chosen resource)",
+            es: "Niveles de acceso (valen para todos los recursos elegidos)",
+        ),
+        options,
     )
-    .with_starting_cursor(0)
-    .with_help_message(tr!(
-        pt: "↑↓ Navegar · Enter Confirmar · Esc Cancelar",
-        en: "↑↓ Move · Enter Confirm · Esc Cancel",
-        es: "↑↓ Navegar · Enter Confirmar · Esc Cancelar",
-    ))
+    .with_default(&[0])
+    .with_formatter(&names_only)
+    .with_help_message(multi_select_help())
     .prompt()
-    .map_err(|e| {
-        KobanaError::Auth(trf!(
-            pt: "seleção de permissão cancelada: {e}",
-            en: "permission selection cancelled: {e}",
-            es: "selección de permiso cancelada: {e}",
-        ))
-    })?;
+    .map_err(selection_cancelled)?;
+    chosen.extend(levels.into_iter().map(|o| o.name));
 
-    final_scopes.push(permission.name);
-
-    Ok(final_scopes.join("+"))
+    Ok(chosen)
 }
 
-/// Handle `kobana auth <subcommand>`
+/// Handle `kobana <product> auth <subcommand>`
 pub async fn handle_auth(
+    product: &'static Product,
     matches: &clap::ArgMatches,
     root_matches: &clap::ArgMatches,
 ) -> Result<(), KobanaError> {
+    let env = config::resolve_environment(
+        root_matches.get_one::<String>("env").map(|s| s.as_str()),
+    );
     match matches.subcommand() {
-        Some(("login", login_matches)) => handle_login(login_matches, root_matches).await,
-        Some(("logout", _)) => handle_logout(),
-        Some(("status", _)) => handle_status(),
-        Some(("export", _)) => handle_export(),
+        Some(("login", m)) => handle_login(product, m, &env, root_matches.get_flag("verbose")).await,
+        Some(("logout", _)) => handle_logout(product, &env),
+        Some(("status", _)) => handle_status(product, &env),
+        Some(("export", _)) => handle_export(product, &env),
         _ => Err(KobanaError::Validation(
             tr!(
                 pt: "subcomando de auth desconhecido",
@@ -219,31 +243,36 @@ pub async fn handle_auth(
     }
 }
 
+fn parse_scopes(raw: &str) -> Vec<String> {
+    raw.split([',', '+', ' '])
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(String::from)
+        .collect()
+}
+
 async fn handle_login(
+    product: &'static Product,
     matches: &clap::ArgMatches,
-    root_matches: &clap::ArgMatches,
+    env: &Environment,
+    verbose: bool,
 ) -> Result<(), KobanaError> {
-    let verbose = root_matches.get_flag("verbose");
+    let interactive = is_terminal();
+    let slug = product.slug;
     let client_id = matches.get_one::<String>("client-id").cloned();
     let client_secret = matches.get_one::<String>("client-secret").cloned();
-    let env = config::resolve_environment(
-        root_matches.get_one::<String>("env").map(|s| s.as_str()),
-    );
 
-    // Resolve scopes:
-    //   1. --scopes flag (non-interactive)
-    //   2. Interactive TUI if stdin is a terminal
-    //   3. All scopes as fallback (non-interactive environments)
-    let scopes = if let Some(s) = matches.get_one::<String>("scopes") {
-        s.replace(',', "+")
-    } else if std::io::IsTerminal::is_terminal(&std::io::stdin()) {
-        prompt_scopes()?
-    } else {
-        oauth::default_scopes()
-    };
-
-    let token_response = if let (Some(id), Some(secret)) = (&client_id, &client_secret) {
-        // Client credentials flow (requires both id + secret)
+    // Client credentials: an application token, not a person's. The Conta
+    // Kobana only binds tokens to a product's `resource` on behalf of a user,
+    // so this flow is banking's legacy API token.
+    if let (Some(id), Some(secret)) = (&client_id, &client_secret) {
+        if slug != "banking" {
+            return Err(KobanaError::Validation(trf!(
+                pt: "--client-secret (client credentials) só vale para banking; {slug} exige o login de uma pessoa",
+                en: "--client-secret (client credentials) only works for banking; {slug} requires a person's login",
+                es: "--client-secret (client credentials) solo vale para banking; {slug} exige el inicio de sesión de una persona",
+            )));
+        }
         eprintln!(
             "{}",
             tr!(
@@ -252,157 +281,194 @@ async fn handle_login(
                 es: "Autenticando con client credentials...",
             )
         );
-        oauth::client_credentials_flow(id, secret, &env).await?
-    } else {
-        // Authorization Code + PKCE flow
-        // Priority: --client-id flag > KOBANA_CLIENT_ID env > default "kobana-cli"
-        let id = client_id
-            .or_else(|| std::env::var("KOBANA_CLIENT_ID").ok())
-            .unwrap_or_else(|| oauth::DEFAULT_CLIENT_ID.to_string());
+        let response = oauth::client_credentials_flow(id, secret, env).await?;
+        return save_and_report(product, env, response, Some(id.clone()), None, Vec::new());
+    }
 
-        // Secret is optional with PKCE
-        let secret = client_secret
-            .or_else(|| std::env::var("KOBANA_CLIENT_SECRET").ok());
+    let resource = product.oauth_resource(env)?;
 
-        eprintln!(
-            "{}",
-            trf!(
-                pt: "Autenticando com PKCE (cliente: {id})...",
-                en: "Authenticating with PKCE (client: {id})...",
-                es: "Autenticando con PKCE (cliente: {id})...",
-            )
-        );
-        oauth::authorization_code_flow(&id, secret.as_deref(), &scopes, &env, verbose).await?
+    let scopes = match matches.get_one::<String>("scopes") {
+        Some(s) => parse_scopes(s),
+        None => {
+            let catalog = oauth::discover_scopes(slug, resource.mcp, env).await?;
+            if verbose {
+                eprintln!("{} {}", tr!(pt: "Escopos de", en: "Scopes from", es: "Alcances de"), catalog.source);
+            }
+            if interactive {
+                prompt_scopes(product, &catalog)?
+            } else {
+                // Non-interactive: every published resource, read only
+                let mut scopes = catalog.resources;
+                scopes.push("read".into());
+                scopes
+            }
+        }
     };
+    if scopes.is_empty() {
+        return Err(KobanaError::Validation(
+            tr!(
+                pt: "nenhum escopo informado",
+                en: "no scopes given",
+                es: "ningún alcance indicado",
+            )
+            .into(),
+        ));
+    }
 
-    let expires_at = token_response
-        .expires_in
-        .map(|secs| chrono::Utc::now().timestamp() + secs);
+    // Priority: --client-id flag > KOBANA_CLIENT_ID env > default "kobana-cli"
+    let id = client_id
+        .or_else(|| std::env::var("KOBANA_CLIENT_ID").ok().filter(|v| !v.is_empty()))
+        .unwrap_or_else(|| oauth::DEFAULT_CLIENT_ID.to_string());
+    // Secret is optional with PKCE
+    let secret = client_secret.or_else(|| std::env::var("KOBANA_CLIENT_SECRET").ok().filter(|v| !v.is_empty()));
 
+    let account = oauth::authorization_server(env);
+    eprintln!(
+        "{}",
+        trf!(
+            pt: "Entrando em {slug} pela Conta Kobana ({account}, cliente: {id})...",
+            en: "Logging in to {slug} through the Conta Kobana ({account}, client: {id})...",
+            es: "Iniciando sesión en {slug} con la Conta Kobana ({account}, cliente: {id})...",
+        )
+    );
+    let response = oauth::authorization_code_flow(
+        &id,
+        secret.as_deref(),
+        &scopes.join(" "),
+        resource.api,
+        env,
+        verbose,
+    )
+    .await?;
+
+    save_and_report(product, env, response, Some(id), Some(resource.api.to_string()), scopes)
+}
+
+fn save_and_report(
+    product: &Product,
+    env: &Environment,
+    response: oauth::TokenResponse,
+    client_id: Option<String>,
+    resource: Option<String>,
+    scopes: Vec<String>,
+) -> Result<(), KobanaError> {
+    let slug = product.slug;
     let env_name = env.as_str();
-
     let creds = StoredCredentials {
-        access_token: token_response.access_token,
-        refresh_token: token_response.refresh_token,
-        token_type: token_response
-            .token_type
-            .unwrap_or_else(|| "Bearer".into()),
-        expires_at,
+        access_token: response.access_token,
+        refresh_token: response.refresh_token,
+        token_type: response.token_type.unwrap_or_else(|| "Bearer".into()),
+        expires_at: response
+            .expires_in
+            .map(|secs| chrono::Utc::now().timestamp() + secs),
         environment: env_name.into(),
+        product: Some(slug.into()),
+        client_id,
+        resource,
+        scopes,
     };
+    credential_store::save_credentials(slug, env_name, &creds)?;
 
-    credential_store::save_credentials(&creds)?;
-
-    let scopes_list: Vec<&str> = scopes.split('+').collect();
-    let cred_path = credential_store::credentials_path();
     let backend = credential_store::key_backend();
+    let mut report = serde_json::json!({
+        "status": "success",
+        "message": trf!(
+            pt: "Autenticação em {slug} concluída. Credenciais criptografadas salvas.",
+            en: "Authenticated to {slug}. Encrypted credentials saved.",
+            es: "Autenticación en {slug} completada. Credenciales cifradas guardadas.",
+        ),
+        "product": slug,
+        "environment": env_name,
+        "resource": creds.resource,
+        "credentials_file": credential_store::credentials_path(slug, env_name).to_string_lossy(),
+        "encryption": trf!(
+            pt: "AES-256-GCM (chave no keyring do sistema ou no `.key` local; backend atual: {backend})",
+            en: "AES-256-GCM (key in OS keyring or local `.key`; current backend: {backend})",
+            es: "AES-256-GCM (clave en el keyring del sistema o en el `.key` local; backend actual: {backend})",
+        ),
+        "expires_at": creds.expires_at,
+        "scopes": creds.scopes,
+    });
+    // A token in the environment wins over the one just saved: say so
+    if let Some((_, source)) = auth::env_token(product) {
+        let var = source.label();
+        report["warning"] = serde_json::json!(trf!(
+            pt: "{var} está definida e tem precedência sobre estas credenciais",
+            en: "{var} is set and takes precedence over these credentials",
+            es: "{var} está definida y tiene precedencia sobre estas credenciales",
+        ));
+    }
+    println!("{}", serde_json::to_string_pretty(&report).unwrap_or_default());
+    Ok(())
+}
 
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&serde_json::json!({
-            "status": "success",
-            "message": tr!(
-                pt: "Autenticação concluída. Credenciais criptografadas salvas.",
-                en: "Authentication successful. Encrypted credentials saved.",
-                es: "Autenticación completada. Credenciales cifradas guardadas.",
-            ),
-            "environment": creds.environment,
-            "credentials_file": cred_path.to_string_lossy(),
-            "encryption": trf!(
-                pt: "AES-256-GCM (chave no keyring do sistema ou no `.key` local; backend atual: {backend})",
-                en: "AES-256-GCM (key in OS keyring or local `.key`; current backend: {backend})",
-                es: "AES-256-GCM (clave en el keyring del sistema o en el `.key` local; backend actual: {backend})",
-            ),
+fn handle_logout(product: &Product, env: &Environment) -> Result<(), KobanaError> {
+    let removed = credential_store::delete_credentials(product.slug, env.as_str())?;
+    let report = serde_json::json!({
+        "logged_out": removed,
+        "product": product.slug,
+        "environment": env.as_str(),
+        "message": if removed {
+            tr!(pt: "Credenciais removidas.", en: "Credentials removed.", es: "Credenciales eliminadas.")
+        } else {
+            tr!(pt: "Não havia credenciais salvas.", en: "There were no saved credentials.", es: "No había credenciales guardadas.")
+        },
+    });
+    println!("{report}");
+    Ok(())
+}
+
+fn product_status(product: &Product, env: &Environment) -> serde_json::Value {
+    if let Some((_, source)) = auth::env_token(product) {
+        return serde_json::json!({ "authenticated": true, "method": source.label() });
+    }
+    if let Ok(path) = std::env::var("KOBANA_CREDENTIALS_FILE") {
+        if !path.is_empty() {
+            let source = TokenSource::CredentialsFile(path.clone());
+            return serde_json::json!({ "authenticated": true, "method": source.label(), "file": path });
+        }
+    }
+    match credential_store::load_credentials(product.slug, env.as_str()) {
+        Ok(creds) => serde_json::json!({
+            "authenticated": true,
+            "method": TokenSource::Saved.label(),
+            "expired": auth::is_expired(&creds),
             "expires_at": creds.expires_at,
-            "scopes": scopes_list,
-        }))
-        .unwrap_or_default()
-    );
+            "has_refresh_token": creds.refresh_token.is_some(),
+            "resource": creds.resource,
+            "scopes": creds.scopes,
+        }),
+        Err(_) => serde_json::json!({
+            "authenticated": false,
+            "message": auth::not_configured_for(product),
+        }),
+    }
+}
 
+fn handle_status(product: &Product, env: &Environment) -> Result<(), KobanaError> {
+    let mut report = product_status(product, env);
+    report["product"] = product.slug.into();
+    report["environment"] = env.as_str().into();
+    println!("{}", serde_json::to_string_pretty(&report).unwrap_or_default());
     Ok(())
 }
 
-fn handle_logout() -> Result<(), KobanaError> {
-    credential_store::delete_credentials()?;
-    println!(
-        "{}",
-        serde_json::json!({
-            "logged_out": true,
-            "message": tr!(
-                pt: "Credenciais removidas.",
-                en: "Credentials removed.",
-                es: "Credenciales eliminadas.",
-            )
-        })
-    );
-    Ok(())
-}
-
-fn handle_status() -> Result<(), KobanaError> {
-    if let Ok(token) = std::env::var("KOBANA_TOKEN") {
-        if !token.is_empty() {
-            let env = config::resolve_environment(None);
-            println!(
-                "{}",
-                serde_json::json!({
-                    "authenticated": true,
-                    "method": "KOBANA_TOKEN",
-                    "environment": format!("{:?}", env),
-                })
-            );
-            return Ok(());
-        }
+fn handle_export(product: &Product, env: &Environment) -> Result<(), KobanaError> {
+    let env_name = env.as_str();
+    if let Some((token, source)) = auth::env_token(product) {
+        println!(
+            "{}",
+            serde_json::json!({
+                "access_token": token,
+                "token_type": "Bearer",
+                "product": product.slug,
+                "source": source.label(),
+            })
+        );
+        return Ok(());
     }
 
-    match credential_store::load_credentials() {
-        Ok(creds) => {
-            let expired = creds
-                .expires_at
-                .map(|exp| chrono::Utc::now().timestamp() > exp)
-                .unwrap_or(false);
-
-            println!(
-                "{}",
-                serde_json::json!({
-                    "authenticated": true,
-                    "method": "saved_credentials",
-                    "environment": creds.environment,
-                    "expired": expired,
-                    "expires_at": creds.expires_at,
-                    "has_refresh_token": creds.refresh_token.is_some(),
-                })
-            );
-        }
-        Err(_) => {
-            println!(
-                "{}",
-                serde_json::json!({
-                    "authenticated": false,
-                    "message": crate::auth::not_configured_message(),
-                })
-            );
-        }
-    }
-
-    Ok(())
-}
-
-fn handle_export() -> Result<(), KobanaError> {
-    if let Ok(token) = std::env::var("KOBANA_TOKEN") {
-        if !token.is_empty() {
-            println!(
-                "{}",
-                serde_json::json!({
-                    "access_token": token,
-                    "token_type": "Bearer",
-                    "source": "KOBANA_TOKEN",
-                })
-            );
-            return Ok(());
-        }
-    }
-
-    let creds = credential_store::load_credentials()?;
+    let creds = credential_store::load_credentials(product.slug, env_name)?;
     println!(
         "{}",
         serde_json::json!({
@@ -411,9 +477,36 @@ fn handle_export() -> Result<(), KobanaError> {
             "token_type": creds.token_type,
             "expires_at": creds.expires_at,
             "environment": creds.environment,
-            "source": "saved_credentials",
+            "product": product.slug,
+            "resource": creds.resource,
+            "source": TokenSource::Saved.label(),
         })
     );
-
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn groups_by_the_segment_before_the_first_dot() {
+        assert_eq!(scope_group("banking", "banking/charge.bank_billets"), "charge");
+        assert_eq!(scope_group("banking", "banking/payment.dda.bank_billets"), "payment");
+        assert_eq!(scope_group("billing", "billing/customers"), "customers");
+    }
+
+    #[test]
+    fn scopes_split_on_commas_plus_and_spaces() {
+        assert_eq!(
+            parse_scopes("billing/customers, billing/plans+write read"),
+            vec!["billing/customers", "billing/plans", "write", "read"]
+        );
+    }
+
+    #[test]
+    fn banking_scopes_keep_their_labels() {
+        assert!(!scope_label("banking", "banking/charge.bank_billets").is_empty());
+        assert!(scope_label("billing", "billing/customers").is_empty());
+    }
 }

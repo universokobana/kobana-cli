@@ -177,48 +177,42 @@ kobana banking financial accounts balances --params '{"financial_account_uid": "
 
 ### Metodos Suportados
 
+Cada produto tem o proprio token, emitido pela Conta Kobana (`account.kobana.com.br`) com a API do produto como `aud`.
+
 | Prioridade | Metodo | Configuracao |
 |------------|--------|-------------|
-| 1 | Token de acesso (env var) | `KOBANA_TOKEN` |
+| 1 | Token do produto (env var) | `KOBANA_<PRODUTO>_TOKEN` (kadu tambem le `KADU_TOKEN`) |
 | 2 | Credenciais OAuth (arquivo) | `KOBANA_CREDENTIALS_FILE` |
-| 3 | Client Credentials (OAuth) | `KOBANA_CLIENT_ID` + `KOBANA_CLIENT_SECRET` |
-| 4 | Credenciais salvas (criptografadas) | `kobana auth login` |
+| 3 | Credenciais salvas (criptografadas, por produto) | `kobana <produto> auth login` |
 
 ### Comandos de Auth
 
 ```bash
-# Login interativo — abre browser para OAuth authorization code flow
-kobana auth login
+# Login interativo — mostra os escopos publicados pelo produto e os niveis de acesso
+kobana billing auth login
 
-# Login com client credentials (para apps OAuth)
-kobana auth login --client-id <ID> --client-secret <SECRET>
+# Client credentials (so banking)
+kobana banking auth login --client-id <ID> --client-secret <SECRET>
 
-# Ver status da autenticacao
-kobana auth status
-
-# Exportar credenciais (para CI/headless)
-kobana auth export > credentials.json
-
-# Logout — remove credenciais salvas
-kobana auth logout
+kobana billing auth status
+kobana billing auth export > credentials.json
+kobana billing auth logout
 ```
 
 ### OAuth Flows
 
-A Kobana suporta tres metodos de autenticacao:
+1. **Authorization Code + PKCE** — o CLI abre `account.<env>.kobana.com.br/oauth/authorize` com `resource=<API do produto>`, os escopos `<produto>/<recurso>` lidos de `/.well-known/oauth-protected-resource` (host MCP do produto; fallback: catalogo do AS) e os niveis `read`, `write`, `delete`, `import`, `export`. Recebe o callback em localhost e renova o token com o refresh token quando vence.
 
-1. **Token de Acesso** — Token obtido diretamente na interface da Kobana em *Integracoes > API > Token de API*. Diferente entre sandbox e producao. Configurado via env var `KOBANA_TOKEN`.
+2. **Client Credentials Flow** — so banking: troca `client_id` + `client_secret` por um access token de aplicacao.
 
-2. **Authorization Code Flow** — Para acessar contas de terceiros. O CLI abre o browser para autorizacao e recebe o callback em localhost.
-
-3. **Client Credentials Flow** — Para apps OAuth. Troca `client_id` + `client_secret` por um access token.
+3. **Token por env var** — `KOBANA_<PRODUTO>_TOKEN`.
 
 ### Armazenamento Seguro
 
 Credenciais sao criptografadas em repouso (AES-256-GCM) com chave armazenada no keyring do OS (ou arquivo fallback para CI/Docker).
 
 ```
-~/.config/kobana/credentials.enc    # credenciais criptografadas
+~/.config/kobana/credentials-<produto>-<ambiente>.enc    # credenciais criptografadas, uma por produto e ambiente
 ~/.config/kobana/config.json        # configuracoes (ambiente, defaults)
 ```
 
@@ -261,7 +255,7 @@ kobana banking charge pix list --page-all --page-limit 5
 
 | Variavel | Descricao |
 |----------|-----------|
-| `KOBANA_TOKEN` | Token de acesso Bearer (maior prioridade) |
+| `KOBANA_<PRODUTO>_TOKEN` | Token Bearer de um produto (maior prioridade) |
 | `KOBANA_CREDENTIALS_FILE` | Caminho para arquivo JSON de credenciais OAuth |
 | `KOBANA_CLIENT_ID` | OAuth client ID |
 | `KOBANA_CLIENT_SECRET` | OAuth client secret |

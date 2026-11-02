@@ -7,28 +7,156 @@ use sha2::Digest;
 use std::io::{BufRead, Write};
 use std::net::TcpListener;
 
-fn oauth_authorize_url(env: &Environment) -> &'static str {
+/// The Conta Kobana — the authorization server that issues the tokens of
+/// every product. Production uses the apex, other environments enter as a
+/// segment (`account.sandbox.kobana.com.br`); development is the local
+/// kobana-app. `KOBANA_ACCOUNT_URL` overrides it (e.g. dev behind a tunnel).
+pub fn authorization_server(env: &Environment) -> String {
+    if let Ok(url) = std::env::var("KOBANA_ACCOUNT_URL") {
+        if !url.is_empty() {
+            return url.trim_end_matches('/').to_string();
+        }
+    }
     match env {
-        Environment::Sandbox => "https://app-sandbox.kobana.com.br/oauth/authorize",
-        Environment::Production => "https://app.kobana.com.br/oauth/authorize",
-        Environment::Development => "http://localhost:5005/oauth/authorize",
+        Environment::Production => "https://account.kobana.com.br".into(),
+        Environment::Sandbox => "https://account.sandbox.kobana.com.br".into(),
+        Environment::Development => "http://localhost:5005".into(),
     }
 }
 
-fn oauth_token_url(env: &Environment) -> &'static str {
-    match env {
-        Environment::Sandbox => "https://app-sandbox.kobana.com.br/oauth/token",
-        Environment::Production => "https://app.kobana.com.br/oauth/token",
-        Environment::Development => "http://localhost:5005/oauth/token",
+fn oauth_authorize_url(env: &Environment) -> String {
+    format!("{}/oauth/authorize", authorization_server(env))
+}
+
+fn oauth_token_url(env: &Environment) -> String {
+    format!("{}/oauth/token", authorization_server(env))
+}
+
+/// Access levels: global verbs, valid for every resource of the token. A
+/// resource scope alone only reads; `write`, `delete`, `import` and `export`
+/// each unlock one kind of operation and do not imply one another.
+pub const ACCESS_LEVELS: &[(&str, [&str; 3])] = &[
+    ("read", ["Leitura", "Read", "Lectura"]),
+    ("write", ["Criação e alteração", "Create and update", "Creación y modificación"]),
+    ("delete", ["Exclusão", "Delete", "Eliminación"]),
+    ("import", ["Importação em volume", "Bulk import", "Importación masiva"]),
+    ("export", ["Exportação em volume", "Bulk export", "Exportación masiva"]),
+];
+
+/// The resource scopes a product publishes, and where they came from
+#[derive(Debug)]
+pub struct ScopeCatalog {
+    /// `{product}/{resource}` scopes, sorted
+    pub resources: Vec<String>,
+    /// The document they were read from
+    pub source: String,
+}
+
+/// RFC 9728 metadata URL for a resource: the well-known path goes between
+/// the host and the resource's own path (`http://h/mcp` →
+/// `http://h/.well-known/oauth-protected-resource/mcp`)
+pub fn protected_resource_metadata_url(resource: &str) -> Result<String, KobanaError> {
+    let url = reqwest::Url::parse(resource)
+        .map_err(|e| KobanaError::Internal(format!("{resource}: {e}")))?;
+    let path = url.path().trim_end_matches('/');
+    let mut base = url.clone();
+    base.set_path("");
+    base.set_query(None);
+    Ok(format!(
+        "{}/.well-known/oauth-protected-resource{path}",
+        base.as_str().trim_end_matches('/')
+    ))
+}
+
+/// The `{product}/…` scopes of a metadata document, without the catch-all
+/// `{product}/all`, which the apps do not advertise either
+pub fn product_scopes(metadata: &serde_json::Value, product: &str) -> Vec<String> {
+    let prefix = format!("{product}/");
+    let mut scopes: Vec<String> = metadata["scopes_supported"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|s| s.as_str())
+        .filter(|s| s.starts_with(&prefix) && *s != format!("{product}/all"))
+        .map(String::from)
+        .collect();
+    scopes.sort();
+    scopes.dedup();
+    scopes
+}
+
+async fn fetch_json(url: &str) -> Result<serde_json::Value, String> {
+    let client = reqwest::Client::builder()
+        .user_agent(format!("kobana-cli/{}", env!("CARGO_PKG_VERSION")))
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .map_err(|e| e.to_string())?;
+    let response = client
+        .get(url)
+        .header("Accept", "application/json")
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    let status = response.status();
+    if !status.is_success() {
+        return Err(status.to_string());
+    }
+    response.json().await.map_err(|e| e.to_string())
+}
+
+/// The scopes a product publishes in its `/.well-known/oauth-protected-resource`.
+///
+/// When the app does not publish the document (or it lists none of its own
+/// scopes), falls back to the authorization server's catalogue filtered by
+/// the product prefix — the same registry the app's document is built from.
+pub async fn discover_scopes(
+    product: &str,
+    mcp_resource: &str,
+    env: &Environment,
+) -> Result<ScopeCatalog, KobanaError> {
+    let metadata_url = protected_resource_metadata_url(mcp_resource)?;
+    let app_error = match fetch_json(&metadata_url).await {
+        Ok(doc) => {
+            let resources = product_scopes(&doc, product);
+            if !resources.is_empty() {
+                return Ok(ScopeCatalog { resources, source: metadata_url });
+            }
+            tr!(pt: "nenhum escopo do produto", en: "no product scopes", es: "ningún alcance del producto").to_string()
+        }
+        Err(e) => e,
+    };
+
+    let as_url = format!(
+        "{}/.well-known/oauth-authorization-server",
+        authorization_server(env)
+    );
+    match fetch_json(&as_url).await {
+        Ok(doc) => {
+            let resources = product_scopes(&doc, product);
+            if resources.is_empty() {
+                return Err(KobanaError::Auth(trf!(
+                    pt: "a Conta Kobana não publica escopos de {product} ({metadata_url}: {app_error})",
+                    en: "the Conta Kobana publishes no {product} scopes ({metadata_url}: {app_error})",
+                    es: "la Conta Kobana no publica alcances de {product} ({metadata_url}: {app_error})",
+                )));
+            }
+            Ok(ScopeCatalog { resources, source: as_url })
+        }
+        Err(as_error) => Err(KobanaError::Auth(trf!(
+            pt: "não foi possível obter os escopos de {product}: {metadata_url}: {app_error}; {as_url}: {as_error}",
+            en: "could not fetch the {product} scopes: {metadata_url}: {app_error}; {as_url}: {as_error}",
+            es: "no se pudieron obtener los alcances de {product}: {metadata_url}: {app_error}; {as_url}: {as_error}",
+        ))),
     }
 }
 
 /// Default public client ID for the Kobana CLI (PKCE, no secret needed)
 pub const DEFAULT_CLIENT_ID: &str = "kobana-cli";
 
-/// All available Kobana OAuth scopes with descriptions in Portuguese, English
-/// and Spanish
-pub const ALL_SCOPES: &[(&str, [&str; 3])] = &[
+/// Labels for the banking resource scopes, in Portuguese, English and
+/// Spanish. Only labels: the scopes offered at login come from the app's
+/// published metadata, and one missing here is shown without a description.
+pub const BANKING_SCOPE_LABELS: &[(&str, [&str; 3])] = &[
     (
         "admin.subaccounts",
         [
@@ -503,10 +631,9 @@ pub const ALL_SCOPES: &[(&str, [&str; 3])] = &[
     ),
 ];
 
-/// Top-level resource groups with human-readable descriptions in Portuguese,
-/// English and Spanish. Used for the first step of the interactive scope
-/// selector.
-pub const TOP_LEVEL_GROUPS: &[(&str, [&str; 3])] = &[
+/// Labels for the banking resource groups (the segment before the first
+/// `.`), used on the first screen of the interactive scope selector.
+pub const BANKING_GROUP_LABELS: &[(&str, [&str; 3])] = &[
     (
         "admin",
         [
@@ -637,15 +764,6 @@ pub const TOP_LEVEL_GROUPS: &[(&str, [&str; 3])] = &[
     ),
 ];
 
-/// Default scopes requested by the CLI (all scopes)
-pub fn default_scopes() -> String {
-    ALL_SCOPES
-        .iter()
-        .map(|(name, _)| *name)
-        .collect::<Vec<_>>()
-        .join("+")
-}
-
 #[derive(Debug, Deserialize)]
 pub struct TokenResponse {
     pub access_token: String,
@@ -673,6 +791,7 @@ pub async fn authorization_code_flow(
     client_id: &str,
     client_secret: Option<&str>,
     scopes: &str,
+    resource: &str,
     env: &Environment,
     verbose: bool,
 ) -> Result<TokenResponse, KobanaError> {
@@ -689,11 +808,22 @@ pub async fn authorization_code_flow(
     let code_verifier = generate_code_verifier();
     let code_challenge = generate_code_challenge(&code_verifier);
 
-    let authorize_base = oauth_authorize_url(env);
-
-    let authorize_url = format!(
-        "{authorize_base}?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&code_challenge={code_challenge}&code_challenge_method=S256&scope={scopes}"
-    );
+    let state = generate_code_verifier();
+    let authorize_url = reqwest::Url::parse_with_params(
+        &oauth_authorize_url(env),
+        &[
+            ("client_id", client_id),
+            ("redirect_uri", redirect_uri.as_str()),
+            ("response_type", "code"),
+            ("code_challenge", code_challenge.as_str()),
+            ("code_challenge_method", "S256"),
+            ("scope", scopes),
+            ("resource", resource),
+            ("state", state.as_str()),
+        ],
+    )
+    .map_err(|e| KobanaError::Internal(e.to_string()))?
+    .to_string();
 
     eprintln!(
         "{}",
@@ -722,17 +852,18 @@ pub async fn authorization_code_flow(
             es: "Esperando el retorno de la autorización en el puerto {port}...",
         )
     );
-    let code = wait_for_callback(listener)?;
+    let code = wait_for_callback(listener, &state)?;
 
     let token_url = oauth_token_url(env);
 
     exchange_code(
-        token_url,
+        &token_url,
         client_id,
         client_secret,
         &code,
         &redirect_uri,
         &code_verifier,
+        resource,
         verbose,
     )
     .await
@@ -748,7 +879,7 @@ pub async fn client_credentials_flow(
 
     let client = reqwest::Client::new();
     let response = client
-        .post(token_url)
+        .post(&token_url)
         .form(&[
             ("grant_type", "client_credentials"),
             ("client_id", client_id),
@@ -781,21 +912,29 @@ pub async fn client_credentials_flow(
         )))
 }
 
-/// Refresh an access token
-#[allow(dead_code)]
+/// Refresh an access token. A public client identifies itself with its
+/// `client_id`, and `resource` keeps the new token bound to the same `aud`.
 pub async fn refresh_token(
     refresh_token: &str,
+    client_id: &str,
+    resource: Option<&str>,
     env: &Environment,
 ) -> Result<TokenResponse, KobanaError> {
     let token_url = oauth_token_url(env);
 
+    let mut form = vec![
+        ("grant_type", "refresh_token"),
+        ("refresh_token", refresh_token),
+        ("client_id", client_id),
+    ];
+    if let Some(resource) = resource {
+        form.push(("resource", resource));
+    }
+
     let client = reqwest::Client::new();
     let response = client
-        .post(token_url)
-        .form(&[
-            ("grant_type", "refresh_token"),
-            ("refresh_token", refresh_token),
-        ])
+        .post(&token_url)
+        .form(&form)
         .send()
         .await
         .map_err(|e| KobanaError::Auth(trf!(
@@ -823,6 +962,7 @@ pub async fn refresh_token(
         )))
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn exchange_code(
     token_url: &str,
     client_id: &str,
@@ -830,6 +970,7 @@ async fn exchange_code(
     code: &str,
     redirect_uri: &str,
     code_verifier: &str,
+    resource: &str,
     verbose: bool,
 ) -> Result<TokenResponse, KobanaError> {
     let user_agent = format!("kobana-cli/{}", env!("CARGO_PKG_VERSION"));
@@ -848,6 +989,7 @@ async fn exchange_code(
         ("code", code),
         ("redirect_uri", redirect_uri),
         ("code_verifier", code_verifier),
+        ("resource", resource),
     ];
 
     // Only include client_secret if provided (not needed for PKCE public clients)
@@ -928,7 +1070,7 @@ async fn exchange_code(
         )))
 }
 
-fn wait_for_callback(listener: TcpListener) -> Result<String, KobanaError> {
+fn wait_for_callback(listener: TcpListener, state: &str) -> Result<String, KobanaError> {
     listener
         .set_nonblocking(false)
         .map_err(|e| KobanaError::Internal(trf!(
@@ -975,7 +1117,23 @@ fn wait_for_callback(listener: TcpListener) -> Result<String, KobanaError> {
 
     // Always write an HTML response before returning, so the browser tab
     // shows a meaningful message and the TCP connection is closed cleanly.
-    let result = if let Some(code) = query.get("code") {
+    let state_matches = query.get("state").map(|s| s.as_str()) == Some(state);
+    let result = if query.contains_key("code") && !state_matches {
+        let title = tr!(
+            pt: "Retorno inválido",
+            en: "Invalid callback",
+            es: "Retorno inválido",
+        );
+        write_html(&stream, 400, title, &format!("<h2 style=\"color:#ef4444;\">✗ {title}</h2><p>state</p>"));
+        Err(KobanaError::Auth(
+            tr!(
+                pt: "o retorno da autorização não trouxe o `state` deste login",
+                en: "the authorization callback does not carry this login's `state`",
+                es: "el retorno de la autorización no trajo el `state` de este inicio de sesión",
+            )
+            .into(),
+        ))
+    } else if let Some(code) = query.get("code") {
         let title = tr!(
             pt: "Autorização concedida",
             en: "Authorization granted",
@@ -1167,4 +1325,45 @@ fn open_browser(url: &str) -> Result<(), KobanaError> {
             )))?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn metadata_url_goes_between_host_and_path() {
+        assert_eq!(
+            protected_resource_metadata_url("https://mcp.billing.kobana.com.br").unwrap(),
+            "https://mcp.billing.kobana.com.br/.well-known/oauth-protected-resource"
+        );
+        assert_eq!(
+            protected_resource_metadata_url("http://localhost:5005/mcp").unwrap(),
+            "http://localhost:5005/.well-known/oauth-protected-resource/mcp"
+        );
+    }
+
+    #[test]
+    fn product_scopes_keep_only_the_product_prefix() {
+        let doc = serde_json::json!({
+            "scopes_supported": ["billing/plans", "read", "write", "billing/all", "billing/customers", "finance/accounts"]
+        });
+        assert_eq!(product_scopes(&doc, "billing"), vec!["billing/customers", "billing/plans"]);
+        assert!(product_scopes(&serde_json::json!({}), "billing").is_empty());
+    }
+
+    #[test]
+    fn account_host_per_environment() {
+        if std::env::var("KOBANA_ACCOUNT_URL").is_ok() {
+            return;
+        }
+        assert_eq!(authorization_server(&Environment::Production), "https://account.kobana.com.br");
+        assert_eq!(authorization_server(&Environment::Sandbox), "https://account.sandbox.kobana.com.br");
+    }
+
+    #[test]
+    fn the_five_access_levels() {
+        let names: Vec<&str> = ACCESS_LEVELS.iter().map(|(n, _)| *n).collect();
+        assert_eq!(names, ["read", "write", "delete", "import", "export"]);
+    }
 }

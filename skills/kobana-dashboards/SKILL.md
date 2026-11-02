@@ -24,7 +24,7 @@ kobana dashboards <resource> <method> [flags]
 Dashboards is its own API (`api.dashboards.kobana.com.br`) and does not share
 credentials with the banking product:
 
-- `KOBANA_TOKEN` must hold an RS256 access token issued by the Kobana
+- `KOBANA_DASHBOARDS_TOKEN` — or the credentials saved by `kobana dashboards auth login` — must hold an RS256 access token issued by the Kobana
   Authorization Server (`account.kobana.com.br`) with
   `aud=https://api.dashboards.kobana.com.br`. Scopes have two axes: `dashboards/{resource}` limits what the token reaches, and an
   access level says what it may do there — `GET` needs `read`, `write` or `all`;

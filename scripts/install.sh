@@ -71,7 +71,7 @@ load_messages() {
       M_FEEDBACK="Queremos saber como está sendo. De verdade. Tudo mesmo."
       M_FEEDBACK_LINK="Conte pra gente em %s"
       M_DONE="Pronto! O Kobana CLI está instalado (%s)."
-      M_AUTH="Autentique no Gateway Bancário com \`%s\`, ou exporte \`%s\` do produto"
+      M_AUTH="Entre em qualquer produto com \`%s\`, ou exporte \`%s\`"
       M_EXPLORE="Veja os seis produtos com \`%s\` e cada endpoint com \`%s\`"
       M_UPDATE="Atualize depois com \`%s\`"
       ;;
@@ -101,7 +101,7 @@ load_messages() {
       M_FEEDBACK="Queremos saber cómo te va. De verdad. Todo."
       M_FEEDBACK_LINK="Cuéntanos en %s"
       M_DONE="¡Listo! El Kobana CLI está instalado (%s)."
-      M_AUTH="Autentícate en el Gateway Bancario con \`%s\`, o exporta \`%s\` del producto"
+      M_AUTH="Inicia sesión en cualquier producto con \`%s\`, o exporta \`%s\`"
       M_EXPLORE="Mira los seis productos con \`%s\` y cada endpoint con \`%s\`"
       M_UPDATE="Actualiza después con \`%s\`"
       ;;
@@ -131,7 +131,7 @@ load_messages() {
       M_FEEDBACK="We want to know how it's going. Really. Everything."
       M_FEEDBACK_LINK="Tell us at %s"
       M_DONE="Done! The Kobana CLI is installed (%s)."
-      M_AUTH="Authenticate with the Banking Gateway using \`%s\`, or export the product's \`%s\`"
+      M_AUTH="Log in to any product with \`%s\`, or export \`%s\`"
       M_EXPLORE="See the six products with \`%s\` and every endpoint with \`%s\`"
       M_UPDATE="Update later with \`%s\`"
       ;;
@@ -312,7 +312,7 @@ main() {
   say "✨" "$(msg "$M_FEEDBACK_LINK" "${LINK}${ISSUES_URL}${RESET}")"
   blank
   say "💻" "$(msg "$M_DONE" "$("$INSTALL_DIR/bin/kobana" --version 2>/dev/null || printf '%s' "$tag")")"
-  say "🔐" "$(msg "$M_AUTH" "${BOLD}kobana auth login${RESET}" "${BOLD}KOBANA_TOKEN${RESET}")"
+  say "🔐" "$(msg "$M_AUTH" "${BOLD}kobana <product> auth login${RESET}" "${BOLD}KOBANA_<PRODUCT>_TOKEN${RESET}")"
   say "🧾" "$(msg "$M_EXPLORE" "${BOLD}kobana --help${RESET}" "${BOLD}kobana schema --list${RESET}")"
   say "🔄" "$(msg "$M_UPDATE" "${BOLD}kobana update${RESET}")"
 }

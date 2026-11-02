@@ -46,6 +46,30 @@ pub struct Product {
     /// Header parameters filled from an env var when `--params` omits them,
     /// as `(header, env var)` — e.g. the workspace a token acts on.
     pub header_env: &'static [(&'static str, &'static str)],
+    /// Where the product's tokens come from: its entries in the Conta Kobana
+    /// resource registry (`kobana-app/config/oauth_resources.yml`)
+    pub oauth: OauthHosts,
+    /// Env vars read as this product's token besides `KOBANA_<SLUG>_TOKEN`
+    pub token_env_aliases: &'static [&'static str],
+}
+
+/// A product's surfaces as the Conta Kobana knows them, per environment.
+/// `None` when the authorization server has no resource for that environment.
+pub struct OauthHosts {
+    pub production: OauthResource,
+    pub sandbox: Option<OauthResource>,
+    pub development: Option<OauthResource>,
+}
+
+/// One environment of a product in the resource registry.
+pub struct OauthResource {
+    /// The `resource` sent to `/oauth/authorize` — it becomes the token's
+    /// `aud`, so it must match the registry byte for byte (it is not always
+    /// the CLI's base URL: local dev ports differ)
+    pub api: &'static str,
+    /// The MCP surface, which publishes the product's scopes in
+    /// `/.well-known/oauth-protected-resource` (RFC 9728)
+    pub mcp: &'static str,
 }
 
 /// API hosts for a product, per environment. Never include a version prefix —
@@ -115,6 +139,34 @@ impl Product {
             Environment::Development => Ok(self.hosts.development.unwrap_or(self.hosts.production)),
         }
     }
+
+    /// The product's resource in the Conta Kobana for this environment
+    pub fn oauth_resource(&self, env: &Environment) -> Result<&OauthResource, KobanaError> {
+        let resource = match env {
+            Environment::Production => Some(&self.oauth.production),
+            Environment::Sandbox => self.oauth.sandbox.as_ref(),
+            Environment::Development => self.oauth.development.as_ref(),
+        };
+        resource.ok_or_else(|| {
+            let slug = self.slug;
+            let env = env.as_str();
+            KobanaError::Validation(trf!(
+                pt: "{slug} não tem login pela Conta Kobana em {env}",
+                en: "{slug} has no Conta Kobana login in {env}",
+                es: "{slug} no tiene inicio de sesión con la Conta Kobana en {env}",
+            ))
+        })
+    }
+
+    /// The env var holding this product's token: `KOBANA_<SLUG>_TOKEN`
+    pub fn token_env(&self) -> String {
+        format!("KOBANA_{}_TOKEN", self.slug.to_uppercase())
+    }
+}
+
+/// The registered product with this slug
+pub fn by_slug(slug: &str) -> Option<&'static Product> {
+    REGISTRY.iter().find(|p| p.slug == slug)
 }
 
 /// Build an HTTP client for a product in the given environment.
@@ -206,6 +258,12 @@ Product {
     ],
     client_cert_env: None,
     header_env: &[],
+    oauth: OauthHosts {
+        production: OauthResource { api: "https://api.kobana.com.br", mcp: "https://mcp.banking.kobana.com.br" },
+        sandbox: Some(OauthResource { api: "https://api.sandbox.kobana.com.br", mcp: "https://mcp.banking.sandbox.kobana.com.br" }),
+        development: Some(OauthResource { api: "http://localhost:5005", mcp: "http://localhost:5005/mcp" }),
+    },
+    token_env_aliases: &[],
 },
 Product {
     slug: "inbox",
@@ -223,6 +281,12 @@ Product {
     // The inbox API dropped mTLS on 2026-10-31: the Bearer token is enough
     client_cert_env: None,
     header_env: &[],
+    oauth: OauthHosts {
+        production: OauthResource { api: "https://api.inbox.kobana.com.br", mcp: "https://mcp.inbox.kobana.com.br" },
+        sandbox: None,
+        development: Some(OauthResource { api: "http://localhost:3011", mcp: "http://localhost:3012" }),
+    },
+    token_env_aliases: &[],
 },
 Product {
     slug: "billing",
@@ -239,6 +303,12 @@ Product {
     specs: &[spec!("billing-v1", "/v1")],
     client_cert_env: None,
     header_env: &[],
+    oauth: OauthHosts {
+        production: OauthResource { api: "https://api.billing.kobana.com.br", mcp: "https://mcp.billing.kobana.com.br" },
+        sandbox: Some(OauthResource { api: "https://api.billing.sandbox.kobana.com.br", mcp: "https://mcp.billing.sandbox.kobana.com.br" }),
+        development: Some(OauthResource { api: "http://localhost:3031", mcp: "http://localhost:3032" }),
+    },
+    token_env_aliases: &[],
 },
 Product {
     slug: "finance",
@@ -256,6 +326,12 @@ Product {
     client_cert_env: None,
     // Every finance route acts on one workspace of the token's organization
     header_env: &[("X-Workspace-Id", "KOBANA_WORKSPACE_ID")],
+    oauth: OauthHosts {
+        production: OauthResource { api: "https://api.finance.kobana.com.br", mcp: "https://mcp.finance.kobana.com.br" },
+        sandbox: Some(OauthResource { api: "https://api.finance.sandbox.kobana.com.br", mcp: "https://mcp.finance.sandbox.kobana.com.br" }),
+        development: Some(OauthResource { api: "http://localhost:3021", mcp: "http://localhost:3022" }),
+    },
+    token_env_aliases: &[],
 },
 Product {
     slug: "dunning",
@@ -272,6 +348,12 @@ Product {
     specs: &[spec!("dunning-v1", "/v1")],
     client_cert_env: None,
     header_env: &[("X-Workspace-Id", "KOBANA_WORKSPACE_ID")],
+    oauth: OauthHosts {
+        production: OauthResource { api: "https://api.dunning.kobana.com.br", mcp: "https://mcp.dunning.kobana.com.br" },
+        sandbox: Some(OauthResource { api: "https://api.dunning.sandbox.kobana.com.br", mcp: "https://mcp.dunning.sandbox.kobana.com.br" }),
+        development: Some(OauthResource { api: "http://localhost:3041", mcp: "http://localhost:3042" }),
+    },
+    token_env_aliases: &[],
 },
 Product {
     slug: "dashboards",
@@ -289,6 +371,12 @@ Product {
     client_cert_env: None,
     // Optional while the organization has a single workspace
     header_env: &[("X-Workspace-Id", "KOBANA_WORKSPACE_ID")],
+    oauth: OauthHosts {
+        production: OauthResource { api: "https://api.dashboards.kobana.com.br", mcp: "https://mcp.dashboards.kobana.com.br" },
+        sandbox: None,
+        development: Some(OauthResource { api: "http://localhost:3071", mcp: "http://localhost:3072" }),
+    },
+    token_env_aliases: &[],
 },
 Product {
     slug: "kadu",
@@ -308,6 +396,12 @@ Product {
     client_cert_env: None,
     // The organization is the token's `org` claim; there is no workspace header
     header_env: &[],
+    oauth: OauthHosts {
+        production: OauthResource { api: "https://api.kadu.ia.br", mcp: "https://mcp.kadu.ia.br" },
+        sandbox: None,
+        development: Some(OauthResource { api: "http://localhost:3051", mcp: "http://localhost:3052" }),
+    },
+    token_env_aliases: &["KADU_TOKEN"],
 },
 ];
 
@@ -900,8 +994,50 @@ mod tests {
             specs: &[],
             client_cert_env: None,
             header_env: &[],
+            oauth: OauthHosts {
+                production: OauthResource { api: "https://prod", mcp: "https://mcp" },
+                sandbox: None,
+                development: None,
+            },
+            token_env_aliases: &[],
         };
         assert_eq!(no_dev.base_url(&Environment::Development).unwrap(), "https://prod");
         assert!(no_dev.base_url(&Environment::Sandbox).is_err());
+    }
+}
+
+#[cfg(test)]
+mod oauth_tests {
+    use super::*;
+
+    #[test]
+    fn every_product_has_a_production_resource_and_its_token_var() {
+        for p in REGISTRY {
+            assert!(p.oauth.production.api.starts_with("https://"), "{}", p.slug);
+            assert_eq!(p.oauth.production.api, p.hosts.production, "{}", p.slug);
+            assert_eq!(p.token_env(), format!("KOBANA_{}_TOKEN", p.slug.to_uppercase()));
+        }
+        assert_eq!(by_slug("kadu").unwrap().token_env_aliases, ["KADU_TOKEN"]);
+    }
+
+    /// `kobana <product> auth` is the CLI's own command: a spec resource with
+    /// that name would be shadowed by it
+    #[test]
+    fn no_product_has_an_auth_resource() {
+        for loaded in load_all().unwrap() {
+            assert!(!loaded.tree.children.contains_key("auth"), "{}", loaded.product.slug);
+            assert!(
+                loaded.tree.endpoints.iter().all(|e| e.cli_method != "auth"),
+                "{}",
+                loaded.product.slug
+            );
+        }
+    }
+
+    #[test]
+    fn sandbox_resource_only_where_the_cli_has_a_sandbox() {
+        for p in REGISTRY {
+            assert_eq!(p.oauth.sandbox.is_some(), p.hosts.sandbox.is_some(), "{}", p.slug);
+        }
     }
 }

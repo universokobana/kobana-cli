@@ -105,7 +105,7 @@ kobana banking bank-billets list --page-all | jq -r '.[] | .id'
 O CLI deve funcionar sem interacao em ambientes CI:
 
 ```bash
-export KOBANA_TOKEN=xxxxx
+export KOBANA_BANKING_TOKEN=xxxxx
 kobana banking bank-billets list
 # Funciona sem login interativo
 ```

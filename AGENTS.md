@@ -210,7 +210,7 @@ ruby scripts/build-spec-translations.rb
 | `clap_i18n.rs`       | Localized clap help layout, `-h`/`-V`/`help`, parse errors, `--lang` |
 | `executor.rs`        | HTTP request construction, response handling, dry-run           |
 | `auth.rs`            | Token resolution chain (env var → file → saved credentials)    |
-| `auth_commands.rs`   | `kobana auth` subcommands: `login`, `logout`, `status`, `export` |
+| `auth_commands.rs`   | `kobana <product> auth` subcommands: `login`, `logout`, `status`, `export` |
 | `credential_store.rs`| AES-256-GCM encryption/decryption of credential files          |
 | `oauth.rs`           | OAuth2 Authorization Code and Client Credentials flows         |
 | `schema.rs`          | `kobana schema` command — introspect API endpoint schemas      |
@@ -422,18 +422,27 @@ Current helpers:
 
 | Variable | Description |
 |----------|-------------|
-| `KOBANA_TOKEN` | Bearer access token (highest priority) |
+| `KOBANA_<PRODUCT>_TOKEN` | A product's Bearer token (highest priority): `KOBANA_BANKING_TOKEN`, `KOBANA_FINANCE_TOKEN`… Kadu also reads `KADU_TOKEN` (`Product::token_env_aliases`) |
 | `KOBANA_CREDENTIALS_FILE` | Path to OAuth credentials JSON file |
-| `KOBANA_CLIENT_ID` | OAuth client ID (for `kobana auth login`) |
+| `KOBANA_CLIENT_ID` | OAuth client ID (for `kobana <product> auth login`, default `kobana-cli`) |
 | `KOBANA_CLIENT_SECRET` | OAuth client secret |
+| `KOBANA_ACCOUNT_URL` | Overrides the Conta Kobana (authorization server) URL |
 | `KOBANA_WORKSPACE_ID` | Workspace sent as `X-Workspace-Id` by `finance` (required) and `dashboards` (optional). A value in `--params` wins |
 
 > [!NOTE]
-> Products do not share credentials. `KOBANA_TOKEN` holds a banking OAuth token
-> **or**, for every other product, an RS256 access token issued by the Kobana
-> Authorization Server (`account.kobana.com.br`) whose `aud` is that product's
-> API URL — so one token still serves one product. `kobana auth login` only
-> produces banking credentials.
+> Products do not share credentials. Every token is issued by the Conta Kobana
+> (`account.kobana.com.br` in production, `account.<env>.kobana.com.br`
+> otherwise, the local kobana-app in development) with the product's API URL as
+> `aud`, so one token serves one product. `kobana <product> auth login` reads the scopes it publishes in
+> `/.well-known/oauth-protected-resource` on its MCP host (falling back to the
+> authorization server's catalogue filtered by `<product>/`, which is what Kadu
+> needs today), adds the global access levels (`read`, `write`, `delete`,
+> `import`, `export`) and sends `resource=<Product::oauth.*.api>`. Each
+> `Product` carries its registry entry in `oauth` — the `api` URI must match
+> `kobana-app/config/oauth_resources.yml` byte for byte, and in development it
+> is not the CLI's base URL. Credentials are saved per product and environment
+> (`credentials-<product>-<env>.enc`) and refreshed when expired; the legacy
+> `credentials.enc` still counts as banking.
 
 ### Configuration
 

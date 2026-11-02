@@ -76,8 +76,11 @@ async fn run() -> Result<(), KobanaError> {
         return update::handle_update(check_only, as_json).await;
     }
 
-    if let Some(("auth", auth_matches)) = matches.subcommand() {
-        return auth_commands::handle_auth(auth_matches, &matches).await;
+    // `kobana <product> auth …`
+    if let Some((name, sub)) = matches.subcommand() {
+        if let (Some(product), Some(("auth", auth_matches))) = (product::by_slug(name), sub.subcommand()) {
+            return auth_commands::handle_auth(product, auth_matches, &matches).await;
+        }
     }
 
     if let Some(("completions", comp_matches)) = matches.subcommand() {
@@ -98,15 +101,15 @@ async fn run() -> Result<(), KobanaError> {
                     matches.get_one::<String>("env").map(|s| s.as_str()),
                 );
                 let helper_dry_run = sub_matches.get_flag("dry-run");
-                let token = if helper_dry_run {
-                    auth::resolve_token().unwrap_or_default()
-                } else {
-                    auth::resolve_token()?
-                };
                 // Helpers wrap banking endpoints (+emitir, +cobrar, …)
                 let banking = product::find(&products, "banking").ok_or_else(|| {
                     KobanaError::Internal("banking product is not registered".into())
                 })?;
+                let token = if helper_dry_run {
+                    auth::resolve_token(banking.product, &env).await.unwrap_or_default()
+                } else {
+                    auth::resolve_token(banking.product, &env).await?
+                };
                 let client = product::client_for(banking.product, &env, &token, helper_dry_run)?;
                 return helper.execute(&client, sub_matches).await;
             }
@@ -134,9 +137,9 @@ async fn run() -> Result<(), KobanaError> {
     // For dry-run, we don't need auth
     let dry_run = matches.get_flag("dry-run");
     let token = if dry_run {
-        auth::resolve_token().unwrap_or_default()
+        auth::resolve_token(loaded_product.product, &env).await.unwrap_or_default()
     } else {
-        auth::resolve_token()?
+        auth::resolve_token(loaded_product.product, &env).await?
     };
 
     // Create client — each product has its own API host and TLS requirements

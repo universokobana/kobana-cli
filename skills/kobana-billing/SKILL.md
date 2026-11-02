@@ -20,7 +20,7 @@ kobana billing <resource> <method> [flags]
 ```
 
 Billing is its own API (`api.billing.kobana.com.br`) and does not share
-credentials with the banking product. `KOBANA_TOKEN` must hold an RS256 access
+credentials with the banking product. `KOBANA_BILLING_TOKEN` — or the credentials saved by `kobana billing auth login` — must hold an RS256 access
 token issued by the Kobana Authorization Server (`account.kobana.com.br`) with
 `aud=https://api.billing.kobana.com.br`. Scopes have two axes: `billing/{resource}` limits what the token reaches, and an
 access level says what it may do there — `GET` needs `read`, `write` or `all`;

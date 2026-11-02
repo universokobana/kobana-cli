@@ -24,7 +24,7 @@ kobana kadu <resource> <method> [flags]
 Kadu is its own API (`api.kadu.ia.br`) and does not share credentials with any
 other product:
 
-- `KOBANA_TOKEN` must hold an RS256 access token (`typ: at+jwt`) issued by the
+- `KOBANA_KADU_TOKEN` (or `KADU_TOKEN`) — or the credentials saved by `kobana kadu auth login` — must hold an RS256 access token (`typ: at+jwt`) issued by the
   Kobana Authorization Server (`account.kobana.com.br`) with
   `aud=https://api.kadu.ia.br`. The organization is the token's `org` claim —
   there is no workspace header; workspaces are a resource.

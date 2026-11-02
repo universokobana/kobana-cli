@@ -212,78 +212,81 @@ Requer [Rust](https://rustup.rs/) 1.86+.
 
 ## Autenticação
 
-Cada produto autentica separadamente. Em todos eles o token vai em
-`KOBANA_TOKEN`, mas **o token de um produto não vale para outro** — e a forma de
-obtê-lo muda:
+Cada produto autentica separadamente: **o token de um produto não vale para
+outro**. Todos os tokens vêm da **Conta Kobana** (`account.kobana.com.br`), o
+Authorization Server da Kobana, e o `aud` de cada um é a URL da API do produto
+(`https://api.billing.kobana.com.br`, `https://api.kadu.ia.br`, …).
 
-| Produto | Credencial | Como obter |
-|---------|-----------|------------|
-| `banking` | Token de API ou OAuth | Interface da Kobana ou `kobana auth login` |
-| `finance` | JWT (RS256) + `X-Workspace-Id` | Conta Kobana (`account.kobana.com.br`) |
-| `billing` | JWT (RS256) | Conta Kobana (`account.kobana.com.br`) |
-| `inbox` | JWT (RS256) | Conta Kobana (`account.kobana.com.br`) |
-| `dunning` | JWT (RS256) | Conta Kobana (`account.kobana.com.br`) |
-| `dashboards` | JWT (RS256), `X-Workspace-Id` opcional | Conta Kobana (`account.kobana.com.br`) |
-| `kadu` | JWT (RS256) | Conta Kobana (`account.kobana.com.br`) |
-
-### Gateway Bancário
-
-#### Token de acesso (mais simples)
-
-Obtenha o token em *Integracões > API > Token de API* na interface da Kobana.
+### Login pelo navegador (OAuth + PKCE)
 
 ```bash
-export KOBANA_TOKEN=seu_token_aqui
+kobana billing auth login
+kobana kadu auth login
 ```
 
-#### OAuth (PKCE)
+Como todo comando, o login segue `kobana <produto> <comando>`. O
+`kobana <produto> auth login` mostra os escopos que **o produto publica** no seu
+`/.well-known/oauth-protected-resource` (RFC 9728), lido na hora do login.
+Depois vêm os níveis de acesso, que valem para todos os recursos escolhidos:
 
-O CLI usa OAuth com PKCE — funciona sem configurar nada:
+| Nível | Libera |
+|-------|--------|
+| `read` | Leitura |
+| `write` | Criação e alteração |
+| `delete` | Exclusão |
+| `import` | Importação em volume |
+| `export` | Exportação em volume |
+
+Um nível não implica outro: `DELETE` exige `delete`, importação exige `import`.
+O navegador abre na Conta Kobana com o `resource` do produto, e o token salvo
+só vale para ele. Quando o token vence, o CLI o renova sozinho com o refresh
+token.
 
 ```bash
-# Login (abre browser, zero config)
-kobana auth login
+# Escopos sem perguntar (fora de um terminal, o default é todos os recursos + read)
+kobana billing auth login --scopes "billing/customers,billing/plans,read,write"
 
-# Login com escopos específicos (default: read)
-kobana auth login --scopes "read,write"
+# Client credentials — só no banking (token de aplicação, sem pessoa)
+kobana banking auth login --client-id <ID> --client-secret <SECRET>
 
-# Client credentials (para apps server-side)
-kobana auth login --client-id <ID> --client-secret <SECRET>
-
-# Ver status
-kobana auth status
-
-# Exportar credenciais (para CI)
-kobana auth export > credentials.json
-
-# Logout
-kobana auth logout
+kobana billing auth status
+kobana billing auth export > credentials.json
+kobana billing auth logout
 ```
 
-Credenciais salvas são criptografadas com AES-256-GCM. A chave fica no keyring do OS (macOS Keychain, etc.) com fallback para arquivo.
+As credenciais ficam uma por produto e ambiente
+(`~/.config/kobana/credentials-<produto>-<ambiente>.enc`), criptografadas com
+AES-256-GCM. A chave fica no keyring do OS (macOS Keychain, etc.) com fallback
+para arquivo. O `credentials.enc` das versões até a 0.9.0 continua valendo
+como credencial do `banking`.
 
-> [!NOTE]
-> `kobana auth login` é do Gateway Bancário. Ele não emite tokens para os
-> demais produtos.
+### Token por variável de ambiente
 
-### Demais produtos
-
-`finance`, `billing`, `inbox`, `dunning`, `dashboards` e `kadu` só **verificam** tokens:
-todos aceitam um access token **RS256 emitido pelo Authorization Server da
-Kobana** (`account.kobana.com.br`), enviado como `Authorization: Bearer <jwt>`.
-O `aud` do token é a URL da API do produto (`https://api.billing.kobana.com.br`,
-`https://api.kadu.ia.br`, …), então um token continua valendo para um produto só. Coloque o token do
-produto em `KOBANA_TOKEN` antes de chamá-lo:
+Cada produto lê o próprio token em `KOBANA_<PRODUTO>_TOKEN`:
 
 ```bash
-KOBANA_TOKEN=$TOKEN_FINANCE kobana finance payables list
-KOBANA_TOKEN=$TOKEN_BILLING kobana billing subscriptions list
+export KOBANA_BANKING_TOKEN=...
+export KOBANA_FINANCE_TOKEN=...
+export KOBANA_KADU_TOKEN=...   # ou KADU_TOKEN
+kobana finance payables list
+kobana kadu tasks list
 ```
 
-Como a variável é a mesma para todos os produtos, exporte-a por comando (ou use
-um `.env` por projeto) se você alterna entre produtos na mesma sessão.
+| Produto | Variável |
+|---------|----------|
+| `banking` | `KOBANA_BANKING_TOKEN` |
+| `finance` | `KOBANA_FINANCE_TOKEN` |
+| `billing` | `KOBANA_BILLING_TOKEN` |
+| `inbox` | `KOBANA_INBOX_TOKEN` |
+| `dunning` | `KOBANA_DUNNING_TOKEN` |
+| `dashboards` | `KOBANA_DASHBOARDS_TOKEN` |
+| `kadu` | `KOBANA_KADU_TOKEN` ou `KADU_TOKEN` |
 
-#### Espaço de trabalho (`X-Workspace-Id`)
+No `banking`, o token de API de *Integrações > API > Token de API* da interface
+da Kobana também serve. `KOBANA_TOKEN`, das versões até a 0.9.0, não é mais
+lido.
+
+### Espaço de trabalho (`X-Workspace-Id`)
 
 No `finance`, toda rota age sobre **um** espaço de trabalho da organização do
 token, escolhido pelo cabeçalho `X-Workspace-Id` — sem ele a API responde
@@ -305,7 +308,7 @@ kobana finance payables list --params '{"X-Workspace-Id": "outro-uuid"}'
 O `--dry-run` mostra os cabeçalhos enviados (sem o token), e
 `kobana schema` lista os cabeçalhos de cada endpoint em `header_params`.
 
-#### Inbox Autônomo: só o token
+### Inbox Autônomo: só o token
 
 Desde 31/10/2026 a API do `inbox` não usa mais **mTLS**: o JWT no
 `Authorization: Bearer` basta, como nos outros produtos, e o CLI não pede
@@ -318,9 +321,9 @@ os dois.
 
 | Prioridade | Método | Configuração |
 |------------|--------|--------------|
-| 1 | Token direto | `KOBANA_TOKEN` |
+| 1 | Token do produto | `KOBANA_<PRODUTO>_TOKEN` |
 | 2 | Arquivo de credenciais | `KOBANA_CREDENTIALS_FILE` |
-| 3 | Credenciais salvas | `kobana auth login` |
+| 3 | Credenciais salvas | `kobana <produto> auth login` |
 
 ### Ambientes
 
@@ -341,8 +344,9 @@ Produtos sem host de desenvolvimento próprio caem em produção quando você pa
 `--env development`. Já `--env sandbox` num produto sem sandbox (`inbox`,
 `dashboards` e `kadu`) termina com erro, para nunca mandar um teste para produção.
 
-O OAuth (`kobana auth login`) é do Gateway Bancário e usa `app.kobana.com.br` em
-produção e `app-sandbox.kobana.com.br` em sandbox.
+O `kobana <produto> auth login` usa a Conta Kobana do ambiente: `account.kobana.com.br` em
+produção, `account.sandbox.kobana.com.br` em sandbox e a kobana-app local
+(`localhost:5005`) em development. `KOBANA_ACCOUNT_URL` troca o endereço.
 
 ```bash
 # Produção (default — não precisa de flag)
@@ -359,7 +363,7 @@ export KOBANA_ENVIRONMENT=sandbox
 kobana banking charge pix list
 
 # Login em sandbox
-kobana auth login --env sandbox
+kobana billing auth login --env sandbox
 ```
 
 Os tokens são **diferentes entre ambientes** — um token de sandbox não funciona em produção e vice-versa.
@@ -367,7 +371,7 @@ Os tokens são **diferentes entre ambientes** — um token de sandbox não funci
 ### Idioma
 
 O CLI fala português, inglês ou espanhol: ajuda, mensagens, erros, perguntas do
-`kobana auth login` e a página que o navegador mostra no fim do login. As
+`kobana <produto> auth login` e a página que o navegador mostra no fim do login. As
 descrições dos endpoints, no `--help` e no `kobana schema`, vêm traduzidas das
 specs que cada produto publica nas suas docs.
 
@@ -624,11 +628,12 @@ OpenAPI specs embutidos. O caminho segue a mesma forma do comando:
 
 | Variável | Descrição |
 |----------|-----------|
-| `KOBANA_TOKEN` | Token do produto que você vai chamar (Bearer). Não é compartilhado entre produtos |
+| `KOBANA_<PRODUTO>_TOKEN` | Token (Bearer) de um produto: `KOBANA_BANKING_TOKEN`, `KOBANA_FINANCE_TOKEN`, `KOBANA_KADU_TOKEN` (ou `KADU_TOKEN`)… |
+| `KOBANA_ACCOUNT_URL` | Endereço da Conta Kobana usada no login (default: o do ambiente) |
 | `KOBANA_WORKSPACE_ID` | Espaço de trabalho enviado em `X-Workspace-Id` pelo `finance` (obrigatório), pelo `dashboards` e pelo `dunning` |
 | `KOBANA_CREDENTIALS_FILE` | Caminho para arquivo JSON de credenciais |
-| `KOBANA_CLIENT_ID` | OAuth client ID (Gateway Bancário) |
-| `KOBANA_CLIENT_SECRET` | OAuth client secret (Gateway Bancário) |
+| `KOBANA_CLIENT_ID` | OAuth client ID do login (default: `kobana-cli`) |
+| `KOBANA_CLIENT_SECRET` | OAuth client secret (opcional com PKCE) |
 | `KOBANA_CONFIG_DIR` | Diretório de config (default: `~/.config/kobana`) |
 | `KOBANA_ENVIRONMENT` | `production` (default), `sandbox` ou `development` |
 | `KOBANA_LOG` | Nível de log para stderr (ex: `kobana=debug`) |

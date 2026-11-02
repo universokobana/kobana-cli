@@ -20,10 +20,26 @@ pub struct StoredCredentials {
     pub token_type: String,
     pub expires_at: Option<i64>,
     pub environment: String,
+    /// Product the token was issued for. Absent in the single
+    /// `credentials.enc` written up to 0.9.0, which was always banking.
+    #[serde(default)]
+    pub product: Option<String>,
+    /// OAuth client the token was issued to, needed to refresh it
+    #[serde(default)]
+    pub client_id: Option<String>,
+    /// `resource` (the token's `aud`) asked at login, sent again on refresh
+    #[serde(default)]
+    pub resource: Option<String>,
+    #[serde(default)]
+    pub scopes: Vec<String>,
 }
 
-/// Save credentials encrypted to disk
-pub fn save_credentials(creds: &StoredCredentials) -> Result<(), KobanaError> {
+/// Save a product's credentials encrypted to disk
+pub fn save_credentials(
+    product: &str,
+    env: &str,
+    creds: &StoredCredentials,
+) -> Result<(), KobanaError> {
     let config_dir = config::config_dir();
     std::fs::create_dir_all(&config_dir)
         .map_err(|e| KobanaError::Internal(trf!(
@@ -37,7 +53,7 @@ pub fn save_credentials(creds: &StoredCredentials) -> Result<(), KobanaError> {
         serde_json::to_vec(creds).map_err(|e| KobanaError::Internal(e.to_string()))?;
 
     let encrypted = encrypt(&key, &plaintext)?;
-    let cred_path = credentials_path();
+    let cred_path = credentials_path(product, env);
 
     std::fs::write(&cred_path, &encrypted)
         .map_err(|e| KobanaError::Internal(trf!(
@@ -62,9 +78,35 @@ pub fn save_credentials(creds: &StoredCredentials) -> Result<(), KobanaError> {
     Ok(())
 }
 
-/// Load credentials from encrypted file
-pub fn load_credentials() -> Result<StoredCredentials, KobanaError> {
-    let cred_path = credentials_path();
+/// Load a product's saved credentials. Banking falls back to the single
+/// `credentials.enc` of 0.9.0 and earlier when it was saved for `env`.
+pub fn load_credentials(product: &str, env: &str) -> Result<StoredCredentials, KobanaError> {
+    let path = credentials_path(product, env);
+    if path.exists() {
+        return load_from(&path);
+    }
+    if product == "banking" && legacy_credentials_path().exists() {
+        let creds = load_from(&legacy_credentials_path())?;
+        if creds.environment == env {
+            return Ok(creds);
+        }
+    }
+    Err(KobanaError::Auth(tr!(
+        pt: "Nenhuma credencial salva",
+        en: "No saved credentials found",
+        es: "No hay credenciales guardadas",
+    ).into()))
+}
+
+/// Whether `load_credentials` would find something
+pub fn has_credentials(product: &str, env: &str) -> bool {
+    credentials_path(product, env).exists()
+        || (product == "banking"
+            && legacy_credentials_path().exists()
+            && load_from(&legacy_credentials_path()).is_ok_and(|c| c.environment == env))
+}
+
+fn load_from(cred_path: &PathBuf) -> Result<StoredCredentials, KobanaError> {
     if !cred_path.exists() {
         return Err(KobanaError::Auth(tr!(
             pt: "Nenhuma credencial salva",
@@ -73,7 +115,7 @@ pub fn load_credentials() -> Result<StoredCredentials, KobanaError> {
         ).into()));
     }
 
-    let encrypted = std::fs::read(&cred_path)
+    let encrypted = std::fs::read(cred_path)
         .map_err(|e| KobanaError::Auth(trf!(
             pt: "não foi possível ler as credenciais: {e}",
             en: "failed to read credentials: {e}",
@@ -91,32 +133,63 @@ pub fn load_credentials() -> Result<StoredCredentials, KobanaError> {
         )))
 }
 
-/// Delete saved credentials
-pub fn delete_credentials() -> Result<(), KobanaError> {
-    let cred_path = credentials_path();
-    if cred_path.exists() {
-        // Overwrite with zeros before deleting
-        let size = std::fs::metadata(&cred_path)
-            .map(|m| m.len() as usize)
-            .unwrap_or(0);
-        if size > 0 {
-            let _ = std::fs::write(&cred_path, vec![0u8; size]);
+/// Delete a product's saved credentials (banking also drops the legacy file),
+/// and the encryption key once no credential is left. Returns whether
+/// anything was removed.
+pub fn delete_credentials(product: &str, env: &str) -> Result<bool, KobanaError> {
+    let mut removed = wipe(&credentials_path(product, env))?;
+    if product == "banking" && legacy_credentials_path().exists() {
+        let legacy_env = load_from(&legacy_credentials_path()).map(|c| c.environment);
+        if legacy_env.map_or(true, |e| e == env) {
+            removed |= wipe(&legacy_credentials_path())?;
         }
-        std::fs::remove_file(&cred_path)
-            .map_err(|e| KobanaError::Internal(trf!(
-                pt: "não foi possível apagar as credenciais: {e}",
-                en: "failed to delete credentials: {e}",
-                es: "no se pudieron eliminar las credenciales: {e}",
-            )))?;
     }
-
-    // Also try to remove the keyring entry
-    let _ = delete_keyring_key();
-
-    Ok(())
+    // The key goes with the last credential it encrypts
+    if saved_credential_files().is_empty() {
+        let _ = delete_keyring_key();
+    }
+    Ok(removed)
 }
 
-pub fn credentials_path() -> PathBuf {
+/// Every saved credential file, of any product and environment
+fn saved_credential_files() -> Vec<PathBuf> {
+    let Ok(entries) = std::fs::read_dir(config::config_dir()) else {
+        return Vec::new();
+    };
+    entries
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| {
+            p.file_name()
+                .and_then(|n| n.to_str())
+                .is_some_and(|n| n.starts_with("credentials") && n.ends_with(".enc"))
+        })
+        .collect()
+}
+
+/// Overwrite with zeros, then delete. Returns whether the file existed.
+fn wipe(path: &PathBuf) -> Result<bool, KobanaError> {
+    if !path.exists() {
+        return Ok(false);
+    }
+    let size = std::fs::metadata(path).map(|m| m.len() as usize).unwrap_or(0);
+    if size > 0 {
+        let _ = std::fs::write(path, vec![0u8; size]);
+    }
+    std::fs::remove_file(path).map_err(|e| KobanaError::Internal(trf!(
+        pt: "não foi possível apagar as credenciais: {e}",
+        en: "failed to delete credentials: {e}",
+        es: "no se pudieron eliminar las credenciales: {e}",
+    )))?;
+    Ok(true)
+}
+
+/// One file per product and environment: `credentials-billing-sandbox.enc`
+pub fn credentials_path(product: &str, env: &str) -> PathBuf {
+    config::config_dir().join(format!("credentials-{product}-{env}.enc"))
+}
+
+/// The single banking credential written by 0.9.0 and earlier
+fn legacy_credentials_path() -> PathBuf {
     config::config_dir().join("credentials.enc")
 }
 

@@ -24,7 +24,7 @@ kobana finance <resource> <method> [flags]
 Finance is its own API (`api.finance.kobana.com.br`) and does not share
 credentials with the banking product. Every request needs **two** things:
 
-- `KOBANA_TOKEN` — an RS256 access token issued by the Kobana Authorization
+- `KOBANA_FINANCE_TOKEN` — or the credentials saved by `kobana finance auth login` — an RS256 access token issued by the Kobana Authorization
   Server. Its `org` claim is the tenant. Scopes have two axes: `finance/{resource}` limits what the token reaches, and an
   access level says what it may do there — `GET` needs `read`, `write` or `all`;
   `DELETE` (bulk included) needs `delete` or `all`; bulk imports need `import`

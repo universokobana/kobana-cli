@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Login em qualquer produto** — `kobana <produto> auth login` (`kobana billing auth login`, `kobana kadu auth login`…) mostra os escopos que o produto publica no `/.well-known/oauth-protected-resource` do seu host MCP, lidos na hora (o `kadu`, que ainda não publica o documento, usa o catálogo da Conta Kobana filtrado por `kadu/`). Depois vêm os níveis de acesso, `read`, `write`, `delete`, `import` e `export`, que valem para todos os recursos escolhidos. O token sai da Conta Kobana com o `resource` do produto, então o `aud` é a API dele, e é renovado sozinho com o refresh token quando vence
+- **Token por produto em variável de ambiente** — `KOBANA_BANKING_TOKEN`, `KOBANA_FINANCE_TOKEN`, `KOBANA_BILLING_TOKEN`, `KOBANA_INBOX_TOKEN`, `KOBANA_DUNNING_TOKEN`, `KOBANA_DASHBOARDS_TOKEN` e `KOBANA_KADU_TOKEN` (ou `KADU_TOKEN`),, com prioridade sobre tudo
+- **`auth status`, `auth export` e `auth logout` por produto** — `kobana <produto> auth status|export|logout`
+
+### Changed
+
+- **O login usa a Conta Kobana** (`account.kobana.com.br`, `account.sandbox.kobana.com.br`; a kobana-app local em development) no lugar de `app.kobana.com.br`; `KOBANA_ACCOUNT_URL` troca o endereço. Os escopos do `banking` passam a ser os publicados por ele (`banking/charge.bank_billets`…), e não mais a lista embutida no CLI
+- **Credenciais salvas por produto e ambiente** (`credentials-<produto>-<ambiente>.enc`). O `credentials.enc` das versões anteriores continua valendo como credencial do `banking`
+- **`auth` dentro do produto** — `kobana <produto> auth login|logout|status|export`, no formato `kobana <produto> <comando>` de todo o CLI. `--client-id`/`--client-secret` (client credentials) só valem para o `banking`
+
+### Removed
+
+- **`kobana auth …`** (incompatível) — use `kobana <produto> auth …`; o antigo `kobana auth login` equivale a `kobana banking auth login`
+- **`KOBANA_TOKEN`** (incompatível) — o mesmo token ia para qualquer produto chamado. Use a variável do produto (`KOBANA_BANKING_TOKEN`, `KOBANA_FINANCE_TOKEN`…)
+
 ## [0.9.0] - 2026-11-02
 
 ### Added
