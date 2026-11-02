@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-02
+
 ### Added
 
 - **`kadu`: repositórios de código** — `kobana kadu sources list|create|get|update|delete|check`: repositórios git que uma tarefa lê numa cópia clonada a cada execução (`task.sources`). O `create` recebe `{"name", "repository": "owner/repo", "ref"}`; sem o GitHub App da organização no repositório, a resposta traz `deploy_key_public_key` para cadastrar como Deploy Key somente leitura, e `check` verifica o acesso e grava `access_status`. Spec e traduções do `kadu` atualizadas a partir do `main` do kadu, que traz também `usage performance` (`GET /v1/usage/performance`)
