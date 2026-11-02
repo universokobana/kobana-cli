@@ -756,9 +756,16 @@ mod tests {
             "webhook-deliveries",
             "operation-approvals",
             "me",
+            "volumes",
         ] {
             assert!(kadu.tree.children.contains_key(resource), "kadu {resource}");
         }
+
+        // Volumes: CRUD plus the files and the sync trail of each volume, read only
+        let volumes = &kadu.tree.children["volumes"];
+        let mut methods: Vec<&str> = volumes.endpoints.iter().map(|e| e.cli_method.as_str()).collect();
+        methods.sort();
+        assert_eq!(methods, ["create", "delete", "files", "get", "list", "syncs", "update"]);
 
         // The token's own organization is a singleton: `kobana kadu organization get`,
         // with no id and no listing (`list` stays only as a hidden alias)

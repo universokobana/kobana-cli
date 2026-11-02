@@ -58,6 +58,9 @@ other product:
   period; `{"dry_run": true}` only counts)
 - `webhooks` — CRUD plus `rotate-secret`; `webhook-deliveries list|get|replay`
 - `repository` — `get`, `sync` (skills repository)
+- `volumes` — CRUD plus `files` (the volume's file index) and `syncs` (what each
+  execution mounted and committed); read only besides the CRUD — content never
+  goes through the API, it is synced by the runner
 
 ### Organization
 - `organization` — `get`, `update`: **only the token's organization** (the
