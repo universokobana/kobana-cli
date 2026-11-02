@@ -128,6 +128,24 @@ fn show_endpoint_schema(
 
     // Walk the same tree the CLI dispatches on, so schema output can never
     // drift from what the commands actually accept
+    // `…recipients.remove.create`, the path before `remove` became an action
+    // of `recipients`, still finds it
+    if method_name == "create" {
+        if let Some((action, parents)) = resource_parts.split_last() {
+            let mut node = Some(&loaded.tree);
+            for part in parents {
+                node = node.and_then(|n| n.children.get(*part));
+            }
+            if let Some(endpoint) = node.and_then(|n| {
+                n.endpoints
+                    .iter()
+                    .find(|e| e.legacy_create && e.cli_method == *action)
+            }) {
+                return print_endpoint(loaded, endpoint);
+            }
+        }
+    }
+
     let mut node = &loaded.tree;
     for part in resource_parts {
         node = node.children.get(*part).ok_or_else(|| {

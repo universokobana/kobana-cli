@@ -83,6 +83,10 @@ pub struct ResolvedEndpoint {
     pub operation: Operation,
     /// Path parameter names extracted from the template (e.g., ["id", "uid"])
     pub path_params: Vec<String>,
+    /// An action of its parent resource (`inboxes recipients remove`) that
+    /// used to be a resource of its own with a `create` method
+    /// (`inboxes recipients remove create`). The old line still runs it.
+    pub legacy_create: bool,
 }
 
 impl ResolvedEndpoint {
@@ -213,7 +217,24 @@ impl ApiSpec {
             // `/inboxes/{id}/recipients` (POST + DELETE) would otherwise emit
             // the same command name twice, so the action becomes a resource
             // node and each verb gets its own inferred method underneath it.
-            let last_is_action = is_action_path && path_item.operations.len() == 1;
+            // A POST-only path under another route (`/holidays/sync` next to
+            // `/holidays`, `/inboxes/{id}/recipients/remove` next to
+            // `…/recipients`) is an action of that resource too: `holidays
+            // sync`, `inboxes recipients remove` — not a resource `sync` with
+            // a `create` in it, its name until the next release after 0.8.0.
+            let is_nested_action = raw_segments.len() >= 2
+                && path_item.operations.len() == 1
+                && path_item.operations.contains_key(&HttpMethod::Post)
+                && {
+                    let last = raw_segments.last().unwrap();
+                    let second_last = raw_segments[raw_segments.len() - 2];
+                    !last.starts_with('{') && !second_last.starts_with('{')
+                }
+                && path
+                    .rsplit_once('/')
+                    .is_some_and(|(parent, _)| self.paths.contains_key(parent));
+            let last_is_action =
+                (is_action_path || is_nested_action) && path_item.operations.len() == 1;
 
             // Build endpoints for each HTTP method
             for (http_method, operation) in &path_item.operations {
@@ -237,6 +258,7 @@ impl ApiSpec {
                     cli_method: cli_method.clone(),
                     operation: operation.clone(),
                     path_params: path_params.clone(),
+                    legacy_create: is_nested_action,
                 };
 
                 // Navigate to the right node in the tree
@@ -303,6 +325,8 @@ fn resolve_conflicts(node: &mut CommandNode) {
         let child_name = ep.cli_method.clone();
         let new_method = infer_cli_method(ep.http_method, &ep.path_template, &ep.operation);
         ep.cli_method = new_method.clone();
+        // Back inside its own resource it is `create` again, as it always was
+        ep.legacy_create = false;
         if let Some(child) = node.children.get_mut(&child_name) {
             if !child
                 .endpoints
@@ -636,6 +660,41 @@ mod tests {
         assert_eq!(method("webhooks"), "list");
         // A reference cycle is bounded and falls back to the path rule
         assert_eq!(method("loop"), "list");
+    }
+
+    #[test]
+    fn a_post_only_subpath_is_an_action_of_its_parent() {
+        let spec = ApiSpec::parse(
+            r#"{"paths": {
+                "/v1/inboxes/{id}/recipients": {"post": {"responses": {}}},
+                "/v1/inboxes/{id}/recipients/remove": {"post": {"responses": {}}},
+                "/v1/holidays": {"get": {"responses": {}}, "post": {"responses": {}}},
+                "/v1/holidays/sync": {"post": {"responses": {}}},
+                "/v1/data_sources": {"get": {"responses": {}}},
+                "/v1/data_sources/openapi": {"post": {"responses": {}}},
+                "/v1/data_sources/openapi/analyze": {"post": {"responses": {}}},
+                "/v1/reports/monthly": {"post": {"responses": {}}}
+            }}"#,
+        )
+        .unwrap();
+        let tree = spec.build_command_tree("/v1");
+        let methods = |node: &CommandNode| -> Vec<(String, bool)> {
+            let mut m: Vec<_> = node.endpoints.iter().map(|e| (e.cli_method.clone(), e.legacy_create)).collect();
+            m.sort();
+            m
+        };
+
+        let recipients = &tree.children["inboxes"].children["recipients"];
+        assert_eq!(methods(recipients), [("create".to_string(), false), ("remove".to_string(), true)]);
+        assert!(recipients.children.is_empty());
+        let holidays = &tree.children["holidays"];
+        assert!(methods(holidays).contains(&("sync".to_string(), true)));
+        // A name that is also a resource with children stays that resource,
+        // and its own sub-action is an action of it
+        let openapi = &tree.children["data-sources"].children["openapi"];
+        assert_eq!(methods(openapi), [("analyze".to_string(), true), ("create".to_string(), false)]);
+        // Without a parent route it is still a resource of its own
+        assert_eq!(methods(&tree.children["reports"].children["monthly"]), [("create".to_string(), false)]);
     }
 
     #[test]

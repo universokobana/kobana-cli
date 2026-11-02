@@ -579,19 +579,22 @@ mod tests {
             assert!(v1.children.contains_key(resource), "missing {resource}");
         }
 
-        // An action path under a resource that has its own endpoint becomes a
-        // child node: `POST …/recipients` adds, `POST …/recipients/remove`
-        // removes (it was a `DELETE` on the collection until the API moved it)
+        // A POST-only path under a resource that has its own endpoint is an
+        // action of it: `POST …/recipients` adds (`recipients create`),
+        // `POST …/recipients/remove` removes (`recipients remove`, still
+        // answering to its old line `recipients remove create`)
         let recipients = v1.children["inboxes"]
             .children
             .get("recipients")
             .expect("inboxes recipients");
-        let methods: Vec<&str> =
-            recipients.endpoints.iter().map(|e| e.cli_method.as_str()).collect();
-        assert_eq!(methods, vec!["create"]);
-        let remove = recipients.children.get("remove").expect("inboxes recipients remove");
-        let methods: Vec<&str> = remove.endpoints.iter().map(|e| e.cli_method.as_str()).collect();
-        assert_eq!(methods, vec!["create"]);
+        let mut methods: Vec<(&str, bool)> = recipients
+            .endpoints
+            .iter()
+            .map(|e| (e.cli_method.as_str(), e.legacy_create))
+            .collect();
+        methods.sort();
+        assert_eq!(methods, vec![("create", false), ("remove", true)]);
+        assert!(!recipients.children.contains_key("remove"));
 
         assert_eq!(
             inbox.product.base_url(&Environment::Production).unwrap(),

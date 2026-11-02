@@ -60,6 +60,18 @@ fn build_method_command(endpoint: &ResolvedEndpoint, parent_path: &str) -> Comma
         cmd = cmd.long_about(desc.clone());
     }
 
+    // The line it had before becoming an action of its parent keeps working
+    // (`… recipients remove create`), out of the help
+    if endpoint.legacy_create {
+        cmd = cmd.subcommand(
+            clap_i18n::command(
+                "create".to_string(),
+                leaf_usage(&format!("{parent_path} {} create", endpoint.cli_method)),
+            )
+            .hide(true),
+        );
+    }
+
     cmd
 }
 
@@ -463,6 +475,12 @@ fn resolve_in_tree<'a>(
         // Check if it's an endpoint method
         for endpoint in &node.endpoints {
             if endpoint.cli_method == sub_name {
+                // `<action> create`, the line before it became an action
+                if let Some(("create", legacy)) = sub_matches.subcommand() {
+                    if endpoint.legacy_create {
+                        return Some((endpoint, legacy.clone()));
+                    }
+                }
                 return Some((endpoint, sub_matches.clone()));
             }
         }
