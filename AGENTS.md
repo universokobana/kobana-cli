@@ -124,6 +124,32 @@ every route), `dashboards` and `dunning` (optional while the organization has a
 single workspace) map it to `KOBANA_WORKSPACE_ID`.
 `header_env_names_a_header_parameter_of_the_spec` keeps the mapping honest.
 
+#### Command names (`spec.rs`)
+
+Each path segment is a resource (`_` → `-`), path parameters go in `--params`,
+and the method name is inferred:
+
+- `GET` → `list`, or `get` when it reads one record: a path ending in `{id}`,
+  or a top-level route without pagination whose 2xx response is
+  `{ data: <object> }` (the envelope may be a local `$ref`). A singleton next to
+  an item route (`/data_purges` and `/data_purges/{id}`) stays `list`, so the
+  `get` by id is not hidden. Singletons keep `list` as a hidden alias.
+- `POST` → `create`, `PUT`/`PATCH` → `update`, `DELETE` → `delete`.
+- **Actions.** A path with a single operation whose last segment follows `{id}`
+  (`/pix/{uid}/cancel`), or a POST-only path under another route
+  (`/holidays/sync` next to `/holidays`), is a command of the parent resource
+  named by that segment: `pix cancel`, `holidays sync`. The second kind was
+  `holidays sync create` up to 0.8.0 and keeps answering to it as a hidden
+  subcommand (`ResolvedEndpoint::legacy_create`; `kobana schema` accepts the
+  old path too).
+- A name that is also a child resource (`data-sources openapi` has
+  `openapi analyze`) moves into that child and is inferred again there. Two
+  paths meeting on one name are deduplicated only after that move.
+
+Renaming a command breaks scripts, so a rule change keeps the old name as an
+alias, and is checked by diffing the whole command tree of every product
+before and after (a script walking `--help`).
+
 #### Updating specs
 
 Embed the **Portuguese** spec — its text is the source that the English and

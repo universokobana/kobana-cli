@@ -44,7 +44,7 @@ The Inbox API is **not** the banking API and does not share its credentials:
 
 ### inboxes
 - `list`, `create`, `get`, `update`, `delete`
-- `recipients create` / `recipients remove create` — allowed recipients of an inbox
+- `recipients create` / `recipients remove` — allowed recipients of an inbox
 
 ### emails
 - `list`, `get`

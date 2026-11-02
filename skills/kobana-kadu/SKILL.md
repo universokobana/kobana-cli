@@ -54,10 +54,10 @@ other product:
 - `environments`, `secrets`, `schedules`, `mcp-servers` — CRUD
 - `memories` — CRUD plus `versions` (history, newest first; `current: true` is
   the one in force), `rollback` (`{"version": N}`: saves a NEW version with that
-  content) and `consolidate create` (memories from the finished executions of a
+  content) and `consolidate` (memories from the finished executions of a
   period; `{"dry_run": true}` only counts)
 - `webhooks` — CRUD plus `rotate-secret`; `webhook-deliveries list|get|replay`
-- `repository` — `get`, `sync create` (skills repository)
+- `repository` — `get`, `sync` (skills repository)
 
 ### Organization
 - `organization` — `get`, `update`: **only the token's organization** (the
@@ -89,7 +89,7 @@ kobana kadu executions list --page-all --fields "id,status,created_at"
 # a model call charged to the organization — preview first)
 kobana kadu memories versions --params '{"id": "MEMORY_ID"}' --fields "versions"
 kobana kadu memories rollback --dry-run --params '{"id": "MEMORY_ID"}' --json '{"version": 2}'
-kobana kadu memories consolidate create \
+kobana kadu memories consolidate \
   --json '{"from": "2026-10-01", "to": "2026-10-31", "dry_run": true}'
 kobana kadu executions consolidate-memories --dry-run --params '{"id": "EXECUTION_ID"}'
 ```

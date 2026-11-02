@@ -275,10 +275,16 @@ impl ApiSpec {
                     node = node.children.entry(seg.clone()).or_default();
                 }
 
-                // Deduplicate by command name: a node cannot expose the same
-                // subcommand twice, whatever the HTTP method behind it (PUT and
-                // PATCH both infer `update`, for instance).
-                if !node.endpoints.iter().any(|e| e.cli_method == cli_method) {
+                // One command per name and path: PUT and PATCH on one path
+                // both infer `update`. Two paths may still meet on a name here
+                // (`POST /entities/join` and `PUT /entities/{id}/join` are both
+                // `join`); `resolve_conflicts` moves them apart before the
+                // last pass keeps one command per name.
+                if !node
+                    .endpoints
+                    .iter()
+                    .any(|e| e.cli_method == cli_method && e.path_template == endpoint.path_template)
+                {
                     node.endpoints.push(endpoint);
                 }
             }
@@ -287,6 +293,7 @@ impl ApiSpec {
         // Post-process: resolve conflicts where an endpoint's cli_method
         // matches a child node name. Move such endpoints into the child.
         resolve_conflicts(&mut root);
+        dedupe_command_names(&mut root);
 
         root
     }
@@ -303,6 +310,16 @@ impl ApiSpec {
                 .is_some_and(|seg| seg.starts_with('{') && seg.ends_with('}') && !seg.contains('/'))
                 && item.operations.contains_key(&HttpMethod::Get)
         })
+    }
+}
+
+/// A node cannot expose the same subcommand twice: the first endpoint of a
+/// name stays (paths in spec order), as before two paths could meet on it.
+fn dedupe_command_names(node: &mut CommandNode) {
+    let mut seen = std::collections::BTreeSet::new();
+    node.endpoints.retain(|e| seen.insert(e.cli_method.clone()));
+    for child in node.children.values_mut() {
+        dedupe_command_names(child);
     }
 }
 
@@ -693,6 +710,21 @@ mod tests {
         // and its own sub-action is an action of it
         let openapi = &tree.children["data-sources"].children["openapi"];
         assert_eq!(methods(openapi), [("analyze".to_string(), true), ("create".to_string(), false)]);
+        // Two paths meeting on one name are moved apart, none is lost
+        let spec2 = ApiSpec::parse(
+            r#"{"paths": {
+                "/v1/entities": {"get": {"responses": {}}},
+                "/v1/entities/join": {"post": {"responses": {}}},
+                "/v1/entities/join/preview": {"post": {"responses": {}}},
+                "/v1/entities/{id}/join": {"put": {"responses": {}}}
+            }}"#,
+        )
+        .unwrap()
+        .build_command_tree("/v1");
+        assert_eq!(
+            methods(&spec2.children["entities"].children["join"]),
+            [("create".to_string(), false), ("preview".to_string(), true), ("update".to_string(), false)]
+        );
         // Without a parent route it is still a resource of its own
         assert_eq!(methods(&tree.children["reports"].children["monthly"]), [("create".to_string(), false)]);
     }

@@ -33,7 +33,7 @@ and bulk exports `export` (or `all`); every other method needs `write` or
 ### Debtors and charges
 - `people` — CRUD plus `statement-pdf`, `bulk delete`, `contact-points`
 - `charges` — CRUD plus `notify`, `settlement-pdf`, `bulk delete`,
-  `bulk-assign-rule create`, `bulk-cancel create`
+  `bulk-assign-rule`, `bulk-cancel`
 - `classifications` — CRUD
 - `interactions` — CRUD
 
@@ -52,7 +52,7 @@ and bulk exports `export` (or `all`); every other method needs `write` or
 - `negativations` — `list`, `create`, `get`, `update`, `remove`
 - `protests` — `list`, `create`, `get`, `update`, `cancel`
 - `tasks` — `list`, `create`, `get`, `update` (cancel with `status: cancelled`), `complete`,
-  `bulk-assign create`, `bulk-complete create`
+  `bulk-assign`, `bulk-complete`
 
 ### Data and integration
 - `imports` — `list`, `create`, `get`

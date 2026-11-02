@@ -54,9 +54,9 @@ and bulk exports `export` (or `all`); every other method needs `write` or
 - `payments` — `list`, `create`, `get`, `delete`, plus `cancel`, `refund`,
   `retry`, `change-card`, `change-due-date`, `send-email`, `sync`
 - `payment-methods` — CRUD plus `set-default`
-- `late-fee-policies` — CRUD plus `default`, `simulate create`
+- `late-fee-policies` — CRUD plus `default`, `simulate`
 - `bank-accounts`, `pix-keys` — CRUD; `banks list`
-- `holidays` — CRUD plus `sync create`
+- `holidays` — CRUD plus `sync`
 
 ### Accounts & customers
 - `billing-accounts` — CRUD plus `close`, `suspend`, `reactivate`, `credits`,

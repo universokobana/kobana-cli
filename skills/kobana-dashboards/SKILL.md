@@ -39,30 +39,30 @@ credentials with the banking product:
 
 ### Data
 - `data-sources` — `list`, `get`, `update`, `delete`, plus `authorize`,
-  `schedule`, `spec`, `sync`, `catalog`, `database create`, `mcp create`,
-  `openapi create`, `openapi analyze create`, `operations update`, `logs get`,
-  `test create`
+  `schedule`, `spec`, `sync`, `catalog`, `database`, `mcp`,
+  `openapi create`, `openapi analyze`, `operations update`, `logs get`,
+  `test`
 - `entities` — CRUD plus `aggregate`, `usage`, `records get|create|delete`,
-  `records import create`, `join`, `preview create`, `sync`, `tenant-syncs`, `logs get`
+  `records import`, `join`, `preview`, `sync`, `tenant-syncs`, `logs get`
 - `imports`, `exports` (`download`), `data-purges` (`list`, `get`, `delete`), `backups` (`cancel`,
-  `download`, `restore create`)
+  `download`, `restore`)
 
 ### Portal
-- `portal-users` — CRUD plus `resend`, `email-preview`, `invite create`,
+- `portal-users` — CRUD plus `resend`, `email-preview`, `invite`,
   `activity get`, `activity timeline get`
-- `portal-settings` — `list`, `update`, `domain`, `logo`, `sender-identity create`
+- `portal-settings` — `get`, `update`, `domain`, `logo`, `sender-identity`
 - `portal-custom-domains` — `list`, `create`, `delete`, `dns-status`, `verify`
-- `portal-oauth-providers` — `list`, `create`, `update`, `delete`, `test create`
+- `portal-oauth-providers` — `list`, `create`, `update`, `delete`, `test`
 - `portal-user-mappings` — `list`, `update`, `delete`
 
 ### Builder
-- `builder` — `list`, `draft update`, `theme update`, `publish create`,
+- `builder` — `get`, `draft update`, `theme update`, `publish`,
   `versions get|restore|rollback`, and the page-editing `tools` (`list-pages`,
   `get-page`, `insert-block`, `update-block`, `move-block`, …)
-- `assets` (`download`, `presign create`), `asset-types`, `checklists` (`progress`)
+- `assets` (`download`, `presign`), `asset-types`, `checklists` (`progress`)
 
 ### Organization
-- `workspaces` — CRUD plus `export`, `usage`, `import create`
+- `workspaces` — CRUD plus `export`, `usage`, `import`
 - `organization get|update` — the token's own organization (no id, no listing, no
   `X-Workspace-Id`); `update` changes `addresses` and `custom_metadata` only
 - `settings`, `dashboard-users`, `team-roles`, `permissions`,
