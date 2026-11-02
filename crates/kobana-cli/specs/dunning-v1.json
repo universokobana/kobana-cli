@@ -29792,16 +29792,6 @@
               "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
             },
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
-          },
-          {
-            "name": "X-Workspace-Id",
-            "in": "header",
-            "required": false,
-            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
           }
         ]
       },
@@ -29935,16 +29925,6 @@
             "in": "header",
             "required": false,
             "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "X-Workspace-Id",
-            "in": "header",
-            "required": false,
-            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
             "schema": {
               "type": "string",
               "format": "uuid"

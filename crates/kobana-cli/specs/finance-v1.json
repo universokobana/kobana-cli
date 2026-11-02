@@ -25191,18 +25191,6 @@
         },
         "parameters": [
           {
-            "name": "X-Workspace-Id",
-            "in": "header",
-            "required": true,
-            "description": "Workspace to act on, as a UUID. The token identifies the organization; this header picks which of its workspaces the request reads or writes. It is checked against the token's organization, so a workspace owned by anyone else answers `UNKNOWN_WORKSPACE` — the same code as one that does not exist. Omitting it answers `WORKSPACE_REQUIRED` (400).",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "example": "2b93f876-769a-4bdc-b23e-304957f313b4"
-            },
-            "example": "2b93f876-769a-4bdc-b23e-304957f313b4"
-          },
-          {
             "name": "User-Agent",
             "in": "header",
             "required": true,
@@ -25346,18 +25334,6 @@
           }
         },
         "parameters": [
-          {
-            "name": "X-Workspace-Id",
-            "in": "header",
-            "required": true,
-            "description": "Workspace to act on, as a UUID. The token identifies the organization; this header picks which of its workspaces the request reads or writes. It is checked against the token's organization, so a workspace owned by anyone else answers `UNKNOWN_WORKSPACE` — the same code as one that does not exist. Omitting it answers `WORKSPACE_REQUIRED` (400).",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "example": "2b93f876-769a-4bdc-b23e-304957f313b4"
-            },
-            "example": "2b93f876-769a-4bdc-b23e-304957f313b4"
-          },
           {
             "name": "User-Agent",
             "in": "header",
@@ -25548,18 +25524,6 @@
           }
         },
         "parameters": [
-          {
-            "name": "X-Workspace-Id",
-            "in": "header",
-            "required": true,
-            "description": "Workspace to act on, as a UUID. The token identifies the organization; this header picks which of its workspaces the request reads or writes. It is checked against the token's organization, so a workspace owned by anyone else answers `UNKNOWN_WORKSPACE` — the same code as one that does not exist. Omitting it answers `WORKSPACE_REQUIRED` (400).",
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "example": "2b93f876-769a-4bdc-b23e-304957f313b4"
-            },
-            "example": "2b93f876-769a-4bdc-b23e-304957f313b4"
-          },
           {
             "name": "User-Agent",
             "in": "header",
