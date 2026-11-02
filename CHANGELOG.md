@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-02
+
 ### Added
 
 - **Login em qualquer produto** — `kobana <produto> auth login` (`kobana billing auth login`, `kobana kadu auth login`…) mostra os escopos que o produto publica no `/.well-known/oauth-protected-resource` do seu host MCP, lidos na hora (o `kadu`, que ainda não publica o documento, usa o catálogo da Conta Kobana filtrado por `kadu/`). Depois vêm os níveis de acesso, `read`, `write`, `delete`, `import` e `export`, que valem para todos os recursos escolhidos. O token sai da Conta Kobana com o `resource` do produto, então o `aud` é a API dele, e é renovado sozinho com o refresh token quando vence
@@ -23,6 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`kobana auth …`** (incompatível) — use `kobana <produto> auth …`; o antigo `kobana auth login` equivale a `kobana banking auth login`
 - **`KOBANA_TOKEN`** (incompatível) — o mesmo token ia para qualquer produto chamado. Use a variável do produto (`KOBANA_BANKING_TOKEN`, `KOBANA_FINANCE_TOKEN`…)
+
+### Security
+
+- **`rustls` 0.23.46** — fecha quatro alertas do Dependabot (2 moderados, 2 baixos) na pilha TLS por onde passam todas as requisições
 
 ## [0.9.0] - 2026-11-02
 
