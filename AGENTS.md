@@ -146,6 +146,10 @@ and the method name is inferred:
   `openapi analyze`) moves into that child and is inferred again there. Two
   paths meeting on one name are deduplicated only after that move.
 
+- **Deprecated operations** (`deprecated: true` in the spec) stay runnable but
+  leave the help (`.hide(true)`); `kobana schema` reports `deprecated`. That is
+  how an API retires a path: the replacement shows, the old line still works.
+
 Renaming a command breaks scripts, so a rule change keeps the old name as an
 alias, and is checked by diffing the whole command tree of every product
 before and after (a script walking `--help`).

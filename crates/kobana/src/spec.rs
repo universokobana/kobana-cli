@@ -54,6 +54,9 @@ pub struct Operation {
     /// (`#/components/schemas/OrganizationResponse`) that `responses`, kept as
     /// written for `kobana schema`, does not resolve.
     pub single_record: bool,
+    /// `deprecated: true` in the spec: the command still runs (a script may
+    /// call it) but leaves the help, which shows the replacement instead.
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -444,6 +447,7 @@ fn wraps_single_record(response: &serde_json::Value, doc: Option<&serde_json::Va
 fn parse_operation(value: &serde_json::Value) -> Result<Operation, KobanaError> {
     let summary = value["summary"].as_str().map(String::from);
     let description = value["description"].as_str().map(String::from);
+    let deprecated = value["deprecated"].as_bool().unwrap_or(false);
     let tags = value["tags"]
         .as_array()
         .map(|arr| {
@@ -477,6 +481,7 @@ fn parse_operation(value: &serde_json::Value) -> Result<Operation, KobanaError> 
         responses,
         tags,
         single_record: false,
+        deprecated,
     })
 }
 
@@ -727,6 +732,23 @@ mod tests {
         );
         // Without a parent route it is still a resource of its own
         assert_eq!(methods(&tree.children["reports"].children["monthly"]), [("create".to_string(), false)]);
+    }
+
+    #[test]
+    fn deprecated_operations_are_parsed_and_kept() {
+        let spec = ApiSpec::parse(
+            r#"{"paths": {
+                "/v1/usage/credits/daily": {"post": {"deprecated": true, "responses": {}}},
+                "/v1/usage/credits/publish": {"post": {"responses": {}}},
+                "/v1/usage/credits": {"get": {"responses": {}}}
+            }}"#,
+        )
+        .unwrap();
+        let tree = spec.build_command_tree("/v1");
+        let credits = &tree.children["usage"].children["credits"];
+        let find = |m: &str| credits.endpoints.iter().find(|e| e.cli_method == m).unwrap();
+        assert!(find("daily").operation.deprecated);
+        assert!(!find("publish").operation.deprecated);
     }
 
     #[test]

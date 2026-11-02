@@ -1,4 +1,5 @@
 {
+  "**Descontinuado em 2026-11-02.** Use `POST /usage/credits/publish`: é a mesma operação, com o mesmo corpo e as mesmas respostas — só o caminho mudou, para o último segmento ser o verbo da ação. Este caminho continua funcionando, mas não recebe mais mudanças.": "**Deprecated on 2026-11-02.** Use `POST /usage/credits/publish`: the same operation, with the same body and the same responses — only the path changed, so that the last segment is the action verb. This path keeps working but receives no further changes.",
   "A aprovação.": "The approval.",
   "A chave, sem máscara (documentos só com dígitos, telefone com `+55`, e-mail e aleatória em minúsculas).": "The key, unmasked (documents as digits only, phone with `+55`, email and random key lowercased).",
   "A regra está ativa.": "Whether the rule is active.",
@@ -1666,7 +1667,8 @@
   "Próxima tentativa de cobrança automática (dunning).": "Next automatic charge attempt (dunning).",
   "Publica a proposta (`draft → sent`) sem disparar o e-mail, tornando-a acessível no portal.": "Publishes the proposal (`draft → sent`) without sending the email, making it available on the portal.",
   "Publica o consumo de créditos pré-pagos (produto do tipo `credits`) por conta de cobrança × produto × dia, registro único **ou** em lote `{ records: [...] }` com até **100** itens. A chave (conta, produto, `usage_date`) é única: publicar o mesmo dia de novo **sobrescreve** o registro (`overwritten: true`), nunca soma. Lotes com falhas parciais retornam **207 Multi-Status**.": "Publishes prepaid credit usage (a `credits` product) per billing account × product × day, as a single record **or** a batch `{ records: [...] }` of up to **100** items. The key (account, product, `usage_date`) is unique: publishing the same day again **overwrites** the record (`overwritten: true`), it never adds up. Batches with partial failures return **207 Multi-Status**.",
-  "Publicar consumo diário de créditos": "Publish daily credit usage",
+  "Publicar consumo de créditos": "Publish credit usage",
+  "Publicar consumo diário de créditos (descontinuado)": "Publish daily credit usage (deprecated)",
   "Publicar produto": "Publish product",
   "Publicar proposta": "Publish proposal",
   "Página (começa em 1). Padrão: `1`.": "Page (starts at 1). Default: `1`.",

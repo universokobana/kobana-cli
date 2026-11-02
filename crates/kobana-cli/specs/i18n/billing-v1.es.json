@@ -1,4 +1,5 @@
 {
+  "**Descontinuado em 2026-11-02.** Use `POST /usage/credits/publish`: é a mesma operação, com o mesmo corpo e as mesmas respostas — só o caminho mudou, para o último segmento ser o verbo da ação. Este caminho continua funcionando, mas não recebe mais mudanças.": "**Obsoleto desde 2026-11-02.** Usa `POST /usage/credits/publish`: es la misma operación, con el mismo cuerpo y las mismas respuestas — solo cambió la ruta, para que el último segmento sea el verbo de la acción. Esta ruta sigue funcionando, pero ya no recibe cambios.",
   "A aprovação.": "La aprobación.",
   "A chave, sem máscara (documentos só com dígitos, telefone com `+55`, e-mail e aleatória em minúsculas).": "La clave, sin máscara (documentos solo con dígitos, teléfono con `+55`, correo y aleatoria en minúsculas).",
   "A regra está ativa.": "Si la regla está activa.",
@@ -1611,7 +1612,7 @@
   "Próxima tentativa de cobrança automática (dunning).": "Próximo intento de cobro automático (dunning).",
   "Publica a proposta (`draft → sent`) sem disparar o e-mail, tornando-a acessível no portal.": "Publica la propuesta (`draft → sent`) sin enviar el correo, dejándola disponible en el portal.",
   "Publica o consumo de créditos pré-pagos (produto do tipo `credits`) por conta de cobrança × produto × dia, registro único **ou** em lote `{ records: [...] }` com até **100** itens. A chave (conta, produto, `usage_date`) é única: publicar o mesmo dia de novo **sobrescreve** o registro (`overwritten: true`), nunca soma. Lotes com falhas parciais retornam **207 Multi-Status**.": "Publica el consumo de créditos prepagos (producto de tipo `credits`) por cuenta de cobro × producto × día, registro único **o** en lote `{ records: [...] }` con hasta **100** ítems. La clave (cuenta, producto, `usage_date`) es única: publicar el mismo día de nuevo **sobrescribe** el registro (`overwritten: true`), nunca suma. Los lotes con fallos parciales devuelven **207 Multi-Status**.",
-  "Publicar consumo diário de créditos": "Publicar consumo diario de créditos",
+  "Publicar consumo diário de créditos (descontinuado)": "Publicar consumo diario de créditos (obsoleto)",
   "Publicar produto": "Publicar producto",
   "Publicar proposta": "Publicar propuesta",
   "Página (começa em 1). Padrão: `1`.": "Página (comienza en 1). Por defecto: `1`.",

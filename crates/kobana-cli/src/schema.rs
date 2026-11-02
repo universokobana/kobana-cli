@@ -222,6 +222,7 @@ fn print_endpoint(
         "path_params": endpoint.path_params,
         "summary": endpoint.operation.summary,
         "description": endpoint.operation.description,
+        "deprecated": endpoint.operation.deprecated,
         "parameters": query_params,
         "header_params": header_params,
         "request_body": endpoint.operation.request_body,

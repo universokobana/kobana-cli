@@ -60,6 +60,12 @@ fn build_method_command(endpoint: &ResolvedEndpoint, parent_path: &str) -> Comma
         cmd = cmd.long_about(desc.clone());
     }
 
+    // A deprecated operation keeps running for the scripts that call it, but
+    // leaves the help: the spec's description names what replaced it
+    if endpoint.operation.deprecated {
+        cmd = cmd.hide(true);
+    }
+
     // The line it had before becoming an action of its parent keeps working
     // (`… recipients remove create`), out of the help
     if endpoint.legacy_create {
