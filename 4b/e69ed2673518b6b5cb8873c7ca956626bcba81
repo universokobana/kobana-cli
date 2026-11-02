@@ -1,0 +1,28 @@
+crates/kobana-cli/src/oauth.rs
+  s_a6378aaf095336::t_e2c6441d66edb9 1122-1132,1143,1150,1152-1159,1168,1170-1171,1176-1177,1193-1273,1282-1283,1287
+  s_a6378aaf095336::t_30aeb202bf99a9 1375-1391
+  s_a6378aaf095336::t_f20ecf0c35bb40 1392
+crates/kobana-cli/src/credential_store.rs
+  s_a6378aaf095336::t_281368424e5c0e 280-281
+CHANGELOG.md
+  s_a6378aaf095336::t_37f330fe8ff134 10-13,19
+crates/kobana-cli/assets/callback.html
+  s_a6378aaf095336::t_6738dbee6b1556 98,100,102-103,106
+  s_a6378aaf095336::t_2dacaec6f6e904 1-97,99,101,104-105,107-138
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4be69ed2673518b6b5cb8873c7ca956626bcba81",
+  "prompts": {},
+  "sessions": {
+    "s_a6378aaf095336": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d745fa4e-197c-487a-8e60-15258b778aaa",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Rafael Lima <contato@rafael.adm.br>"
+    }
+  }
+}
