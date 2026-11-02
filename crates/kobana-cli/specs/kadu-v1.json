@@ -106,6 +106,15 @@
           "timezone": {
             "type": "string"
           },
+          "default_locale": {
+            "type": "string",
+            "enum": [
+              "pt-BR",
+              "en-US",
+              "es-ES"
+            ],
+            "description": "Idioma das execuções quando a tarefa não fixa `task.locale` e o disparo não traz idioma (agendamento, endpoint de disparo)."
+          },
           "custom_metadata": {
             "type": "object",
             "additionalProperties": {
@@ -126,6 +135,7 @@
           "monthly_cost_limit",
           "monthly_cost_accumulated_usd",
           "timezone",
+          "default_locale",
           "custom_metadata",
           "created_at",
           "updated_at"
@@ -219,6 +229,28 @@
           "conversational": {
             "type": "boolean",
             "description": "Aceita continuar a conversa: `POST /executions/{id}/continue`."
+          },
+          "memory_access": {
+            "type": "string",
+            "enum": [
+              "disabled",
+              "read",
+              "read_write"
+            ],
+            "description": "Uso de memórias pelo agente da Task: `disabled`, `read` (busca e lê sob demanda) ou `read_write` (também grava). Definido no frontmatter (`memory.access`) ou no /manage."
+          },
+          "memory_consolidation": {
+            "type": "boolean",
+            "description": "Consolida as memórias ao fim de cada execução (só com `memory_access: read_write`): um job lê o resultado, os eventos e as pendências e grava os fatos duráveis. Definido no frontmatter (`memory.consolidation`) ou no /manage."
+          },
+          "memory_scope": {
+            "type": "string",
+            "enum": [
+              "organization",
+              "workspace",
+              "activity"
+            ],
+            "description": "Até onde o agente da Task enxerga as memórias: `activity` (activity e níveis acima), `workspace` (workspace e organização) ou `organization`. Definido no frontmatter (`memory.scope`) ou no /manage."
           }
         },
         "required": [
@@ -229,7 +261,10 @@
           "workspace_id",
           "activity_id",
           "parameters_sensitive",
-          "conversational"
+          "conversational",
+          "memory_access",
+          "memory_consolidation",
+          "memory_scope"
         ]
       },
       "Execution": {
@@ -397,6 +432,19 @@
             "additionalProperties": {
             }
           },
+          "current_version": {
+            "type": "integer",
+            "description": "Versão vigente: toda alteração de conteúdo grava uma versão nova (`GET /memories/{id}/versions`) e a última é a verdade."
+          },
+          "last_change": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Quem fez a última alteração: `source` (`api`, `agent`, `consolidation`, `console`, `manage`, `rollback`), `execution_id`, `actor_type`, `actor_id`, `rollback_from`, `at`."
+          },
           "created_at": {
             "type": "string"
           },
@@ -424,9 +472,127 @@
           "status",
           "custom_metadata",
           "system_metadata",
+          "current_version",
+          "last_change",
           "created_at",
           "updated_at",
           "deleted_at"
+        ]
+      },
+      "MemoryVersion": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer"
+          },
+          "current": {
+            "type": "boolean",
+            "description": "É a versão vigente."
+          },
+          "workspace_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "activity_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "entity_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "entity_value": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "key": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "summary": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "custom_metadata": {
+            "type": "object",
+            "additionalProperties": {
+            }
+          },
+          "source": {
+            "type": "string",
+            "description": "Quem gravou: `api`, `agent`, `consolidation`, `console`, `manage`, `rollback`, `backfill` ou `unknown`."
+          },
+          "execution_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "actor_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actor_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rollback_from": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Em `source: rollback`, a versão cujo conteúdo esta copiou."
+          },
+          "created_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "current",
+          "workspace_id",
+          "activity_id",
+          "entity_type",
+          "entity_value",
+          "key",
+          "content",
+          "summary",
+          "status",
+          "custom_metadata",
+          "source",
+          "execution_id",
+          "actor_type",
+          "actor_id",
+          "rollback_from",
+          "created_at"
         ]
       },
       "Environment": {
@@ -478,6 +644,73 @@
           "created_at",
           "updated_at",
           "deleted_at"
+        ]
+      },
+      "McpServer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome que a tarefa usa em `task.mcp_servers`. Único entre os servidores vivos da organização."
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "transport": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "http",
+              "sse",
+              "stdio",
+              null
+            ],
+            "description": "Deduzido da `config`. Stdio só roda se igual a uma entrada do catálogo da Kobana ou com a liberação da organização."
+          },
+          "config": {
+            "type": "object",
+            "additionalProperties": {
+            },
+            "description": "Uma entrada de `mcpServers` no formato padrão do `.mcp.json`: remoto `{ \"type\": \"http\" | \"sse\", \"url\": \"https://…\", \"headers\": { … } }` ou stdio `{ \"command\": \"npx\", \"args\": [ … ], \"env\": { … } }`. Credencial só como `${VAR}` (secret do ambiente, na `required_secrets` da tarefa): header ou env com nome de credencial e valor literal é recusado.",
+            "example": {
+              "type": "http",
+              "url": "https://docs.banking.kobana.com.br/mcp"
+            }
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Desligado: fica cadastrado, mas não é entregue às execuções."
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "organization_id",
+          "name",
+          "description",
+          "transport",
+          "config",
+          "enabled",
+          "created_at",
+          "updated_at"
         ]
       },
       "Secret": {
@@ -1764,6 +1997,14 @@
                   "timezone": {
                     "type": "string",
                     "example": "America/Sao_Paulo"
+                  },
+                  "default_locale": {
+                    "type": "string",
+                    "enum": [
+                      "pt-BR",
+                      "en-US",
+                      "es-ES"
+                    ]
                   },
                   "custom_metadata": {
                     "type": "object",
@@ -4929,6 +5170,601 @@
         "operationId": "delete-memories-id"
       }
     },
+    "/v1/memories/{id}/versions": {
+      "get": {
+        "tags": [
+          "Memórias"
+        ],
+        "summary": "Lista as versões da memória",
+        "description": "Mais nova primeiro. Toda alteração de conteúdo (pela API, pelo agente, pela consolidação ou pelo console) grava uma versão; `current: true` marca a vigente.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "memory_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "current_version": {
+                          "type": "integer"
+                        },
+                        "versions": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/MemoryVersion"
+                          }
+                        }
+                      },
+                      "required": [
+                        "memory_id",
+                        "current_version",
+                        "versions"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_TOKEN / INVALID_AUDIENCE / INVALID_ISSUER / TOKEN_EXPIRED / TOKEN_REVOKED / MTLS_REQUIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FEATURE_NOT_ENABLED — memórias (`memories.*`) não liberadas para a organização; ou os demais 403 de autenticação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AS_UNAVAILABLE — a verificação do token está indisponível (Authorization Server fora do ar ou configuração ausente). Tente de novo (`Retry-After`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get-memories-id-versions"
+      }
+    },
+    "/v1/memories/{id}/rollback": {
+      "post": {
+        "tags": [
+          "Memórias"
+        ],
+        "summary": "Volta a memória para uma versão",
+        "description": "Grava uma versão NOVA com o conteúdo da escolhida, que vira a vigente; o histórico fica inteiro (`rollback_from`).",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "description": "Chave opaca (até 255 caracteres), válida por 24h na organização. Mesma chave + mesma requisição devolve a resposta original com `X-Idempotent-Replay: true`; mesma chave com corpo diferente → 409 IDEMPOTENCY_KEY_REUSED. Segredo de uso único (`signing_secret` na criação e na rotação de webhook) não é guardado: no replay ele volta `null`."
+            },
+            "required": false,
+            "description": "Chave opaca (até 255 caracteres), válida por 24h na organização. Mesma chave + mesma requisição devolve a resposta original com `X-Idempotent-Replay: true`; mesma chave com corpo diferente → 409 IDEMPOTENCY_KEY_REUSED. Segredo de uso único (`signing_secret` na criação e na rotação de webhook) não é guardado: no replay ele volta `null`.",
+            "name": "X-Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                },
+                "required": [
+                  "version"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Memory"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_TOKEN / INVALID_AUDIENCE / INVALID_ISSUER / TOKEN_EXPIRED / TOKEN_REVOKED / MTLS_REQUIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FEATURE_NOT_ENABLED — memórias (`memories.*`) não liberadas para a organização; ou os demais 403 de autenticação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (memória ou versão)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT — já é a versão vigente / IDEMPOTENCY_KEY_REUSED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR — workspace/activity da versão não vale mais",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AS_UNAVAILABLE — a verificação do token está indisponível (Authorization Server fora do ar ou configuração ausente). Tente de novo (`Retry-After`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post-memories-id-rollback"
+      }
+    },
+    "/v1/memories/consolidate": {
+      "post": {
+        "tags": [
+          "Memórias"
+        ],
+        "summary": "Consolida as memórias de um período",
+        "description": "Lê as execuções terminadas (`success`/`failed`) do período que ainda não foram consolidadas — inclusive de Task com memórias desligadas — e grava os fatos duráveis como memórias, no escopo de cada Task. Cada execução é uma chamada de modelo cobrada da organização. `dry_run: true` devolve só a prévia. Assíncrono: as memórias aparecem conforme os jobs rodam.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "description": "Chave opaca (até 255 caracteres), válida por 24h na organização. Mesma chave + mesma requisição devolve a resposta original com `X-Idempotent-Replay: true`; mesma chave com corpo diferente → 409 IDEMPOTENCY_KEY_REUSED. Segredo de uso único (`signing_secret` na criação e na rotação de webhook) não é guardado: no replay ele volta `null`."
+            },
+            "required": false,
+            "description": "Chave opaca (até 255 caracteres), válida por 24h na organização. Mesma chave + mesma requisição devolve a resposta original com `X-Idempotent-Replay: true`; mesma chave com corpo diferente → 409 IDEMPOTENCY_KEY_REUSED. Segredo de uso único (`signing_secret` na criação e na rotação de webhook) não é guardado: no replay ele volta `null`.",
+            "name": "X-Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "from": {
+                    "type": "string",
+                    "description": "Dia inicial (YYYY-MM-DD, UTC), inclusive."
+                  },
+                  "to": {
+                    "type": "string",
+                    "description": "Dia final (YYYY-MM-DD, UTC), inclusive. Até 366 dias."
+                  },
+                  "task_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "uuid",
+                    "description": "Só as execuções desta Task."
+                  },
+                  "dry_run": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                },
+                "required": [
+                  "from",
+                  "to"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "prévia (dry_run)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "dry_run": {
+                          "type": "boolean"
+                        },
+                        "pending": {
+                          "type": "integer",
+                          "description": "Terminadas no período ainda não consolidadas."
+                        },
+                        "already_done": {
+                          "type": "integer",
+                          "description": "Já consolidadas (ficam de fora)."
+                        },
+                        "will_queue": {
+                          "type": "integer",
+                          "description": "As que este pedido pega (até `max`, as mais antigas primeiro)."
+                        },
+                        "queued": {
+                          "type": "integer"
+                        },
+                        "truncated": {
+                          "type": "boolean",
+                          "description": "Período com execuções demais para ler: reduza-o."
+                        },
+                        "max": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "dry_run",
+                        "pending",
+                        "already_done",
+                        "will_queue",
+                        "queued",
+                        "truncated",
+                        "max"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "enfileirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "dry_run": {
+                          "type": "boolean"
+                        },
+                        "pending": {
+                          "type": "integer",
+                          "description": "Terminadas no período ainda não consolidadas."
+                        },
+                        "already_done": {
+                          "type": "integer",
+                          "description": "Já consolidadas (ficam de fora)."
+                        },
+                        "will_queue": {
+                          "type": "integer",
+                          "description": "As que este pedido pega (até `max`, as mais antigas primeiro)."
+                        },
+                        "queued": {
+                          "type": "integer"
+                        },
+                        "truncated": {
+                          "type": "boolean",
+                          "description": "Período com execuções demais para ler: reduza-o."
+                        },
+                        "max": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "dry_run",
+                        "pending",
+                        "already_done",
+                        "will_queue",
+                        "queued",
+                        "truncated",
+                        "max"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_TOKEN / INVALID_AUDIENCE / INVALID_ISSUER / TOKEN_EXPIRED / TOKEN_REVOKED / MTLS_REQUIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FEATURE_NOT_ENABLED — memórias (`memories.*`) não liberadas para a organização; ou os demais 403 de autenticação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "IDEMPOTENCY_KEY_REUSED / IDEMPOTENCY_REQUEST_IN_PROGRESS (ou CONFLICT da rota)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR — período ou Task inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE — fila indisponível",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post-memories-consolidate"
+      }
+    },
+    "/v1/executions/{id}/consolidate_memories": {
+      "post": {
+        "tags": [
+          "Execuções"
+        ],
+        "summary": "Consolida as memórias da execução",
+        "description": "Lê o resultado, os eventos, as pendências e o pedido do usuário desta execução terminada e grava os fatos duráveis como memórias, no escopo da Task — mesmo com memórias desligadas nela. Refaz se já foi consolidada (atualiza as mesmas memórias). É uma chamada de modelo cobrada da organização. Assíncrono.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "description": "Chave opaca (até 255 caracteres), válida por 24h na organização. Mesma chave + mesma requisição devolve a resposta original com `X-Idempotent-Replay: true`; mesma chave com corpo diferente → 409 IDEMPOTENCY_KEY_REUSED. Segredo de uso único (`signing_secret` na criação e na rotação de webhook) não é guardado: no replay ele volta `null`."
+            },
+            "required": false,
+            "description": "Chave opaca (até 255 caracteres), válida por 24h na organização. Mesma chave + mesma requisição devolve a resposta original com `X-Idempotent-Replay: true`; mesma chave com corpo diferente → 409 IDEMPOTENCY_KEY_REUSED. Segredo de uso único (`signing_secret` na criação e na rotação de webhook) não é guardado: no replay ele volta `null`.",
+            "name": "X-Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "enfileirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "execution_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "queued": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "execution_id",
+                        "queued"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_TOKEN / INVALID_AUDIENCE / INVALID_ISSUER / TOKEN_EXPIRED / TOKEN_REVOKED / MTLS_REQUIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FEATURE_NOT_ENABLED — memórias (`memories.*`) não liberadas para a organização; ou os demais 403 de autenticação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT — execução não terminada / IDEMPOTENCY_KEY_REUSED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_UNAVAILABLE — fila indisponível",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post-executions-id-consolidate-memories"
+      }
+    },
     "/v1/environments": {
       "get": {
         "tags": [
@@ -5483,6 +6319,597 @@
           }
         },
         "operationId": "delete-environments-id"
+      }
+    },
+    "/v1/mcp_servers": {
+      "get": {
+        "tags": [
+          "Servidores MCP"
+        ],
+        "summary": "Lista servidores MCP",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Campo em snake_case: created_at (padrão), updated_at ou um campo filtrável."
+            },
+            "required": false,
+            "description": "Campo em snake_case: created_at (padrão), updated_at ou um campo filtrável.",
+            "name": "sort_by",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "description": "Padrão: desc."
+            },
+            "required": false,
+            "description": "Padrão: desc.",
+            "name": "sort_order",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/McpServer"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PaginationMeta"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_TOKEN / INVALID_AUDIENCE / INVALID_ISSUER / TOKEN_EXPIRED / TOKEN_REVOKED / MTLS_REQUIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "INSUFFICIENT_SCOPE — o token não tem o nível de acesso (ou o recurso `kadu/…`) que a operação exige; `details: { required, granted }`. USER_PERMISSION_DENIED — o papel da pessoa dona do token não concede a operação; `details: { required }`. NOT_A_MEMBER — a pessoa não é membro da organização. FEATURE_NOT_ENABLED — a operação não está liberada para a organização; `details: { permission }`. UNKNOWN_ORGANIZATION — o `org` do token não é uma organização do Kadu.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AS_UNAVAILABLE — a verificação do token está indisponível (Authorization Server fora do ar ou configuração ausente). Tente de novo (`Retry-After`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get-mcp-servers"
+      },
+      "post": {
+        "tags": [
+          "Servidores MCP"
+        ],
+        "summary": "Cadastra servidor MCP",
+        "description": "A tarefa recebe o servidor quando o cita pelo nome em `task.mcp_servers` (depois do `.mcp.json` do plugin e antes do catálogo da Kobana). Escopo: `kadu/environments` (configuração da execução). A `message` das recusas sai no idioma do `Accept-Language` (pt-BR, en-US ou es-ES); `details.reason` é o motivo como código estável, com os parâmetros dele.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "description": "Chave opaca (até 255 caracteres), válida por 24h na organização. Mesma chave + mesma requisição devolve a resposta original com `X-Idempotent-Replay: true`; mesma chave com corpo diferente → 409 IDEMPOTENCY_KEY_REUSED. Segredo de uso único (`signing_secret` na criação e na rotação de webhook) não é guardado: no replay ele volta `null`."
+            },
+            "required": false,
+            "description": "Chave opaca (até 255 caracteres), válida por 24h na organização. Mesma chave + mesma requisição devolve a resposta original com `X-Idempotent-Replay: true`; mesma chave com corpo diferente → 409 IDEMPOTENCY_KEY_REUSED. Segredo de uso único (`signing_secret` na criação e na rotação de webhook) não é guardado: no replay ele volta `null`.",
+            "name": "X-Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 500
+                  },
+                  "config": {
+                    "type": "object",
+                    "additionalProperties": {
+                    },
+                    "description": "Uma entrada de `mcpServers` no formato padrão do `.mcp.json`: remoto `{ \"type\": \"http\" | \"sse\", \"url\": \"https://…\", \"headers\": { … } }` ou stdio `{ \"command\": \"npx\", \"args\": [ … ], \"env\": { … } }`. Credencial só como `${VAR}` (secret do ambiente, na `required_secrets` da tarefa): header ou env com nome de credencial e valor literal é recusado.",
+                    "example": {
+                      "type": "http",
+                      "url": "https://docs.banking.kobana.com.br/mcp"
+                    }
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "name",
+                  "config"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/McpServer"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_TOKEN / INVALID_AUDIENCE / INVALID_ISSUER / TOKEN_EXPIRED / TOKEN_REVOKED / MTLS_REQUIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "INSUFFICIENT_SCOPE (ver acima) ou FEATURE_NOT_ENABLED — a operação não está liberada para a organização (a mesma permissão que libera a tela no console); `details: { permission }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT — já existe servidor vivo com este nome / IDEMPOTENCY_KEY_REUSED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "INVALID_CONFIG — `config` fora do formato `mcpServers` ou com credencial literal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AS_UNAVAILABLE — a verificação do token está indisponível (Authorization Server fora do ar ou configuração ausente). Tente de novo (`Retry-After`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post-mcp-servers"
+      }
+    },
+    "/v1/mcp_servers/{id}": {
+      "get": {
+        "tags": [
+          "Servidores MCP"
+        ],
+        "summary": "Detalha o servidor MCP",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/McpServer"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_TOKEN / INVALID_AUDIENCE / INVALID_ISSUER / TOKEN_EXPIRED / TOKEN_REVOKED / MTLS_REQUIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "INSUFFICIENT_SCOPE — o token não tem o nível de acesso (ou o recurso `kadu/…`) que a operação exige; `details: { required, granted }`. USER_PERMISSION_DENIED — o papel da pessoa dona do token não concede a operação; `details: { required }`. NOT_A_MEMBER — a pessoa não é membro da organização. FEATURE_NOT_ENABLED — a operação não está liberada para a organização; `details: { permission }`. UNKNOWN_ORGANIZATION — o `org` do token não é uma organização do Kadu.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AS_UNAVAILABLE — a verificação do token está indisponível (Authorization Server fora do ar ou configuração ausente). Tente de novo (`Retry-After`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get-mcp-servers-id"
+      },
+      "patch": {
+        "tags": [
+          "Servidores MCP"
+        ],
+        "summary": "Atualiza servidor MCP",
+        "description": "`config` enviada substitui a entrada inteira.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "description": "Chave opaca (até 255 caracteres), válida por 24h na organização. Mesma chave + mesma requisição devolve a resposta original com `X-Idempotent-Replay: true`; mesma chave com corpo diferente → 409 IDEMPOTENCY_KEY_REUSED. Segredo de uso único (`signing_secret` na criação e na rotação de webhook) não é guardado: no replay ele volta `null`."
+            },
+            "required": false,
+            "description": "Chave opaca (até 255 caracteres), válida por 24h na organização. Mesma chave + mesma requisição devolve a resposta original com `X-Idempotent-Replay: true`; mesma chave com corpo diferente → 409 IDEMPOTENCY_KEY_REUSED. Segredo de uso único (`signing_secret` na criação e na rotação de webhook) não é guardado: no replay ele volta `null`.",
+            "name": "X-Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 500
+                  },
+                  "config": {
+                    "type": "object",
+                    "additionalProperties": {
+                    },
+                    "description": "Uma entrada de `mcpServers` no formato padrão do `.mcp.json`: remoto `{ \"type\": \"http\" | \"sse\", \"url\": \"https://…\", \"headers\": { … } }` ou stdio `{ \"command\": \"npx\", \"args\": [ … ], \"env\": { … } }`. Credencial só como `${VAR}` (secret do ambiente, na `required_secrets` da tarefa): header ou env com nome de credencial e valor literal é recusado.",
+                    "example": {
+                      "type": "http",
+                      "url": "https://docs.banking.kobana.com.br/mcp"
+                    }
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/McpServer"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_TOKEN / INVALID_AUDIENCE / INVALID_ISSUER / TOKEN_EXPIRED / TOKEN_REVOKED / MTLS_REQUIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "INSUFFICIENT_SCOPE (ver acima) ou FEATURE_NOT_ENABLED — a operação não está liberada para a organização (a mesma permissão que libera a tela no console); `details: { permission }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT — nome já usado / IDEMPOTENCY_KEY_REUSED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "INVALID_CONFIG — `config` fora do formato `mcpServers` ou com credencial literal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AS_UNAVAILABLE — a verificação do token está indisponível (Authorization Server fora do ar ou configuração ausente). Tente de novo (`Retry-After`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "patch-mcp-servers-id"
+      },
+      "delete": {
+        "tags": [
+          "Servidores MCP"
+        ],
+        "summary": "Remove servidor MCP (soft delete)",
+        "description": "A tarefa que ainda o cita em `mcp_servers` passa a recebê-lo como não encontrado.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/McpServer"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_TOKEN / INVALID_AUDIENCE / INVALID_ISSUER / TOKEN_EXPIRED / TOKEN_REVOKED / MTLS_REQUIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "INSUFFICIENT_SCOPE (ver acima) ou FEATURE_NOT_ENABLED — a operação não está liberada para a organização (a mesma permissão que libera a tela no console); `details: { permission }`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AS_UNAVAILABLE — a verificação do token está indisponível (Authorization Server fora do ar ou configuração ausente). Tente de novo (`Retry-After`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "delete-mcp-servers-id"
       }
     },
     "/v1/secrets": {
@@ -8427,8 +9854,8 @@
         "tags": [
           "Uso"
         ],
-        "summary": "Uso e custo das execuções e das conversas",
-        "description": "Agregado por dia (no fuso da organização) × grupo, somando execuções e turnos de conversa do bot do Slack (origem `slack_chat`, sem workspace/atividade/Task). Padrão: últimos 30 dias; período máximo de 366 dias. `group` é o id (tier, workspace, activity, task) ou a origem; null = sem valor.",
+        "summary": "Uso e custo das execuções, das conversas e da consolidação de memórias",
+        "description": "Agregado por dia (no fuso da organização) × grupo, somando execuções, turnos de conversa do bot do Slack (origem `slack_chat`, sem workspace/atividade/Task) e consolidação de memórias (origem `memory_consolidation`, no workspace/atividade/Task da execução de origem). `by_kind` separa os três: o que é conversa e o que não é. Padrão: últimos 30 dias; período máximo de 366 dias. `group` é o id (tier, workspace, activity, task) ou a origem; null = sem valor.",
         "security": [
           {
             "bearerAuth": [
@@ -8554,6 +9981,116 @@
                             "cost_brl": {
                               "type": "number",
                               "description": "Preço em R$ (tokens × preço do tier). Só com Analytics › Custo liberado."
+                            },
+                            "by_kind": {
+                              "type": "object",
+                              "properties": {
+                                "executions": {
+                                  "type": "object",
+                                  "properties": {
+                                    "count": {
+                                      "type": "number",
+                                      "description": "Execuções, turnos de conversa ou consolidações, conforme o tipo."
+                                    },
+                                    "input_tokens": {
+                                      "type": "number"
+                                    },
+                                    "output_tokens": {
+                                      "type": "number"
+                                    },
+                                    "cache_read_tokens": {
+                                      "type": "number"
+                                    },
+                                    "cache_write_tokens": {
+                                      "type": "number"
+                                    },
+                                    "cost_brl": {
+                                      "type": "number",
+                                      "description": "Só com Analytics › Custo liberado."
+                                    }
+                                  },
+                                  "required": [
+                                    "count",
+                                    "input_tokens",
+                                    "output_tokens",
+                                    "cache_read_tokens",
+                                    "cache_write_tokens"
+                                  ],
+                                  "description": "Execuções do agente."
+                                },
+                                "conversations": {
+                                  "type": "object",
+                                  "properties": {
+                                    "count": {
+                                      "type": "number",
+                                      "description": "Execuções, turnos de conversa ou consolidações, conforme o tipo."
+                                    },
+                                    "input_tokens": {
+                                      "type": "number"
+                                    },
+                                    "output_tokens": {
+                                      "type": "number"
+                                    },
+                                    "cache_read_tokens": {
+                                      "type": "number"
+                                    },
+                                    "cache_write_tokens": {
+                                      "type": "number"
+                                    },
+                                    "cost_brl": {
+                                      "type": "number",
+                                      "description": "Só com Analytics › Custo liberado."
+                                    }
+                                  },
+                                  "required": [
+                                    "count",
+                                    "input_tokens",
+                                    "output_tokens",
+                                    "cache_read_tokens",
+                                    "cache_write_tokens"
+                                  ],
+                                  "description": "Turnos de conversa do bot do Slack."
+                                },
+                                "memory_consolidation": {
+                                  "type": "object",
+                                  "properties": {
+                                    "count": {
+                                      "type": "number",
+                                      "description": "Execuções, turnos de conversa ou consolidações, conforme o tipo."
+                                    },
+                                    "input_tokens": {
+                                      "type": "number"
+                                    },
+                                    "output_tokens": {
+                                      "type": "number"
+                                    },
+                                    "cache_read_tokens": {
+                                      "type": "number"
+                                    },
+                                    "cache_write_tokens": {
+                                      "type": "number"
+                                    },
+                                    "cost_brl": {
+                                      "type": "number",
+                                      "description": "Só com Analytics › Custo liberado."
+                                    }
+                                  },
+                                  "required": [
+                                    "count",
+                                    "input_tokens",
+                                    "output_tokens",
+                                    "cache_read_tokens",
+                                    "cache_write_tokens"
+                                  ],
+                                  "description": "Consolidação de memórias ao fim das execuções (não é conversa)."
+                                }
+                              },
+                              "required": [
+                                "executions",
+                                "conversations",
+                                "memory_consolidation"
+                              ],
+                              "description": "Os mesmos totais separados por tipo de uso: o que é conversa e o que não é."
                             }
                           },
                           "required": [
@@ -8562,7 +10099,8 @@
                             "input_tokens",
                             "output_tokens",
                             "cache_read_tokens",
-                            "cache_write_tokens"
+                            "cache_write_tokens",
+                            "by_kind"
                           ]
                         },
                         "buckets": {
@@ -8593,6 +10131,116 @@
                                 "type": "number",
                                 "description": "Preço em R$ (tokens × preço do tier). Só com Analytics › Custo liberado."
                               },
+                              "by_kind": {
+                                "type": "object",
+                                "properties": {
+                                  "executions": {
+                                    "type": "object",
+                                    "properties": {
+                                      "count": {
+                                        "type": "number",
+                                        "description": "Execuções, turnos de conversa ou consolidações, conforme o tipo."
+                                      },
+                                      "input_tokens": {
+                                        "type": "number"
+                                      },
+                                      "output_tokens": {
+                                        "type": "number"
+                                      },
+                                      "cache_read_tokens": {
+                                        "type": "number"
+                                      },
+                                      "cache_write_tokens": {
+                                        "type": "number"
+                                      },
+                                      "cost_brl": {
+                                        "type": "number",
+                                        "description": "Só com Analytics › Custo liberado."
+                                      }
+                                    },
+                                    "required": [
+                                      "count",
+                                      "input_tokens",
+                                      "output_tokens",
+                                      "cache_read_tokens",
+                                      "cache_write_tokens"
+                                    ],
+                                    "description": "Execuções do agente."
+                                  },
+                                  "conversations": {
+                                    "type": "object",
+                                    "properties": {
+                                      "count": {
+                                        "type": "number",
+                                        "description": "Execuções, turnos de conversa ou consolidações, conforme o tipo."
+                                      },
+                                      "input_tokens": {
+                                        "type": "number"
+                                      },
+                                      "output_tokens": {
+                                        "type": "number"
+                                      },
+                                      "cache_read_tokens": {
+                                        "type": "number"
+                                      },
+                                      "cache_write_tokens": {
+                                        "type": "number"
+                                      },
+                                      "cost_brl": {
+                                        "type": "number",
+                                        "description": "Só com Analytics › Custo liberado."
+                                      }
+                                    },
+                                    "required": [
+                                      "count",
+                                      "input_tokens",
+                                      "output_tokens",
+                                      "cache_read_tokens",
+                                      "cache_write_tokens"
+                                    ],
+                                    "description": "Turnos de conversa do bot do Slack."
+                                  },
+                                  "memory_consolidation": {
+                                    "type": "object",
+                                    "properties": {
+                                      "count": {
+                                        "type": "number",
+                                        "description": "Execuções, turnos de conversa ou consolidações, conforme o tipo."
+                                      },
+                                      "input_tokens": {
+                                        "type": "number"
+                                      },
+                                      "output_tokens": {
+                                        "type": "number"
+                                      },
+                                      "cache_read_tokens": {
+                                        "type": "number"
+                                      },
+                                      "cache_write_tokens": {
+                                        "type": "number"
+                                      },
+                                      "cost_brl": {
+                                        "type": "number",
+                                        "description": "Só com Analytics › Custo liberado."
+                                      }
+                                    },
+                                    "required": [
+                                      "count",
+                                      "input_tokens",
+                                      "output_tokens",
+                                      "cache_read_tokens",
+                                      "cache_write_tokens"
+                                    ],
+                                    "description": "Consolidação de memórias ao fim das execuções (não é conversa)."
+                                  }
+                                },
+                                "required": [
+                                  "executions",
+                                  "conversations",
+                                  "memory_consolidation"
+                                ],
+                                "description": "Os mesmos totais separados por tipo de uso: o que é conversa e o que não é."
+                              },
                               "date": {
                                 "type": "string"
                               },
@@ -8610,6 +10258,7 @@
                               "output_tokens",
                               "cache_read_tokens",
                               "cache_write_tokens",
+                              "by_kind",
                               "date",
                               "group"
                             ]
@@ -11198,6 +12847,10 @@
     {
       "name": "Ambientes",
       "description": "Ambientes de execução (Produção, Sandbox…). Cada secret e agendamento pertence a um."
+    },
+    {
+      "name": "Servidores MCP",
+      "description": "Servidores MCP cadastrados pela organização, que a tarefa recebe ao citá-los pelo nome em `mcp_servers`."
     },
     {
       "name": "Secrets",

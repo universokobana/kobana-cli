@@ -147,9 +147,10 @@ repositório de skills da organização. A organização vem do token (claim
 `activities` e `tasks`.
 
 Recursos principais: `tasks` (`run`, `readiness`, `endpoint`), `executions`
-(`cancel`, `continue`, `logs`, `events`, `todos`, `search`), `environments`,
-`secrets`, `schedules`, `files`, `memories`, `webhooks`, `webhook-deliveries`,
-`repository` (`sync`), `usage`, `operation-approvals`.
+(`cancel`, `continue`, `consolidate-memories`, `logs`, `events`, `todos`,
+`search`), `environments`, `secrets`, `schedules`, `mcp-servers`, `files`,
+`memories` (`versions`, `rollback`, `consolidate`), `webhooks`,
+`webhook-deliveries`, `repository` (`sync`), `usage`, `operation-approvals`.
 
 ```bash
 kobana kadu tasks list --fields "id,slug,label"

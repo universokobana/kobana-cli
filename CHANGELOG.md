@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`kadu`: versões e consolidação de memórias** — `kobana kadu memories versions` (histórico, mais nova primeiro, `current: true` na vigente), `memories rollback` (`{"version": N}` grava uma versão nova com aquele conteúdo; o histórico fica inteiro), `memories consolidate create` (consolida as memórias das execuções terminadas de um período, com `task_id` opcional; `{"dry_run": true}` só conta) e `executions consolidate-memories` (uma execução). A memória traz `current_version` e `last_change`, e `usage get` ganhou `by_kind`, que separa execuções do agente, conversas e consolidação de memórias
+- **`kadu`: servidores MCP da organização** — `kobana kadu mcp-servers list|create|get|update|delete`
+
 ### Changed
 
 - **`kadu`: a organização é só a do token** (incompatível) — `kobana kadu organization get` e `organization update` (`GET`/`PATCH /v1/organization`), no singular e sem id, no lugar de `organizations list|get|update`. Não há mais listagem de organizações. As instalações do bot do Slack entram como `organization slack-installations list|update|delete`, só com o id da instalação. Spec e traduções do `kadu` atualizadas
