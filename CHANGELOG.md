@@ -11,11 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`kadu`: versões e consolidação de memórias** — `kobana kadu memories versions` (histórico, mais nova primeiro, `current: true` na vigente), `memories rollback` (`{"version": N}` grava uma versão nova com aquele conteúdo; o histórico fica inteiro), `memories consolidate create` (consolida as memórias das execuções terminadas de um período, com `task_id` opcional; `{"dry_run": true}` só conta) e `executions consolidate-memories` (uma execução). A memória traz `current_version` e `last_change`, e `usage get` ganhou `by_kind`, que separa execuções do agente, conversas e consolidação de memórias
 - **`kadu`: servidores MCP da organização** — `kobana kadu mcp-servers list|create|get|update|delete`
+- **`organization get|update` em `billing`, `dashboards`, `dunning`, `finance` e `inbox`** — a organização do token (`GET`/`PATCH /v1/organization`), no singular, sem id e sem listagem, como no `kadu`. `dunning`, `finance` e `inbox` ganham o recurso agora; em `billing` e `dashboards` ele existia como `organization list`, que segue como alias oculto. O `update` só muda o perfil que o tenant controla: nome, e-mail e telefone são espelho da Conta Kobana e saíram do corpo. Specs e traduções desses cinco produtos atualizadas a partir do `main` de cada app (o `inbox` deixou de exigir mTLS na spec)
 
 ### Changed
 
 - **`kadu`: a organização é só a do token** (incompatível) — `kobana kadu organization get` e `organization update` (`GET`/`PATCH /v1/organization`), no singular e sem id, no lugar de `organizations list|get|update`. Não há mais listagem de organizações. As instalações do bot do Slack entram como `organization slack-installations list|update|delete`, só com o id da instalação. Spec e traduções do `kadu` atualizadas
 - **GET de um registro só vira `get`** — uma rota sem id e sem paginação cuja resposta é `{ data: { … } }` (objeto, não lista) é um singular e agora se chama `get`: `me get` (`banking`, `inbox`, `dunning`, `kadu`), `kadu organization get`, `kadu repository get`, `kadu usage get`, `inbox usage cost get`/`usage summary get`, `finance cash-flow get` e os `aggregates get` do `finance`, `dunning metrics recovery get`. O nome antigo, `list`, continua respondendo como alias oculto (inclusive em `kobana schema`), então scripts existentes não quebram
+
+### Fixed
+
+- **Singular com envelope em `$ref`** — a inferência do `get` agora segue o `$ref` local da resposta (`#/components/schemas/OrganizationResponse`), como publicam `billing`, `dashboards` e `finance`: `me get`, `organization get`, `settings get`, `usage get` e os demais singulares desses produtos deixam de aparecer como `list` (alias oculto mantido). Um singular ao lado de uma rota de item (`dashboards data-purges` e `data-purges get <id>`) segue `list`, para não esconder o `get` por id
 
 ## [0.8.0] - 2026-11-01
 

@@ -62,10 +62,12 @@ The Inbox API is **not** the banking API and does not share its credentials:
 ### secrets
 - `list`, `create`, `get`, `update`, `delete`
 
-### models, usage, me
+### models, usage, me, organization
 - `models list` — models available to agents
 - `usage cost get`, `usage summary get`
 - `me get` — the workspace and scopes behind the token
+- `organization get|update` — the token's own organization (no id, no listing);
+  `update` changes `custom_metadata` only
 
 ### agent-runs
 - `list`, `get`

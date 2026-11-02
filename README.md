@@ -291,7 +291,9 @@ No `finance`, toda rota age sobre **um** espaço de trabalho da organização do
 token, escolhido pelo cabeçalho `X-Workspace-Id` — sem ele a API responde
 `400 WORKSPACE_REQUIRED`. No `dashboards` e no `dunning` o cabeçalho é
 opcional enquanto a organização tem um único workspace (`kobana dunning
-workspaces list` mostra os que o token alcança).
+workspaces list` mostra os que o token alcança). `me get` e `organization
+get|update` valem para a organização inteira: a API não usa o cabeçalho
+nessas rotas, e um `KOBANA_WORKSPACE_ID` exportado é ignorado por elas.
 
 O CLI preenche o cabeçalho a partir de `KOBANA_WORKSPACE_ID`. Para trocar de
 espaço em uma chamada só, passe-o em `--params`, que tem precedência:

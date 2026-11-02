@@ -49,6 +49,11 @@ pub struct Operation {
     pub request_body: Option<serde_json::Value>,
     pub responses: BTreeMap<String, serde_json::Value>,
     pub tags: Vec<String>,
+    /// Whether a 2xx response wraps one record, found at parse time with the
+    /// whole document at hand: the envelope is often a `$ref`
+    /// (`#/components/schemas/OrganizationResponse`) that `responses`, kept as
+    /// written for `kobana schema`, does not resolve.
+    pub single_record: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -147,7 +152,12 @@ impl ApiSpec {
                     _ => continue, // skip "parameters", "summary", etc.
                 };
 
-                let op = parse_operation(op_value)?;
+                let mut op = parse_operation(op_value)?;
+                op.single_record = op
+                    .responses
+                    .iter()
+                    .filter(|(status, _)| status.starts_with('2'))
+                    .any(|(_, response)| wraps_single_record(response, Some(raw)));
                 operations.insert(method, op);
             }
 
@@ -210,7 +220,15 @@ impl ApiSpec {
                 let cli_method = if last_is_action {
                     resource_segments.last().unwrap().clone()
                 } else {
-                    infer_cli_method(*http_method, path, operation)
+                    let inferred = infer_cli_method(*http_method, path, operation);
+                    // A top-level singleton cannot take `get` from the item
+                    // route beside it (`/data_purges` counts, `/data_purges/{id}`
+                    // reads one job): two `get`s on one node would drop one
+                    if inferred == "get" && path_params.is_empty() && self.has_item_get(path) {
+                        "list".to_string()
+                    } else {
+                        inferred
+                    }
                 };
 
                 let endpoint = ResolvedEndpoint {
@@ -249,6 +267,20 @@ impl ApiSpec {
         resolve_conflicts(&mut root);
 
         root
+    }
+}
+
+impl ApiSpec {
+    /// Whether `path` has a GET item route right under it (`<path>/{id}`).
+    fn has_item_get(&self, path: &str) -> bool {
+        let base = path.trim_end_matches('/');
+        self.paths.iter().any(|(other, item)| {
+            other
+                .strip_prefix(base)
+                .and_then(|rest| rest.strip_prefix('/'))
+                .is_some_and(|seg| seg.starts_with('{') && seg.ends_with('}') && !seg.contains('/'))
+                && item.operations.contains_key(&HttpMethod::Get)
+        })
     }
 }
 
@@ -330,22 +362,42 @@ fn infer_cli_method(http_method: HttpMethod, path: &str, operation: &Operation) 
 /// Whether the 2xx JSON response wraps one record: `{ data: { … } }`, with
 /// `data` an object (inline or a `$ref`) rather than an array.
 fn returns_single_record(operation: &Operation) -> bool {
-    operation
-        .responses
-        .iter()
-        .filter(|(status, _)| status.starts_with('2'))
-        .filter_map(|(_, response)| {
-            response
-                .pointer("/content/application~1json/schema/properties/data")
-        })
-        .any(|data| {
-            let is_array = match data.get("type") {
-                Some(serde_json::Value::String(t)) => t == "array",
-                Some(serde_json::Value::Array(ts)) => ts.iter().any(|t| t == "array"),
-                _ => false,
-            };
-            !is_array && (data.get("$ref").is_some() || data.get("type").is_some())
-        })
+    operation.single_record
+        || operation
+            .responses
+            .iter()
+            .filter(|(status, _)| status.starts_with('2'))
+            .any(|(_, response)| wraps_single_record(response, None))
+}
+
+/// Whether one response's JSON schema is a `{ data: <object> }` envelope. The
+/// schema itself may be a local `$ref`, followed through `doc` when given.
+fn wraps_single_record(response: &serde_json::Value, doc: Option<&serde_json::Value>) -> bool {
+    let Some(mut schema) = response.pointer("/content/application~1json/schema") else {
+        return false;
+    };
+    // Bounded: a reference cycle in a malformed spec must not hang the CLI
+    for _ in 0..8 {
+        let Some(target) = schema.get("$ref").and_then(|r| r.as_str()) else {
+            break;
+        };
+        let Some(resolved) = doc
+            .zip(target.strip_prefix('#'))
+            .and_then(|(doc, pointer)| doc.pointer(pointer))
+        else {
+            return false;
+        };
+        schema = resolved;
+    }
+    let Some(data) = schema.pointer("/properties/data") else {
+        return false;
+    };
+    let is_array = match data.get("type") {
+        Some(serde_json::Value::String(t)) => t == "array",
+        Some(serde_json::Value::Array(ts)) => ts.iter().any(|t| t == "array"),
+        _ => false,
+    };
+    !is_array && (data.get("$ref").is_some() || data.get("type").is_some())
 }
 
 fn parse_operation(value: &serde_json::Value) -> Result<Operation, KobanaError> {
@@ -383,6 +435,7 @@ fn parse_operation(value: &serde_json::Value) -> Result<Operation, KobanaError> 
         request_body,
         responses,
         tags,
+        single_record: false,
     })
 }
 
@@ -551,5 +604,58 @@ mod tests {
         assert_eq!(infer_cli_method(HttpMethod::Get, "/v1/organization/slack_installations", &many), "list");
         // No usable response schema keeps the old rule: a top-level GET lists
         assert_eq!(infer_cli_method(HttpMethod::Get, "/v1/webhooks", &plain), "list");
+    }
+
+    #[test]
+    fn a_singleton_whose_envelope_is_a_ref_reads_one_record() {
+        // billing, dashboards and finance publish the envelope as a component
+        let spec = ApiSpec::parse(
+            r##"{
+            "paths": {
+                "/v1/organization": {"get": {"responses": {"200": {"content": {"application/json": {
+                    "schema": {"$ref": "#/components/schemas/OrganizationResponse"}}}}}}},
+                "/v1/webhooks": {"get": {"responses": {"200": {"content": {"application/json": {
+                    "schema": {"$ref": "#/components/schemas/WebhookList"}}}}}}},
+                "/v1/loop": {"get": {"responses": {"200": {"content": {"application/json": {
+                    "schema": {"$ref": "#/components/schemas/Loop"}}}}}}}
+            },
+            "components": {"schemas": {
+                "OrganizationResponse": {"type": "object", "properties": {
+                    "data": {"$ref": "#/components/schemas/Organization"}}},
+                "Organization": {"type": "object"},
+                "WebhookList": {"type": "object", "properties": {
+                    "data": {"type": "array", "items": {}}}},
+                "Loop": {"$ref": "#/components/schemas/Loop"}
+            }}
+        }"##,
+        )
+        .unwrap();
+        let tree = spec.build_command_tree("/v1");
+        let method = |resource: &str| tree.children[resource].endpoints[0].cli_method.clone();
+        assert_eq!(method("organization"), "get");
+        assert_eq!(method("webhooks"), "list");
+        // A reference cycle is bounded and falls back to the path rule
+        assert_eq!(method("loop"), "list");
+    }
+
+    #[test]
+    fn a_singleton_beside_an_item_route_keeps_list() {
+        // dashboards: `/data_purges` answers counts, `/data_purges/{id}` one job
+        let spec = ApiSpec::parse(
+            r#"{"paths": {
+                "/v1/data_purges": {"get": {"responses": {"200": {"content": {"application/json": {
+                    "schema": {"type": "object", "properties": {"data": {"type": "object"}}}}}}}}},
+                "/v1/data_purges/{id}": {"get": {"responses": {}}}
+            }}"#,
+        )
+        .unwrap();
+        let tree = spec.build_command_tree("/v1");
+        let mut methods: Vec<String> = tree.children["data-purges"]
+            .endpoints
+            .iter()
+            .map(|e| e.cli_method.clone())
+            .collect();
+        methods.sort();
+        assert_eq!(methods, ["get", "list"]);
     }
 }

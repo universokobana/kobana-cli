@@ -61,6 +61,9 @@ credentials with the banking product. Every request needs **two** things:
 ### Fiscal and identity
 - `fiscal-documents` — `list`, `get` (received fiscal documents)
 - `me get` — the organization, person and scopes behind the token
+- `organization get|update` — the token's own organization (no id, no listing, no
+  `X-Workspace-Id`); `update` changes `trade_name`, `website`, `addresses`,
+  `custom_metadata`
 
 ## Examples
 

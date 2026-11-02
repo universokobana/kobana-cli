@@ -63,7 +63,9 @@ credentials with the banking product:
 
 ### Organization
 - `workspaces` — CRUD plus `export`, `usage`, `import create`
-- `organization`, `settings`, `dashboard-users`, `team-roles`, `permissions`,
+- `organization get|update` — the token's own organization (no id, no listing, no
+  `X-Workspace-Id`); `update` changes `addresses` and `custom_metadata` only
+- `settings`, `dashboard-users`, `team-roles`, `permissions`,
   `api-keys` (`revoke`, `rotate`)
 - `email-templates` (`duplicate`, `preview`), `email-layouts`, `notifications`
   (`send`, `stats list`), `comments`

@@ -58,6 +58,9 @@ and bulk exports `export` (or `all`); every other method needs `write` or
 - `imports` — `list`, `create`, `get`
 - `exports` — `charges list`, `people list`, `jobs list|create|download`
 - `metrics recovery get`, `audit-logs list`, `me get`
+- `organization get|update` — the token's own organization (no id, no listing, no
+  `X-Workspace-Id`); `update` changes `trade_name`, `website`, `timezone`,
+  `custom_metadata`
 - `webhook-endpoints` — CRUD plus `rotate-secret`, `test`, `deliveries get|retry`
 
 ## Examples

@@ -11195,6 +11195,298 @@
         ],
         "description": "Espaço de dados da organização. Toda pessoa, cobrança, régua e demais recursos pertencem a um workspace."
       },
+      "Organization": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID da organização."
+          },
+          "public_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID público da organização (o mesmo do `/v1/me`)."
+          },
+          "external_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "ID externo (conta Kobana de origem), quando houver."
+          },
+          "name": {
+            "type": "string",
+            "description": "Razão social / nome da conta Kobana.",
+            "example": "Acme Ltda"
+          },
+          "trade_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Nome fantasia.",
+            "example": "Acme"
+          },
+          "document_type": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Tipo do documento fiscal.",
+            "example": "cnpj"
+          },
+          "document_number": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Documento fiscal (CPF/CNPJ), só dígitos.",
+            "example": "12345678000195"
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "E-mail da organização."
+          },
+          "phone": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Telefone da organização."
+          },
+          "website": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Website."
+          },
+          "logo_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "URL do logo usado nas mensagens e no portal."
+          },
+          "timezone": {
+            "type": "string",
+            "description": "Fuso horário IANA da organização (define o dia civil de vencimentos e réguas).",
+            "example": "America/Sao_Paulo"
+          },
+          "metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do sistema (objeto JSON, somente leitura): contexto interno gravado pelo backend e pelas integrações. Nunca aceito no corpo — use `custom_metadata` para dados próprios."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre, leitura e escrita). Ver `custom_data` para o campo legado dos recursos núcleo."
+          },
+          "created_at": {
+            "type": "string",
+            "description": "Criação (ISO 8601)."
+          },
+          "updated_at": {
+            "type": "string",
+            "description": "Última atualização (ISO 8601)."
+          }
+        },
+        "required": [
+          "id",
+          "public_id",
+          "external_id",
+          "name",
+          "trade_name",
+          "document_type",
+          "document_number",
+          "email",
+          "phone",
+          "website",
+          "logo_url",
+          "timezone",
+          "metadata",
+          "custom_metadata",
+          "created_at",
+          "updated_at"
+        ],
+        "description": "A organização (conta Kobana) em cujo nome o token age. Um token alcança sempre uma única organização."
+      },
+      "OrganizationUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "trade_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 120,
+            "description": "Nome fantasia; `null` limpa.",
+            "example": "Acme"
+          },
+          "website": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri",
+            "description": "Website (URL); `null` limpa.",
+            "example": "https://acme.com.br"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "Nome de fuso IANA (ex.: `America/Sao_Paulo`). Offsets e abreviações são recusados.",
+            "example": "America/Sao_Paulo"
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário (objeto JSON livre). `null` mantém o valor gravado.",
+            "example": {
+              "erp_id": "ERP-123"
+            }
+          },
+          "custom_metadata_mode": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "merge"
+            ],
+            "description": "Como o `custom_metadata` enviado é reconciliado com o valor gravado: `replace` (padrão) substitui o objeto inteiro; `merge` faz deep merge — objetos aninhados mesclam, escalares e arrays substituem a chave, e uma chave enviada com `null` é gravada como `null` (não é removida). Só na atualização.",
+            "example": "merge"
+          }
+        },
+        "description": "Campos do perfil a alterar; os omitidos ficam como estão."
+      },
+      "OperationApproval": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID da aprovação."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "executed",
+              "failed",
+              "declined",
+              "expired"
+            ],
+            "description": "`pending`, `approved` (em processamento), `executed`, `failed`, `declined` (cancelada) ou `expired` — a pendente vencida já sai como `expired`."
+          },
+          "action": {
+            "type": "string",
+            "description": "Nome da tool pedida.",
+            "example": "dunning_charges_bulk_cancel"
+          },
+          "title": {
+            "type": "string",
+            "description": "O que a operação faz, traduzido no idioma do pedido (`Accept-Language`).",
+            "example": "Cancelar cobranças em lote"
+          },
+          "resource": {
+            "type": "string",
+            "description": "Recurso da operação.",
+            "example": "charges"
+          },
+          "operation": {
+            "type": "string",
+            "description": "Operação sobre o recurso.",
+            "example": "bulk_cancel"
+          },
+          "amount": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Valor em jogo (reais), quando a operação tem um."
+          },
+          "requested_at": {
+            "type": "string",
+            "description": "Pedido em (ISO 8601)."
+          },
+          "expires_at": {
+            "type": "string",
+            "description": "Até quando o link vale (ISO 8601)."
+          },
+          "decided_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Quando a pessoa decidiu."
+          },
+          "executed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Quando a execução terminou."
+          },
+          "error": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ],
+            "description": "Por que não executou (`code`, `message`), quando `failed`."
+          },
+          "result": {
+            "description": "O retorno da tool executada, com segredos mascarados, quando `executed`."
+          },
+          "result_hidden": {
+            "type": "boolean",
+            "description": "`true` quando o token não lê o recurso da operação, ou a pessoa não tem mais permissão de lê-lo: `result`, `error` e o valor lido do registro vêm nulos. A lista e a situação não dependem disso."
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "action",
+          "title",
+          "resource",
+          "operation",
+          "amount",
+          "requested_at",
+          "expires_at",
+          "decided_at",
+          "executed_at",
+          "error",
+          "result_hidden"
+        ],
+        "description": "Uma operação destrutiva pedida por um assistente (MCP) que só roda depois que a pessoa confirma pelo link. Nunca traz o link, o token do link nem os argumentos da chamada."
+      },
       "NotificationChannel": {
         "type": "object",
         "properties": {
@@ -29392,6 +29684,606 @@
             "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
           }
         ]
+      }
+    },
+    "/v1/organization": {
+      "get": {
+        "tags": [
+          "Organização"
+        ],
+        "summary": "Consultar a organização",
+        "description": "Retorna a organização do token. A organização vem só da credencial: não há lista nem `{id}`, e nenhum header, query ou corpo escolhe outra. É de nível de organização: não exige o header `X-Workspace-Id`.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A organização do token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Organization"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, inválido, expirado ou revogado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "O token não tem o escopo exigido pela operação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora da sua organização.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo da requisição acima de 2 MB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido (600 por minuto por chave; 60 tentativas inválidas por minuto por IP). Aguarde o `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Tente novamente; persistindo, contate o suporte.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get-organization",
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "description": "Identificação do integrador. Inclua nome e e-mail de contato — ex.: `Kevin Mitnick <kmitnick@kobana.com.br>`. Usado para suporte e auditoria.",
+            "schema": {
+              "type": "string",
+              "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+            },
+            "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Organização"
+        ],
+        "summary": "Atualizar a organização",
+        "description": "Atualiza o perfil da organização do token: nome fantasia, website, fuso horário e `custom_metadata`. Nome, e-mail, telefone, documento e ids são espelho da conta Kobana e não mudam por aqui (o campo enviado é ignorado); campos comerciais (`bypass_subscription`, `courtesy`…) respondem `403`. O perfil vale para todos os workspaces, então exige ser dono da organização ou ter acesso a todos os workspaces. Não exige o header `X-Workspace-Id`.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A organização atualizada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Organization"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requisição inválida (erro de validação).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, inválido, expirado ou revogado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "O token não tem o escopo exigido pela operação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora da sua organização.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo da requisição acima de 2 MB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido (600 por minuto por chave; 60 tentativas inválidas por minuto por IP). Aguarde o `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Tente novamente; persistindo, contate o suporte.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "patch-organization",
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "description": "Identificação do integrador. Inclua nome e e-mail de contato — ex.: `Kevin Mitnick <kmitnick@kobana.com.br>`. Usado para suporte e auditoria.",
+            "schema": {
+              "type": "string",
+              "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+            },
+            "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original (header `X-Idempotent-Replay: true`).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/operation-approvals": {
+      "get": {
+        "tags": [
+          "Aprovações"
+        ],
+        "summary": "Listar minhas aprovações",
+        "description": "Lista as aprovações por link da pessoa do token, na organização do token e no workspace da chamada, da mais recente para a mais antiga. Só leitura: nada aqui aprova, cancela ou reabre uma aprovação. Não exige permissão de papel nem escopo de recurso próprio — o dado é da própria pessoa; basta o nível de leitura.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "description": "Página (a partir de 1).",
+              "example": 1
+            },
+            "required": false,
+            "description": "Página (a partir de 1).",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 100,
+              "description": "Itens por página (máx. 100).",
+              "example": 20
+            },
+            "required": false,
+            "description": "Itens por página (máx. 100).",
+            "name": "per_page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "approved",
+                "executed",
+                "failed",
+                "declined",
+                "expired"
+              ],
+              "description": "Só esta situação. `expired` inclui a pendente vencida; `pending` só a que ainda vale."
+            },
+            "required": false,
+            "description": "Só esta situação. `expired` inclui a pendente vencida; `pending` só a que ainda vale.",
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Pedidas a partir deste instante (ISO 8601, inclusive)."
+            },
+            "required": false,
+            "description": "Pedidas a partir deste instante (ISO 8601, inclusive).",
+            "name": "created_after",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Pedidas antes deste instante (ISO 8601, exclusivo)."
+            },
+            "required": false,
+            "description": "Pedidas antes deste instante (ISO 8601, exclusivo).",
+            "name": "created_before",
+            "in": "query"
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "description": "Identificação do integrador. Inclua nome e e-mail de contato — ex.: `Kevin Mitnick <kmitnick@kobana.com.br>`. Usado para suporte e auditoria.",
+            "schema": {
+              "type": "string",
+              "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+            },
+            "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Aprovações da pessoa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OperationApproval"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PaginationMeta"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requisição inválida (erro de validação).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, inválido, expirado ou revogado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "O token não tem o escopo exigido pela operação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora da sua organização.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo da requisição acima de 2 MB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido (600 por minuto por chave; 60 tentativas inválidas por minuto por IP). Aguarde o `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Tente novamente; persistindo, contate o suporte.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get-operation-approvals"
+      }
+    },
+    "/v1/operation-approvals/{id}": {
+      "get": {
+        "tags": [
+          "Aprovações"
+        ],
+        "summary": "Consultar uma aprovação",
+        "description": "Situação e resultado de uma aprovação por link, pelo `approval.id` que a tool destrutiva devolveu em `approval_required`. Chame depois que a pessoa disser que decidiu na tela — não em laço. Aprovação de outra pessoa, de outra organização ou id inexistente: o mesmo 404. O `result` sai com segredos mascarados.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "O `approval.id` da resposta `approval_required`."
+            },
+            "required": true,
+            "description": "O `approval.id` da resposta `approval_required`.",
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "description": "Identificação do integrador. Inclua nome e e-mail de contato — ex.: `Kevin Mitnick <kmitnick@kobana.com.br>`. Usado para suporte e auditoria.",
+            "schema": {
+              "type": "string",
+              "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+            },
+            "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada age (`id` ou `public_id`, listados em `GET /v1/workspaces`). Opcional enquanto a organização tem um só workspace; com dois ou mais, sem ele a resposta é `400 WORKSPACE_REQUIRED`. Um workspace de outra organização é `403 UNKNOWN_WORKSPACE`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A aprovação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/OperationApproval"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token ausente, inválido, expirado ou revogado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "O token não tem o escopo exigido pela operação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora da sua organização.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo da requisição acima de 2 MB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido (600 por minuto por chave; 60 tentativas inválidas por minuto por IP). Aguarde o `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Tente novamente; persistindo, contate o suporte.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get-operation-approvals-id"
       }
     }
   },

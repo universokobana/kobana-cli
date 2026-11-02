@@ -722,6 +722,25 @@ mod tests {
     }
 
     #[test]
+    fn every_product_exposes_the_token_organization_as_a_singleton() {
+        // `/v1/organization` (kobana-next-apps docs/standards/api-v1-organization.md):
+        // `organization get` and `organization update`, no id, no listing
+        let products = load_all().unwrap();
+        for name in ["billing", "dashboards", "dunning", "finance", "inbox", "kadu"] {
+            let product = find(&products, name).expect("product must load");
+            let organization = &product.tree.children["organization"];
+            let methods: Vec<&str> = organization.endpoints.iter().map(|e| e.cli_method.as_str()).collect();
+            assert!(methods.contains(&"get") && methods.contains(&"update"), "{name}: {methods:?}");
+            assert!(!methods.contains(&"list"), "{name}: {methods:?}");
+            assert!(
+                organization.endpoints.iter().all(|e| e.path_template == "/v1/organization"),
+                "{name}"
+            );
+            assert!(!product.tree.children.contains_key("organizations"), "{name}");
+        }
+    }
+
+    #[test]
     fn kadu_is_registered_with_its_resources() {
         let products = load_all().unwrap();
         let kadu = find(&products, "kadu").expect("kadu must load");

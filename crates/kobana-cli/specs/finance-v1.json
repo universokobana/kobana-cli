@@ -3334,13 +3334,14 @@
             "enum": [
               "calculated",
               "banking",
+              "open_finance",
               "manual",
               "imported",
               "api",
               "mcp",
               "cli"
             ],
-            "description": "Which channel produced this observation. `calculated` is the sum of posted transactions, snapshotted when a bank statement lands; `banking` comes from the Kobana banking gateway; `manual` was typed in the dashboard; `imported` came from a CSV/OFX file; `api`, `mcp` and `cli` identify the client that posted it.",
+            "description": "Which channel produced this observation. `calculated` is the sum of posted transactions, snapshotted when a bank statement lands; `banking` comes from the Kobana banking gateway; `open_finance` comes from a bank connected through Open Finance; `manual` was typed in the dashboard; `imported` came from a CSV/OFX file; `api`, `mcp` and `cli` identify the client that posted it.",
             "example": "banking"
           },
           "capture_date": {
@@ -3475,6 +3476,7 @@
             "enum": [
               "calculated",
               "banking",
+              "open_finance",
               "manual",
               "imported",
               "api",
@@ -8227,6 +8229,333 @@
         ],
         "description": "Answer of `GET /me`: the identity in `data`."
       },
+      "OrganizationAddressV1": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Free label, e.g. `main` or `billing`."
+          },
+          "street": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "complement": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "neighborhood": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "city": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "state": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Two-letter state (UF), e.g. `SP`."
+          },
+          "city_ibge_code": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "7-digit IBGE city code."
+          },
+          "zip_code": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "CEP, digits only."
+          }
+        },
+        "required": [
+          "label",
+          "street",
+          "number",
+          "complement",
+          "neighborhood",
+          "city",
+          "state",
+          "city_ibge_code",
+          "zip_code"
+        ],
+        "description": "One address of the organization."
+      },
+      "OrganizationV1": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The organization's public id — the token `org` claim, and `organization.id` in `GET /me`. Same value as `public_id`.",
+            "example": "3f6c1e2a-9b8d-4c7e-a1f0-5d4e3c2b1a09"
+          },
+          "public_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The organization's public id across Kobana apps."
+          },
+          "external_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The organization's identity on Kobana (the Kobana Account). Set by provisioning; read-only."
+          },
+          "name": {
+            "type": "string",
+            "description": "Registration name, mirrored from the Kobana Account. Read-only.",
+            "example": "Acme Ltda"
+          },
+          "trade_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Trade name (nome fantasia)."
+          },
+          "legal_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Legal name from the Receita Federal lookup, when it answered. Read-only."
+          },
+          "document_type": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "cnpj",
+              "cpf",
+              null
+            ],
+            "description": "Type of `document_number`. Read-only."
+          },
+          "document_number": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "CNPJ or CPF, masked (`00.000.000/0000-00`). The fiscal identity, set by provisioning; read-only.",
+            "example": "12.345.678/0001-95"
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Contact e-mail of the organization, mirrored from the Kobana Account. Read-only."
+          },
+          "phone": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Contact phone, as displayed (`(11) 999999999`), mirrored from the Kobana Account. Read-only."
+          },
+          "website": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Website URL."
+          },
+          "addresses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrganizationAddressV1"
+            }
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário: objeto JSON livre."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last change to the organization or its registration."
+          }
+        },
+        "required": [
+          "id",
+          "public_id",
+          "external_id",
+          "name",
+          "trade_name",
+          "legal_name",
+          "document_type",
+          "document_number",
+          "email",
+          "phone",
+          "website",
+          "addresses",
+          "custom_metadata",
+          "created_at",
+          "updated_at"
+        ],
+        "description": "The organization the token belongs to — the customer, above every workspace: its public id, the registration (name, trade name, CNPJ/CPF), contacts, addresses and `custom_metadata`. Never carries commercial settings or secrets."
+      },
+      "OrganizationResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/OrganizationV1"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "description": "Answer of `GET` and `PATCH /organization`: the organization in `data`."
+      },
+      "OrganizationUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "trade_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255,
+            "description": "Trade name. `null` clears it."
+          },
+          "website": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255,
+            "format": "uri",
+            "description": "Website URL. `null` clears it."
+          },
+          "addresses": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 60
+                },
+                "street": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 255
+                },
+                "number": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 30
+                },
+                "complement": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 255
+                },
+                "neighborhood": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 255
+                },
+                "city": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 255
+                },
+                "state": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 2
+                },
+                "city_ibge_code": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 7
+                },
+                "zip_code": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 9
+                }
+              },
+              "additionalProperties": false
+            },
+            "maxItems": 20,
+            "description": "Replaces the whole address list. `[]` clears it."
+          },
+          "custom_metadata": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+            },
+            "description": "Metadados do usuário: objeto JSON livre. `null` mantém o valor atual. Máx. 64 KB serializado, 16 níveis."
+          },
+          "custom_metadata_mode": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "merge"
+            ],
+            "description": "Como o `custom_metadata` enviado é reconciliado com o valor armazenado: `replace` (padrão) substitui o objeto inteiro, `merge` faz deep merge sobre o valor atual."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request body to update the organization profile: only the fields the customer owns. Identity, fiscal document and commercial settings are not writable here."
+      },
       "TransferV1": {
         "type": "object",
         "properties": {
@@ -12161,6 +12490,7 @@
               "enum": [
                 "calculated",
                 "banking",
+                "open_finance",
                 "manual",
                 "imported",
                 "api",
@@ -12417,7 +12747,7 @@
       "post": {
         "operationId": "createAccountBalance",
         "summary": "Registrar um saldo",
-        "description": "Records one observed balance for the account. This does NOT move money and creates no transaction — use `POST /financial-accounts/{id}/adjust-balance` when you want the ledger corrected. `source` defaults to `api`; narrow it to `mcp` or `cli` so the audit trail names the real channel. The sources the product produces itself (`manual`, `banking`, `calculated`, `imported`) are refused (422). Re-sending the same `external_id` for the same account and source returns 409. The new row's id is the `balanceId` used by the delete. Requires scope `finance/accounts` with access level `write`; pass an `X-Idempotency-Key` header on retries.",
+        "description": "Records one observed balance for the account. This does NOT move money and creates no transaction — use `POST /financial-accounts/{id}/adjust-balance` when you want the ledger corrected. `source` defaults to `api`; narrow it to `mcp` or `cli` so the audit trail names the real channel. The sources the product produces itself (`manual`, `banking`, `open_finance`, `calculated`, `imported`) are refused (422). Re-sending the same `external_id` for the same account and source returns 409. The new row's id is the `balanceId` used by the delete. Requires scope `finance/accounts` with access level `write`; pass an `X-Idempotency-Key` header on retries.",
         "tags": [
           "Contas Financeiras"
         ],
@@ -24830,6 +25160,364 @@
           },
           "403": {
             "description": "Token authenticated, but its organization is unknown or the person is suspended or removed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for this token. Reads and writes have separate budgets, both on a 1-hour sliding window. The response carries `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` and `Retry-After` — wait out `Retry-After` rather than retrying immediately.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": true,
+            "description": "Workspace to act on, as a UUID. The token identifies the organization; this header picks which of its workspaces the request reads or writes. It is checked against the token's organization, so a workspace owned by anyone else answers `UNKNOWN_WORKSPACE` — the same code as one that does not exist. Omitting it answers `WORKSPACE_REQUIRED` (400).",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "2b93f876-769a-4bdc-b23e-304957f313b4"
+            },
+            "example": "2b93f876-769a-4bdc-b23e-304957f313b4"
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "description": "Identifies your integration. Include your name and contact email so the Kobana team can reach you if your integration causes issues (RFC 7231 §5.5.3).",
+            "schema": {
+              "type": "string",
+              "example": "Kevin Mitnick <kmitnick@example.com>"
+            },
+            "example": "Kevin Mitnick <kmitnick@example.com>"
+          },
+          {
+            "name": "X-Request-Source",
+            "in": "header",
+            "required": false,
+            "description": "Surface making the call: `dashboard`, `api`, `cli`, `mcp` or `other`. Recorded as the channel that created or last changed every record the request writes. Without the header, `api` is assumed; an unknown value answers `BAD_REQUEST` (400).",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dashboard",
+                "api",
+                "cli",
+                "mcp",
+                "other"
+              ],
+              "default": "api"
+            }
+          },
+          {
+            "name": "X-Request-Source-Other",
+            "in": "header",
+            "required": false,
+            "description": "Name of the app making the call. Required when `X-Request-Source` is `other` (up to 100 characters), ignored otherwise.",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "example": "Zapier"
+            },
+            "example": "Zapier"
+          }
+        ]
+      }
+    },
+    "/v1/organization": {
+      "get": {
+        "operationId": "getOrganization",
+        "summary": "Obter a organização do token",
+        "description": "Returns the organization the Bearer token belongs to: its public id, registration (name, trade name, CNPJ/CPF), contacts, addresses and `custom_metadata`. Requires scope `finance/settings` with access level `read`. The organization comes only from the token — there is no `{id}` and no listing — and the route is organization-level, so no `X-Workspace-Id` header is needed. Commercial settings and secrets are never returned.",
+        "tags": [
+          "Organização"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The organization of the token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationResponse"
+                },
+                "example": {
+                  "data": {
+                    "id": "3f6c1e2a-9b8d-4c7e-a1f0-5d4e3c2b1a09",
+                    "public_id": "3f6c1e2a-9b8d-4c7e-a1f0-5d4e3c2b1a09",
+                    "external_id": "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f",
+                    "name": "Acme Ltda",
+                    "trade_name": "Acme",
+                    "legal_name": "ACME COMERCIO LTDA",
+                    "document_type": "cnpj",
+                    "document_number": "12.345.678/0001-95",
+                    "email": "financeiro@acme.com.br",
+                    "phone": "(11) 999999999",
+                    "website": "https://acme.com.br",
+                    "addresses": [
+                      {
+                        "label": "main",
+                        "street": "Avenida Paulista",
+                        "number": "1000",
+                        "complement": "Sala 10",
+                        "neighborhood": "Bela Vista",
+                        "city": "São Paulo",
+                        "state": "SP",
+                        "city_ibge_code": "3550308",
+                        "zip_code": "01310100"
+                      }
+                    ],
+                    "custom_metadata": {
+                      "erp_code": "ACME-01"
+                    },
+                    "created_at": "2026-01-10 12:00:00 UTC",
+                    "updated_at": "2026-11-02 09:30:00 UTC"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing / invalid / expired / revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Token lacks the `finance/settings` scope or the `read` access level, its organization is unknown or suspended, or the person is suspended, removed or lacks the `settings.show` permission.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for this token. Reads and writes have separate budgets, both on a 1-hour sliding window. The response carries `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` and `Retry-After` — wait out `Retry-After` rather than retrying immediately.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": true,
+            "description": "Workspace to act on, as a UUID. The token identifies the organization; this header picks which of its workspaces the request reads or writes. It is checked against the token's organization, so a workspace owned by anyone else answers `UNKNOWN_WORKSPACE` — the same code as one that does not exist. Omitting it answers `WORKSPACE_REQUIRED` (400).",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "2b93f876-769a-4bdc-b23e-304957f313b4"
+            },
+            "example": "2b93f876-769a-4bdc-b23e-304957f313b4"
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "description": "Identifies your integration. Include your name and contact email so the Kobana team can reach you if your integration causes issues (RFC 7231 §5.5.3).",
+            "schema": {
+              "type": "string",
+              "example": "Kevin Mitnick <kmitnick@example.com>"
+            },
+            "example": "Kevin Mitnick <kmitnick@example.com>"
+          },
+          {
+            "name": "X-Request-Source",
+            "in": "header",
+            "required": false,
+            "description": "Surface making the call: `dashboard`, `api`, `cli`, `mcp` or `other`. Recorded as the channel that created or last changed every record the request writes. Without the header, `api` is assumed; an unknown value answers `BAD_REQUEST` (400).",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dashboard",
+                "api",
+                "cli",
+                "mcp",
+                "other"
+              ],
+              "default": "api"
+            }
+          },
+          {
+            "name": "X-Request-Source-Other",
+            "in": "header",
+            "required": false,
+            "description": "Name of the app making the call. Required when `X-Request-Source` is `other` (up to 100 characters), ignored otherwise.",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "example": "Zapier"
+            },
+            "example": "Zapier"
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updateOrganization",
+        "summary": "Atualizar o perfil da organização",
+        "description": "Partial update of the profile the customer owns: `trade_name`, `website`, `addresses` and `custom_metadata`. Requires scope `finance/settings` with access level `write`, the `settings.update` permission and, since the profile applies to every workspace, the organization owner or access to all of its workspaces. Identity (`id`, `public_id`, `external_id`), the fiscal document (`document_type`, `document_number`) and `name`, `email` and `phone` — mirrors of the Kobana Account, overwritten by the account sync — are not writable (422, like any unknown key); a commercial setting (`courtesy`, `entitlements`, `partner_slug`…) is a 403. `custom_metadata: null` keeps the stored value.",
+        "tags": [
+          "Organização"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationUpdateRequest"
+              },
+              "examples": {
+                "profile": {
+                  "summary": "Set the trade name and website",
+                  "value": {
+                    "trade_name": "Acme",
+                    "website": "https://acme.com.br"
+                  }
+                },
+                "metadata": {
+                  "summary": "Merge into custom_metadata",
+                  "value": {
+                    "custom_metadata": {
+                      "erp_code": "ACME-02"
+                    },
+                    "custom_metadata_mode": "merge"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated organization.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationResponse"
+                },
+                "example": {
+                  "data": {
+                    "id": "3f6c1e2a-9b8d-4c7e-a1f0-5d4e3c2b1a09",
+                    "public_id": "3f6c1e2a-9b8d-4c7e-a1f0-5d4e3c2b1a09",
+                    "external_id": "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f",
+                    "name": "Acme Ltda",
+                    "trade_name": "Acme",
+                    "legal_name": "ACME COMERCIO LTDA",
+                    "document_type": "cnpj",
+                    "document_number": "12.345.678/0001-95",
+                    "email": "financeiro@acme.com.br",
+                    "phone": "(11) 999999999",
+                    "website": "https://acme.com.br",
+                    "addresses": [
+                      {
+                        "label": "main",
+                        "street": "Avenida Paulista",
+                        "number": "1000",
+                        "complement": "Sala 10",
+                        "neighborhood": "Bela Vista",
+                        "city": "São Paulo",
+                        "state": "SP",
+                        "city_ibge_code": "3550308",
+                        "zip_code": "01310100"
+                      }
+                    ],
+                    "custom_metadata": {
+                      "erp_code": "ACME-01"
+                    },
+                    "created_at": "2026-01-10 12:00:00 UTC",
+                    "updated_at": "2026-11-02 09:30:00 UTC"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed JSON body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing / invalid / expired / revoked token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Token lacks the `finance/settings` scope or the `write` access level; the person lacks the `settings.update` permission or does not reach every workspace (`details.reason: not_all_workspaces`); or the body carries a commercial setting (`details.reason: commercial_field`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Schema validation failure, including a read-only or unknown field.",
             "content": {
               "application/json": {
                 "schema": {

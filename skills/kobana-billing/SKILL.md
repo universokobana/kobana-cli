@@ -64,8 +64,10 @@ and bulk exports `export` (or `all`); every other method needs `write` or
 - `customers` — CRUD plus `recalculate-mrr`, `statement`, `users`
 - `companies` — CRUD plus `deactivate`, `reactivate`, `set-default`, `fiscal`,
   `fiscal-profile`, `matriz`
-- `organization list|update`, `dashboard-users`, `team-roles`, `portal-users list`
-- `me list` — the organization and scopes behind the token
+- `organization get|update` — the token's own organization (no id, no listing);
+  `update` changes `addresses` and `custom_metadata` only
+- `dashboard-users`, `team-roles`, `portal-users list`
+- `me get` — the organization and scopes behind the token
 
 ### Proposals, credits and taxes
 - `proposals` — CRUD plus `send`, `accept`, `undo-accept`, `publish`,

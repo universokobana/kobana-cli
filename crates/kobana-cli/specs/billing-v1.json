@@ -4957,24 +4957,12 @@
       "OrganizationUpdateRequest": {
         "type": "object",
         "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 255,
-            "description": "Nome de exibição da organização."
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "description": "E-mail de contato principal da organização."
-          },
-          "phone": {
-            "type": "string",
-            "description": "Telefone de contato principal da organização."
-          },
           "addresses": {
             "type": "array",
             "items": {
+              "type": "object",
+              "additionalProperties": {
+              }
             },
             "description": "Lista de endereços da organização."
           },
@@ -4985,7 +4973,7 @@
             ],
             "additionalProperties": {
             },
-            "description": "Metadados arbitrários definidos pelo cliente (chave/valor)."
+            "description": "Metadados arbitrários definidos pelo cliente (chave/valor). `null` é ignorado e mantém o valor atual."
           }
         }
       },
@@ -5102,6 +5090,152 @@
         },
         "required": [
           "data"
+        ]
+      },
+      "OperationApprovalV1": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Identificador da aprovação (o `approval.id`)."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "executed",
+              "failed",
+              "declined",
+              "expired"
+            ],
+            "description": "`pending` (ainda não decidida), `approved` (confirmada, em processamento), `executed` (executada), `failed` (falhou; nada foi alterado por ela), `declined` (cancelada; nada rodou) ou `expired` (o link venceu; nada rodou). A pendente vencida já sai como `expired`."
+          },
+          "action": {
+            "type": "string",
+            "description": "A tool do MCP que foi pedida.",
+            "example": "billing_invoices_pay"
+          },
+          "title": {
+            "type": "string",
+            "description": "O que a operação faz, traduzido (\"Pagar a fatura\"). Nunca o nome da tool.",
+            "example": "Pagar a fatura"
+          },
+          "resource": {
+            "type": "string",
+            "description": "Recurso da API sobre o qual a operação age (`invoices`).",
+            "example": "invoices"
+          },
+          "operation": {
+            "type": "string",
+            "description": "O que a operação faz com o recurso (`pay`).",
+            "example": "pay"
+          },
+          "amount": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Valor em reais que a operação movimenta, quando há; senão `null`.",
+            "example": 150.5
+          },
+          "requested_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Quando a operação foi pedida."
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Até quando o link pode ser decidido."
+          },
+          "decided_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Quando a pessoa escolheu Continuar ou Cancelar."
+          },
+          "executed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Quando a execução terminou."
+          },
+          "error": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ],
+            "description": "Por que a execução falhou (`code`, `message`), quando `status` é `failed`; senão `null`."
+          },
+          "result": {
+            "description": "O retorno da tool executada, com segredos mascarados (o valor em claro só apareceu uma vez, na tela), quando `status` é `executed`; senão `null`."
+          },
+          "result_hidden": {
+            "type": "boolean",
+            "description": "`true` quando o token não lê o recurso da aprovação, ou a pessoa não tem mais permissão de leitura dele: aí `result`, `error` e um `amount` lido do registro vêm `null`. Os metadados vêm sempre."
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "action",
+          "title",
+          "resource",
+          "operation",
+          "amount",
+          "requested_at",
+          "expires_at",
+          "decided_at",
+          "executed_at",
+          "error",
+          "result_hidden"
+        ]
+      },
+      "OperationApprovalResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/OperationApprovalV1"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "OperationApprovalListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OperationApprovalV1"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
         ]
       },
       "CompanyPersonV1": {
@@ -37654,7 +37788,7 @@
           "Organização"
         ],
         "summary": "Atualizar organização atual",
-        "description": "Atualiza o perfil cadastral da organização autenticada. Apenas os campos abaixo podem ser modificados — identidade (`id`, `external_id`, `status`) não é alterável por este endpoint.",
+        "description": "Atualiza o perfil que a organização autenticada controla: `addresses` e `custom_metadata` (`null` mantém o valor atual). Identidade (`id`, `external_id`, `status`, documento) e os campos espelhados da Conta Kobana (`name`, `email`, `phone`) não são alteráveis por este endpoint: enviados, são ignorados — para corrigi-los, altere a Conta Kobana. Campos comerciais (como `courtesy` e `bypass_subscription`) são recusados com `403`.",
         "security": [
           {
             "bearerAuth": [
@@ -37935,6 +38069,348 @@
             }
           }
         ]
+      }
+    },
+    "/v1/operation_approvals": {
+      "get": {
+        "tags": [
+          "Aprovações de operação"
+        ],
+        "summary": "Listar suas aprovações de operação",
+        "description": "As aprovações por link da pessoa dona do token, na organização do token, da mais recente para a mais antiga: cada tool destrutiva do MCP que esperou a confirmação na tela de aprovação, com o que aconteceu depois. Qualquer token com pessoa consulta as próprias aprovações, sem escopo de recurso; um token sem pessoa recebe a lista vazia. O retorno de cada operação (`result`, `error`, o `amount` lido do registro) só vem quando o token lê o recurso daquela aprovação e a pessoa ainda tem permissão de leitura dele; senão vem `null` com `result_hidden: true`. Só leitura: nada aqui aprova, cancela ou reabre uma aprovação. O `title` vem no idioma do `Accept-Language` (pt-BR por padrão).",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Página (começa em 1). Padrão: `1`.",
+              "example": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Itens por página. Padrão: `20`. Máximo: `100`.",
+              "example": 20
+            },
+            "required": false,
+            "name": "per_page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "approved",
+                "executed",
+                "failed",
+                "declined",
+                "expired"
+              ],
+              "description": "Só aprovações nesta situação. `pending` deixa de fora a pendente vencida, que é `expired`."
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Só aprovações pedidas a partir deste instante (ISO 8601).",
+              "example": "2026-10-31 12:00:00 UTC"
+            },
+            "required": false,
+            "name": "created_after",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Só aprovações pedidas até este instante (ISO 8601).",
+              "example": "2026-10-31 18:00:00 UTC"
+            },
+            "required": false,
+            "name": "created_before",
+            "in": "query"
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "description": "Identificação do integrador. Inclua nome e e-mail de contato — ex.: `Kevin Mitnick <kmitnick@kobana.com.br>`. Usado para suporte e auditoria.",
+            "schema": {
+              "type": "string",
+              "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+            },
+            "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Request-Source",
+            "in": "header",
+            "required": false,
+            "description": "Superfície que faz a chamada: `dashboard`, `api`, `cli`, `mcp` ou `other`. Fica gravada em `created_via` / `updated_via` dos registros criados ou alterados. Sem o cabeçalho, vale `api`. Valor desconhecido retorna 400.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dashboard",
+                "api",
+                "cli",
+                "mcp",
+                "other"
+              ],
+              "default": "api"
+            }
+          },
+          {
+            "name": "X-Request-Source-Other",
+            "in": "header",
+            "required": false,
+            "description": "Nome do aplicativo que faz a chamada. Obrigatório quando `X-Request-Source` é `other` (até 100 caracteres); ignorado nos demais casos. Fica gravado em `created_via_other` / `updated_via_other`.",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "example": "Zapier"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista paginada de aprovações.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationApprovalListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corpo da requisição falhou na validação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token bearer ausente ou inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Token válido, porém sem permissão para esta operação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado na organização atual.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro inesperado no servidor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get-operation-approvals"
+      }
+    },
+    "/v1/operation_approvals/{id}": {
+      "get": {
+        "tags": [
+          "Aprovações de operação"
+        ],
+        "summary": "Consultar uma aprovação de operação",
+        "description": "Uma aprovação da pessoa dona do token, na organização do token — o `approval.id` que a tool do MCP devolveu com `approval_required`. Aprovação de outra pessoa, de outra organização ou id inexistente respondem o mesmo 404. Nunca devolve o link, o token do link, os argumentos nem o retrato da tela.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "O `approval.id` da resposta `approval_required`."
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "description": "Identificação do integrador. Inclua nome e e-mail de contato — ex.: `Kevin Mitnick <kmitnick@kobana.com.br>`. Usado para suporte e auditoria.",
+            "schema": {
+              "type": "string",
+              "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+            },
+            "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Request-Source",
+            "in": "header",
+            "required": false,
+            "description": "Superfície que faz a chamada: `dashboard`, `api`, `cli`, `mcp` ou `other`. Fica gravada em `created_via` / `updated_via` dos registros criados ou alterados. Sem o cabeçalho, vale `api`. Valor desconhecido retorna 400.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dashboard",
+                "api",
+                "cli",
+                "mcp",
+                "other"
+              ],
+              "default": "api"
+            }
+          },
+          {
+            "name": "X-Request-Source-Other",
+            "in": "header",
+            "required": false,
+            "description": "Nome do aplicativo que faz a chamada. Obrigatório quando `X-Request-Source` é `other` (até 100 caracteres); ignorado nos demais casos. Fica gravado em `created_via_other` / `updated_via_other`.",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "example": "Zapier"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A aprovação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationApprovalResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token bearer ausente ou inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Token válido, porém sem permissão para esta operação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado na organização atual.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro inesperado no servidor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get-operation-approvals-id"
       }
     },
     "/v1/companies": {

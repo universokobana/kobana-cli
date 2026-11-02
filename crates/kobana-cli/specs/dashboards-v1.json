@@ -307,21 +307,6 @@
       "OrganizationUpdateRequest": {
         "type": "object",
         "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 255,
-            "description": "Nome de exibição da organização."
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "description": "E-mail de contato principal da organização."
-          },
-          "phone": {
-            "type": "string",
-            "description": "Telefone de contato principal da organização."
-          },
           "addresses": {
             "type": "array",
             "items": {
@@ -13878,7 +13863,7 @@
           "Organização"
         ],
         "summary": "Atualizar organização atual",
-        "description": "Atualiza o perfil cadastral da organização autenticada. Apenas os campos abaixo podem ser modificados — identidade (`id`, `external_id`, `status`) não é alterável por este endpoint.",
+        "description": "Atualiza o perfil da organização autenticada. Só `addresses` e `custom_metadata` são editáveis (`custom_metadata: null` mantém o valor atual). `name`, `email` e `phone` são espelho da Conta Kobana: só a sincronização com a Conta Kobana os grava, e o corpo que os traz responde 200 sem alterá-los. Identidade (`id`, `public_id`, `external_id`, `status`, `slug`) também é ignorada. Campos comerciais (como `bypass_subscription`, `courtesy` e `monthly_cost_limit`) são definidos pela Kobana e respondem 403.",
         "security": [
           {
             "bearerAuth": [

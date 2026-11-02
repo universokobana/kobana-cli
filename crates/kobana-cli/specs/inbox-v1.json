@@ -3,7 +3,7 @@
   "info": {
     "title": "Kobana Autonomous Inbox API",
     "version": "1.2.0",
-    "description": "API REST pública do Inbox Autônomo Kobana.\n\nAutenticação: Bearer JWT (RS256, emitido pelo Authorization Server da Kobana; `aud` inclui `https://api.inbox[.<env>].kobana.com.br`) somado a mTLS terminado no CloudFront (repassado como o header `cloudfront-viewer-mtls-client-cert-fingerprint`). O claim `org` do JWT (a conta Kobana) resolve a organização do chamador; `sub` é a pessoa e é carregado só para atribuição. Escolha um workspace dentro da organização com `X-Workspace-Id` quando houver mais de um.\n\nOs endpoints de recurso `{id}` (workspaces, inboxes, agents, webhooks) aceitam tanto o UUID interno quanto o `external_id` do recurso. Endpoints POST que possuem `external_id` o aceitam como campo opcional, usando por padrão o `id` interno gerado quando omitido. O campo `deleted_at` nunca é retornado nas respostas nem nos payloads de webhook; registros com soft-delete são filtrados em vez disso.\n\nTodas as chaves nas respostas e nos payloads de webhook estão em `snake_case`. As entregas de webhook compartilham o serializador da API: o envelope traz `event` (`slug`, `id`), `delivered_at` e `workspace`; `data` aninha snapshots dos recursos (`organization`, `agent`, `inbox`, `email`, `agent_run`) mais as chaves específicas do evento."
+    "description": "API REST pública do Inbox Autônomo Kobana.\n\nAutenticação: Bearer JWT (RS256, emitido pelo Authorization Server da Kobana; `aud` inclui `https://api.inbox[.<env>].kobana.com.br`). Não é preciso certificado de cliente. O claim `org` do JWT (a conta Kobana) resolve a organização do chamador; `sub` é a pessoa e é carregado só para atribuição. Escolha um workspace dentro da organização com `X-Workspace-Id` quando houver mais de um.\n\nOs endpoints de recurso `{id}` (workspaces, inboxes, agents, webhooks) aceitam tanto o UUID interno quanto o `external_id` do recurso. Endpoints POST que possuem `external_id` o aceitam como campo opcional, usando por padrão o `id` interno gerado quando omitido. O campo `deleted_at` nunca é retornado nas respostas nem nos payloads de webhook; registros com soft-delete são filtrados em vez disso.\n\nTodas as chaves nas respostas e nos payloads de webhook estão em `snake_case`. As entregas de webhook compartilham o serializador da API: o envelope traz `event` (`slug`, `id`), `delivered_at` e `workspace`; `data` aninha snapshots dos recursos (`organization`, `agent`, `inbox`, `email`, `agent_run`) mais as chaves específicas do evento."
   },
   "servers": [
     {
@@ -54,6 +54,12 @@
     },
     {
       "name": "Identity"
+    },
+    {
+      "name": "Organization"
+    },
+    {
+      "name": "Operation approvals"
     }
   ],
   "paths": {
@@ -73,15 +79,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -271,7 +268,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -317,15 +314,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -387,7 +375,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -455,15 +443,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -543,7 +522,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -612,15 +591,6 @@
         ],
         "parameters": [
           {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "x-origin-shared-secret",
             "in": "header",
             "required": false,
@@ -660,7 +630,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -707,15 +677,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -787,7 +748,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -855,15 +816,6 @@
         ],
         "parameters": [
           {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "x-origin-shared-secret",
             "in": "header",
             "required": false,
@@ -930,7 +882,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -978,15 +930,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -1199,7 +1142,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -1245,15 +1188,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -1315,7 +1249,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -1382,15 +1316,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -1470,7 +1395,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -1539,15 +1464,6 @@
         ],
         "parameters": [
           {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "x-origin-shared-secret",
             "in": "header",
             "required": false,
@@ -1587,7 +1503,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -1634,15 +1550,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -1714,7 +1621,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -1782,15 +1689,6 @@
         ],
         "parameters": [
           {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "x-origin-shared-secret",
             "in": "header",
             "required": false,
@@ -1857,7 +1755,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -1905,15 +1803,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -2094,7 +1983,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -2140,15 +2029,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -2210,7 +2090,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -2277,15 +2157,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -2365,7 +2236,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -2434,15 +2305,6 @@
         ],
         "parameters": [
           {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "x-origin-shared-secret",
             "in": "header",
             "required": false,
@@ -2482,7 +2344,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -2529,15 +2391,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -2609,7 +2462,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -2677,15 +2530,6 @@
         ],
         "parameters": [
           {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "x-origin-shared-secret",
             "in": "header",
             "required": false,
@@ -2752,7 +2596,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -2800,15 +2644,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -3002,7 +2837,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -3048,15 +2883,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -3118,7 +2944,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -3185,15 +3011,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -3273,7 +3090,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -3342,15 +3159,6 @@
         ],
         "parameters": [
           {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "x-origin-shared-secret",
             "in": "header",
             "required": false,
@@ -3390,7 +3198,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -3437,15 +3245,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -3517,7 +3316,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -3585,15 +3384,6 @@
         ],
         "parameters": [
           {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "x-origin-shared-secret",
             "in": "header",
             "required": false,
@@ -3660,7 +3450,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -3708,15 +3498,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -3887,7 +3668,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -3933,15 +3714,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -4003,7 +3775,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -4071,15 +3843,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -4159,7 +3922,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -4228,15 +3991,6 @@
         ],
         "parameters": [
           {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "x-origin-shared-secret",
             "in": "header",
             "required": false,
@@ -4276,7 +4030,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -4323,15 +4077,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -4403,7 +4148,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -4471,15 +4216,6 @@
         ],
         "parameters": [
           {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "x-origin-shared-secret",
             "in": "header",
             "required": false,
@@ -4546,7 +4282,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -4594,15 +4330,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -4819,7 +4546,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -4868,15 +4595,6 @@
         ],
         "parameters": [
           {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "x-origin-shared-secret",
             "in": "header",
             "required": false,
@@ -4916,7 +4634,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -4964,15 +4682,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -5255,7 +4964,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -5302,15 +5011,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -5407,7 +5107,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -5495,15 +5195,6 @@
         ],
         "parameters": [
           {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "x-origin-shared-secret",
             "in": "header",
             "required": false,
@@ -5543,7 +5234,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -5590,15 +5281,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -5655,7 +5337,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -5703,15 +5385,6 @@
         ],
         "parameters": [
           {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "x-origin-shared-secret",
             "in": "header",
             "required": false,
@@ -5744,7 +5417,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -5792,15 +5465,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -5868,7 +5532,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -5927,15 +5591,6 @@
         ],
         "parameters": [
           {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "x-origin-shared-secret",
             "in": "header",
             "required": false,
@@ -5985,7 +5640,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -6023,15 +5678,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -6082,7 +5728,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -6121,15 +5767,6 @@
         ],
         "parameters": [
           {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "x-origin-shared-secret",
             "in": "header",
             "required": false,
@@ -6159,7 +5796,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -6170,6 +5807,412 @@
           },
           "403": {
             "description": "Autenticado, mas a organização ou o vínculo do token é desconhecido aqui.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/organization": {
+      "get": {
+        "operationId": "get-organization",
+        "summary": "Obter organização",
+        "description": "A organização vem só do token (o claim `org`, como em `GET /v1/me`): não há lista nem `{id}`, e nenhum header, query ou corpo escolhe outra. Nível de organização: `X-Workspace-Id` não é necessário. Exige a permissão `settings.show` (todo papel de sistema a tem).",
+        "tags": [
+          "Organization"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox/workspaces"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Organization"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo ou a permissão não bastam, ou a organização do token não é conhecida aqui.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "update-organization",
+        "summary": "Atualizar organização",
+        "description": "A organização vem só do token (o claim `org`, como em `GET /v1/me`): não há lista nem `{id}`, e nenhum header, query ou corpo escolhe outra. Nível de organização: `X-Workspace-Id` não é necessário. Altera o perfil comum a todos os workspaces: `custom_metadata`. Chaves desconhecidas, os campos de identidade (`id`, `public_id`, `external_id`, `slug`, `document_type`, `document_number`) e os espelhos da conta Kobana (`name`, `email`, `phone` — sincronizados a partir dela, por isso não são editáveis aqui) são ignorados. Citar uma configuração comercial da Kobana (cortesia, liberação sem assinatura, limites, parceiro, entitlements) é recusado com 403 `FORBIDDEN` (`error.details.fields`). Exige a permissão `settings.update` (dono e admin). Toda alteração fica no log de auditoria da organização.",
+        "tags": [
+          "Organization"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox/workspaces",
+              "write"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganizationUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Organization"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "O corpo falhou na validação Zod. `error.details` carrega `formErrors`/`fieldErrors`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo ou a permissão não bastam, ou o corpo cita uma configuração comercial (`FORBIDDEN`, `error.details.fields`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/operation-approvals": {
+      "get": {
+        "operationId": "list-operation-approvals",
+        "summary": "Listar aprovações de operação",
+        "description": "As aprovações de operação que uma tool MCP destrutiva pediu, da mais recente para a mais antiga, paginadas por página. Só as aprovações de quem chama — a pessoa do token — na organização do token e no workspace da chamada. Não exige escopo de recurso, como `/v1/me`: o dado é da própria pessoa. Um token sem pessoa não tem nenhuma. O link da aprovação, o token dele e o card guardado nunca são devolvidos.",
+        "tags": [
+          "Operation approvals"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Só as aprovações neste status; uma pendente vencida conta como `expired`.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "approved",
+                "executed",
+                "failed",
+                "declined",
+                "expired"
+              ]
+            }
+          },
+          {
+            "name": "created_after",
+            "in": "query",
+            "required": false,
+            "description": "Pedidas neste instante ISO 8601 ou depois.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "created_before",
+            "in": "query",
+            "required": false,
+            "description": "Pedidas neste instante ISO 8601 ou antes.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Número da página, padrão 1.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "description": "Tamanho da página, padrão 25, máximo 100.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de aprovações.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OperationApproval"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": [
+                        "total",
+                        "page",
+                        "per_page",
+                        "total_pages"
+                      ],
+                      "properties": {
+                        "total": {
+                          "type": "integer"
+                        },
+                        "page": {
+                          "type": "integer"
+                        },
+                        "per_page": {
+                          "type": "integer"
+                        },
+                        "total_pages": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Um parâmetro de consulta é inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/operation-approvals/{id}": {
+      "get": {
+        "operationId": "get-operation-approval",
+        "summary": "Consultar aprovação de operação",
+        "description": "Uma aprovação de operação: status, título, datas e resultado. Aprovação de outra pessoa, de outra organização ou id inexistente respondem o mesmo `404 NOT_FOUND`. Só as aprovações de quem chama — a pessoa do token — na organização do token e no workspace da chamada. Não exige escopo de recurso, como `/v1/me`: o dado é da própria pessoa. Um token sem pessoa não tem nenhuma. O link da aprovação, o token dele e o card guardado nunca são devolvidos.",
+        "tags": [
+          "Operation approvals"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-origin-shared-secret",
+            "in": "header",
+            "required": false,
+            "description": "Segredo compartilhado entre o CloudFront e a origem. Obrigatório em produção; ignorado em desenvolvimento a menos que `CF_ORIGIN_SHARED_SECRET` esteja definido.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "O `approval.id` da resposta `approval_required`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/OperationApproval"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas o escopo é insuficiente ou o recurso está fora de alcance.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado ou filtrado por soft-delete.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6197,15 +6240,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -6239,7 +6273,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -6287,15 +6321,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -6463,7 +6488,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -6511,15 +6536,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -6760,7 +6776,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -6808,15 +6824,6 @@
         ],
         "parameters": [
           {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "x-origin-shared-secret",
             "in": "header",
             "required": false,
@@ -6856,7 +6863,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -6905,15 +6912,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -7009,7 +7007,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -7058,15 +7056,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -7156,7 +7145,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -7205,15 +7194,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -7286,7 +7266,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -7335,15 +7315,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -7419,7 +7390,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -7467,15 +7438,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -7721,7 +7683,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -7769,15 +7731,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -7827,7 +7780,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -7876,15 +7829,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -7960,7 +7904,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -8008,15 +7952,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-origin-shared-secret",
             "in": "header",
@@ -8178,7 +8113,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -8226,15 +8161,6 @@
         ],
         "parameters": [
           {
-            "name": "cloudfront-viewer-mtls-client-cert-fingerprint",
-            "in": "header",
-            "required": true,
-            "description": "Fingerprint mTLS. Em produção o CloudFront o injeta a partir do mTLS do viewer.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "x-origin-shared-secret",
             "in": "header",
             "required": false,
@@ -8274,7 +8200,7 @@
             }
           },
           "401": {
-            "description": "Falha de autenticação (JWT ou mTLS ausente/inválido).",
+            "description": "Falha de autenticação (JWT ausente ou inválido).",
             "content": {
               "application/json": {
                 "schema": {
@@ -9324,6 +9250,204 @@
                 "nullable": true
               }
             }
+          }
+        }
+      },
+      "Organization": {
+        "type": "object",
+        "description": "A organização do token. As configurações comerciais da Kobana (cortesia, plano, limites, parceiro) e os metadados de sistema nunca são devolvidos.",
+        "required": [
+          "id",
+          "public_id",
+          "external_id",
+          "name",
+          "slug",
+          "document_type",
+          "document_number",
+          "email",
+          "phone",
+          "custom_metadata",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Id interno — o `organization_id` dos workspaces dela."
+          },
+          "public_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Id na Kobana inteira: o que o claim `org` do token nomeia e o que `GET /v1/me` devolve em `organization.id`."
+          },
+          "external_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "Id no sistema de provisionamento (a chave de SSO). Somente leitura."
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Primeiro segmento de todo endereço de inbox da organização. Somente leitura."
+          },
+          "document_type": {
+            "type": "string",
+            "enum": [
+              "cnpj",
+              "cpf"
+            ],
+            "nullable": true,
+            "description": "Somente leitura."
+          },
+          "document_number": {
+            "type": "string",
+            "nullable": true,
+            "description": "Somente leitura."
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "custom_metadata": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true,
+            "description": "Metadados do usuário, formato livre. Graváveis por esta API."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "OrganizationUpdate": {
+        "type": "object",
+        "required": [
+
+        ],
+        "properties": {
+          "custom_metadata": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true,
+            "description": "Metadados do usuário, formato livre. `null` mantém o valor guardado. Máximo de 64 KB serializado, 16 níveis de profundidade."
+          },
+          "custom_metadata_mode": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "merge"
+            ],
+            "default": "replace",
+            "description": "Como o `custom_metadata` enviado é reconciliado com o valor armazenado. `replace` (padrão) sobrescreve o objeto inteiro; `merge` faz deep-merge sobre o valor atual — objetos aninhados mesclam recursivamente, escalares e arrays sobrescrevem a chave, e chaves `null` são mantidas (não apagam a chave). Somente em update."
+          }
+        }
+      },
+      "OperationApproval": {
+        "type": "object",
+        "description": "Uma aprovação de operação de quem chama. Nunca traz o link da aprovação, o token dele nem o card guardado.",
+        "required": [
+          "id",
+          "status",
+          "action",
+          "title",
+          "resource",
+          "operation",
+          "requested_at",
+          "expires_at",
+          "decided_at",
+          "executed_at",
+          "error",
+          "result",
+          "result_hidden"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "O `approval.id` da resposta `approval_required`."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "executed",
+              "failed",
+              "declined",
+              "expired"
+            ],
+            "description": "`approved` = a pessoa escolheu Continuar e a operação ainda está rodando. Uma pendente depois de `expires_at` aparece como `expired`."
+          },
+          "action": {
+            "type": "string",
+            "description": "A tool MCP pedida, p. ex. `emails_delete`."
+          },
+          "title": {
+            "type": "string",
+            "description": "A operação, traduzida no idioma do pedido (`Accept-Language`: `pt-BR` por padrão, `en-US` ou `es-ES`)."
+          },
+          "resource": {
+            "type": "string",
+            "description": "O recurso em que a operação age, p. ex. `emails`."
+          },
+          "operation": {
+            "type": "string",
+            "description": "A operação nesse recurso, p. ex. `delete`."
+          },
+          "requested_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "decided_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "executed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "error": {
+            "type": "object",
+            "nullable": true,
+            "description": "Por que a execução falhou; só quando `status` é `failed`.",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          },
+          "result": {
+            "nullable": true,
+            "description": "O que a tool devolveu, só quando `status` é `executed` — com segredos mascarados (`[redacted]`): um segredo de uso único foi mostrado uma vez, na tela de aprovação."
+          },
+          "result_hidden": {
+            "type": "boolean",
+            "description": "`true` quando o resultado fica retido: o token não alcança o recurso da aprovação (`inbox/<recurso>`, ou um nível de acesso que o alcance) ou a pessoa não tem mais a permissão de leitura dele (`<recurso>.show`). `result` e `error` vêm então `null`, aconteça o que acontecer. Listar e ler as próprias aprovações não exige escopo; o resultado delas é dado do recurso."
           }
         }
       },
