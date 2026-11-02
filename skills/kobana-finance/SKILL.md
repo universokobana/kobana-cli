@@ -42,7 +42,7 @@ credentials with the banking product. Every request needs **two** things:
 - `financial-accounts` — `list`, `create`, `get`, `update`, `delete`, `adjust-balance`,
   `balances get|create|delete`, `balances latest get`
 - `financial-transactions` — CRUD plus `aggregates`, `ids`
-- `banks list`, `cash-flow list`
+- `banks list`, `cash-flow get`
 
 ### Payables and receivables
 - `payables` — CRUD plus `send-to-bank`, `cancel-dispatch`, `aggregates`, `ids`
@@ -60,7 +60,7 @@ credentials with the banking product. Every request needs **two** things:
 
 ### Fiscal and identity
 - `fiscal-documents` — `list`, `get` (received fiscal documents)
-- `me list` — the organization, person and scopes behind the token
+- `me get` — the organization, person and scopes behind the token
 
 ## Examples
 
@@ -68,10 +68,10 @@ credentials with the banking product. Every request needs **two** things:
 export KOBANA_WORKSPACE_ID=WORKSPACE_ID
 
 kobana finance financial-accounts list --fields "id,name,balance"
-kobana finance cash-flow list --params '{"start_date": "2026-01-01", "end_date": "2026-01-31"}'
+kobana finance cash-flow get --params '{"start_date": "2026-01-01", "end_date": "2026-01-31"}'
 
 # Aggregates keep large result sets out of the context window
-kobana finance payables aggregates list --params '{"group_by": "category"}'
+kobana finance payables aggregates get --params '{"group_by": "category"}'
 
 # Mutations: always dry-run first
 kobana finance payables send-to-bank --dry-run --params '{"id": "PAYABLE_ID"}'

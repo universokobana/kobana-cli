@@ -47,7 +47,8 @@ fn build_method_command(endpoint: &ResolvedEndpoint, parent_path: &str) -> Comma
     let mut cmd = clap_i18n::command(
         endpoint.cli_method.clone(),
         leaf_usage(&format!("{parent_path} {}", endpoint.cli_method)),
-    );
+    )
+    .aliases(endpoint.aliases().iter().copied());
 
     // Set help/about from operation summary
     if let Some(summary) = &endpoint.operation.summary {

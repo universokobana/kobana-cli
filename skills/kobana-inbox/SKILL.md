@@ -64,8 +64,8 @@ The Inbox API is **not** the banking API and does not share its credentials:
 
 ### models, usage, me
 - `models list` — models available to agents
-- `usage cost list`, `usage summary list`
-- `me list` — the workspace and scopes behind the token
+- `usage cost get`, `usage summary get`
+- `me get` — the workspace and scopes behind the token
 
 ### agent-runs
 - `list`, `get`

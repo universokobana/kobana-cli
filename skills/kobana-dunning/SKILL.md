@@ -57,7 +57,7 @@ and bulk exports `export` (or `all`); every other method needs `write` or
 ### Data and integration
 - `imports` — `list`, `create`, `get`
 - `exports` — `charges list`, `people list`, `jobs list|create|download`
-- `metrics recovery list`, `audit-logs list`, `me list`
+- `metrics recovery get`, `audit-logs list`, `me get`
 - `webhook-endpoints` — CRUD plus `rotate-secret`, `test`, `deliveries get|retry`
 
 ## Examples
@@ -66,7 +66,7 @@ and bulk exports `export` (or `all`); every other method needs `write` or
 kobana dunning charges list --params '{"status": "overdue", "per_page": 25}' \
   --fields "id,person_id,current_amount,due_date,status"
 
-kobana dunning metrics recovery list
+kobana dunning metrics recovery get
 
 # Mutations: always dry-run first
 kobana dunning charges notify --dry-run --params '{"id": "CHARGE_ID"}'

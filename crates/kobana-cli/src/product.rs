@@ -544,6 +544,14 @@ mod tests {
                     e.cli_method
                 );
             }
+            // Aliases are subcommand names too
+            for alias in node.endpoints.iter().flat_map(|e| e.aliases().iter()) {
+                assert!(seen.insert(alias), "{path} exposes alias '{alias}' twice");
+                assert!(
+                    !node.children.contains_key(*alias),
+                    "{path} exposes '{alias}' as both an alias and a resource"
+                );
+            }
             for (name, child) in &node.children {
                 check(child, &format!("{path} {name}"));
             }
@@ -730,6 +738,19 @@ mod tests {
         ] {
             assert!(kadu.tree.children.contains_key(resource), "kadu {resource}");
         }
+
+        // The token's own organization is a singleton: `kobana kadu organization get`,
+        // with no id and no listing (`list` stays only as a hidden alias)
+        let organization = &kadu.tree.children["organization"];
+        let methods: Vec<&str> = organization.endpoints.iter().map(|e| e.cli_method.as_str()).collect();
+        assert!(methods.contains(&"get") && methods.contains(&"update"), "{methods:?}");
+        assert!(!methods.contains(&"list"), "{methods:?}");
+        assert!(!kadu.tree.children.contains_key("organizations"));
+        let slack = &organization.children["slack-installations"];
+        assert!(slack
+            .endpoints
+            .iter()
+            .any(|e| e.cli_method == "list" && e.path_template == "/v1/organization/slack_installations"));
 
         // Running a task is a method of `tasks`: `kobana kadu tasks run`
         let tasks = &kadu.tree.children["tasks"];

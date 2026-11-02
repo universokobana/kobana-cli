@@ -52,11 +52,14 @@ other product:
 - `workspaces`, `activities` — CRUD
 - `environments`, `secrets`, `schedules`, `memories` — CRUD
 - `webhooks` — CRUD plus `rotate-secret`; `webhook-deliveries list|get|replay`
-- `repository` — `list`, `sync create` (skills repository)
+- `repository` — `get`, `sync create` (skills repository)
 
 ### Organization
-- `organizations` (`list`, `get`, `update`), `users`, `memberships`, `roles`
-- `usage`, `system-events`, `operation-approvals` (read only), `me`
+- `organization` — `get`, `update`: **only the token's organization** (the
+  `org` claim), singular, with no id and no listing; `slack-installations
+  list|update|delete` (the Slack bot installations of that organization)
+- `users`, `memberships`, `roles`
+- `usage get`, `system-events`, `operation-approvals` (read only), `me get`
 
 ## Pagination
 

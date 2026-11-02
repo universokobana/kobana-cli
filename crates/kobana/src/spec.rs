@@ -80,6 +80,27 @@ pub struct ResolvedEndpoint {
     pub path_params: Vec<String>,
 }
 
+impl ResolvedEndpoint {
+    /// Other names this command answers to. A top-level singleton (`me`,
+    /// `organization`) was once inferred as `list`; it keeps answering to it
+    /// so scripts written before the singleton rule do not break.
+    pub fn aliases(&self) -> &'static [&'static str] {
+        if self.http_method == HttpMethod::Get
+            && self.cli_method == "get"
+            && self.path_params.is_empty()
+        {
+            &["list"]
+        } else {
+            &[]
+        }
+    }
+
+    /// Whether `name` calls this command, by its name or an alias.
+    pub fn answers_to(&self, name: &str) -> bool {
+        self.cli_method == name || self.aliases().contains(&name)
+    }
+}
+
 /// Tree node for organizing endpoints into CLI subcommands
 #[derive(Debug, Clone, Default)]
 pub struct CommandNode {
@@ -277,6 +298,10 @@ const PAGINATION_PARAMS: &[&str] = &["page", "per_page", "cursor", "limit"];
 /// — unless it is a collection under a parent (`/webhooks/{id}/deliveries`),
 /// which the path alone cannot tell from a singleton. Pagination parameters
 /// can: a GET that takes them, on a path not ending in a parameter, lists.
+///
+/// A top-level GET without pagination may still be a singleton (`/v1/me`,
+/// `/v1/organization`: the token's own record, no id). The response tells it
+/// apart: an envelope whose `data` is an object, not an array, reads one thing.
 fn infer_cli_method(http_method: HttpMethod, path: &str, operation: &Operation) -> String {
     let ends_with_param = path
         .trim_end_matches('/')
@@ -287,7 +312,11 @@ fn infer_cli_method(http_method: HttpMethod, path: &str, operation: &Operation) 
     let paginated = operation.parameters.iter().any(|p| {
         p.location == ParameterLocation::Query && PAGINATION_PARAMS.contains(&p.name.as_str())
     });
-    let lists = !has_path_params || (!ends_with_param && paginated);
+    let lists = if has_path_params {
+        !ends_with_param && paginated
+    } else {
+        paginated || !returns_single_record(operation)
+    };
     match (http_method, lists) {
         (HttpMethod::Get, true) => "list".to_string(),
         (HttpMethod::Get, false) => "get".to_string(),
@@ -296,6 +325,27 @@ fn infer_cli_method(http_method: HttpMethod, path: &str, operation: &Operation) 
         (HttpMethod::Patch, _) => "update".to_string(),
         (HttpMethod::Delete, _) => "delete".to_string(),
     }
+}
+
+/// Whether the 2xx JSON response wraps one record: `{ data: { … } }`, with
+/// `data` an object (inline or a `$ref`) rather than an array.
+fn returns_single_record(operation: &Operation) -> bool {
+    operation
+        .responses
+        .iter()
+        .filter(|(status, _)| status.starts_with('2'))
+        .filter_map(|(_, response)| {
+            response
+                .pointer("/content/application~1json/schema/properties/data")
+        })
+        .any(|data| {
+            let is_array = match data.get("type") {
+                Some(serde_json::Value::String(t)) => t == "array",
+                Some(serde_json::Value::Array(ts)) => ts.iter().any(|t| t == "array"),
+                _ => false,
+            };
+            !is_array && (data.get("$ref").is_some() || data.get("type").is_some())
+        })
 }
 
 fn parse_operation(value: &serde_json::Value) -> Result<Operation, KobanaError> {
@@ -478,5 +528,28 @@ mod tests {
         assert_eq!(infer_cli_method(HttpMethod::Get, "/v1/companies/{id}/fiscal", &plain), "get");
         // An item is read one at a time even if the spec lists `page` on it
         assert_eq!(infer_cli_method(HttpMethod::Get, "/v1/webhooks/{id}", &paginated), "get");
+
+        // A top-level singleton (the token's own record) is told by its
+        // response: `data` an object reads one thing, `data` an array lists
+        let with_data = |data: serde_json::Value| Operation {
+            responses: [(
+                "200".to_string(),
+                serde_json::json!({
+                    "content": {"application/json": {"schema": {
+                        "type": "object", "properties": {"data": data}
+                    }}}
+                }),
+            )]
+            .into(),
+            ..Operation::default()
+        };
+        let single_ref = with_data(serde_json::json!({"$ref": "#/components/schemas/Organization"}));
+        let single_inline = with_data(serde_json::json!({"type": "object", "properties": {}}));
+        let many = with_data(serde_json::json!({"type": "array", "items": {}}));
+        assert_eq!(infer_cli_method(HttpMethod::Get, "/v1/organization", &single_ref), "get");
+        assert_eq!(infer_cli_method(HttpMethod::Get, "/v1/me", &single_inline), "get");
+        assert_eq!(infer_cli_method(HttpMethod::Get, "/v1/organization/slack_installations", &many), "list");
+        // No usable response schema keeps the old rule: a top-level GET lists
+        assert_eq!(infer_cli_method(HttpMethod::Get, "/v1/webhooks", &plain), "list");
     }
 }

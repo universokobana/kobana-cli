@@ -763,6 +763,93 @@
           "deleted_at"
         ]
       },
+      "SlackInstallation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "team_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "team_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "enterprise_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "is_enterprise_install": {
+            "type": "boolean"
+          },
+          "settings": {
+            "type": "object",
+            "properties": {
+              "allowed_channel_types": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "im",
+                    "private_channel",
+                    "public_channel",
+                    "mpim",
+                    "shared_channel"
+                  ]
+                }
+              },
+              "files_mode": {
+                "type": "string",
+                "enum": [
+                  "link",
+                  "upload"
+                ]
+              },
+              "max_upload_bytes": {
+                "type": "integer"
+              },
+              "log_detail": {
+                "type": "string",
+                "enum": [
+                  "milestones",
+                  "verbose"
+                ]
+              }
+            },
+            "required": [
+              "allowed_channel_types",
+              "files_mode",
+              "max_upload_bytes",
+              "log_detail"
+            ]
+          },
+          "connected_users": {
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "team_id",
+          "team_name",
+          "enterprise_id",
+          "is_enterprise_install",
+          "settings",
+          "connected_users",
+          "created_at"
+        ]
+      },
       "Todo": {
         "type": "object",
         "properties": {
@@ -1560,145 +1647,18 @@
         "operationId": "get-me"
       }
     },
-    "/v1/organizations": {
+    "/v1/organization": {
       "get": {
         "tags": [
           "Organizações"
         ],
-        "summary": "Lista organizações",
+        "summary": "Organização do token",
+        "description": "Devolve **apenas a organização do token** (a da claim `org`). Não recebe id e não lista: não há como ler outra organização por esta API.",
         "security": [
           {
             "bearerAuth": [
 
             ]
-          }
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": false,
-            "name": "cursor",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "number",
-              "minimum": 1,
-              "maximum": 100
-            },
-            "required": false,
-            "name": "limit",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "description": "Campo em snake_case: created_at (padrão), updated_at ou um campo filtrável."
-            },
-            "required": false,
-            "description": "Campo em snake_case: created_at (padrão), updated_at ou um campo filtrável.",
-            "name": "sort_by",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
-              "description": "Padrão: desc."
-            },
-            "required": false,
-            "description": "Padrão: desc.",
-            "name": "sort_order",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Organization"
-                      }
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/PaginationMeta"
-                    }
-                  },
-                  "required": [
-                    "data",
-                    "meta"
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "INVALID_TOKEN / INVALID_AUDIENCE / INVALID_ISSUER / TOKEN_EXPIRED / TOKEN_REVOKED / MTLS_REQUIRED",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "INSUFFICIENT_SCOPE — o token não tem o nível de acesso (ou o recurso `kadu/…`) que a operação exige; `details: { required, granted }`. USER_PERMISSION_DENIED — o papel da pessoa dona do token não concede a operação; `details: { required }`. NOT_A_MEMBER — a pessoa não é membro da organização. FEATURE_NOT_ENABLED — a operação não está liberada para a organização; `details: { permission }`. UNKNOWN_ORGANIZATION — o `org` do token não é uma organização do Kadu.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "AS_UNAVAILABLE — a verificação do token está indisponível (Authorization Server fora do ar ou configuração ausente). Tente de novo (`Retry-After`).",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        },
-        "operationId": "get-organizations"
-      }
-    },
-    "/v1/organizations/{id}": {
-      "get": {
-        "tags": [
-          "Organizações"
-        ],
-        "summary": "Detalha a organização",
-        "security": [
-          {
-            "bearerAuth": [
-
-            ]
-          }
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
           }
         ],
         "responses": {
@@ -1761,14 +1721,14 @@
             }
           }
         },
-        "operationId": "get-organizations-id"
+        "operationId": "get-organization"
       },
       "patch": {
         "tags": [
           "Organizações"
         ],
         "summary": "Atualiza a organização do token",
-        "description": "`monthly_cost_limit` e `bypass_subscription` são definidos pela Kobana e recusados (403). Outra organização: 403.",
+        "description": "Altera **apenas a organização do token** (a da claim `org`); não recebe id. `monthly_cost_limit` e `bypass_subscription` são definidos pela Kobana e recusados (403).",
         "security": [
           {
             "bearerAuth": [
@@ -1777,15 +1737,6 @@
           }
         ],
         "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          },
           {
             "schema": {
               "type": "string",
@@ -1873,16 +1824,6 @@
               }
             }
           },
-          "404": {
-            "description": "NOT_FOUND",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
           "409": {
             "description": "IDEMPOTENCY_KEY_REUSED / IDEMPOTENCY_REQUEST_IN_PROGRESS (ou CONFLICT da rota)",
             "content": {
@@ -1904,7 +1845,7 @@
             }
           }
         },
-        "operationId": "patch-organizations-id"
+        "operationId": "patch-organization"
       }
     },
     "/v1/workspaces": {
@@ -8486,8 +8427,8 @@
         "tags": [
           "Uso"
         ],
-        "summary": "Uso e custo das execuções",
-        "description": "Agregado por dia (no fuso da organização) × grupo. Padrão: últimos 30 dias; período máximo de 366 dias. `group` é o id (tier, workspace, activity, task) ou a origem; null = sem valor.",
+        "summary": "Uso e custo das execuções e das conversas",
+        "description": "Agregado por dia (no fuso da organização) × grupo, somando execuções e turnos de conversa do bot do Slack (origem `slack_chat`, sem workspace/atividade/Task). Padrão: últimos 30 dias; período máximo de 366 dias. `group` é o id (tier, workspace, activity, task) ou a origem; null = sem valor.",
         "security": [
           {
             "bearerAuth": [
@@ -8594,6 +8535,10 @@
                             "executions": {
                               "type": "number"
                             },
+                            "conversation_turns": {
+                              "type": "number",
+                              "description": "Turnos de conversa do bot do Slack (origem `slack_chat`)."
+                            },
                             "input_tokens": {
                               "type": "number"
                             },
@@ -8613,6 +8558,7 @@
                           },
                           "required": [
                             "executions",
+                            "conversation_turns",
                             "input_tokens",
                             "output_tokens",
                             "cache_read_tokens",
@@ -8626,6 +8572,10 @@
                             "properties": {
                               "executions": {
                                 "type": "number"
+                              },
+                              "conversation_turns": {
+                                "type": "number",
+                                "description": "Turnos de conversa do bot do Slack (origem `slack_chat`)."
                               },
                               "input_tokens": {
                                 "type": "number"
@@ -8655,6 +8605,7 @@
                             },
                             "required": [
                               "executions",
+                              "conversation_turns",
                               "input_tokens",
                               "output_tokens",
                               "cache_read_tokens",
@@ -8724,6 +8675,339 @@
           }
         },
         "operationId": "get-usage"
+      }
+    },
+    "/v1/organization/slack_installations": {
+      "get": {
+        "tags": [
+          "Organizações"
+        ],
+        "summary": "Instalações do bot do Slack da organização",
+        "description": "Workspaces do Slack ligados à organização do token (sempre a do token; sem id).",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SlackInstallation"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_TOKEN / INVALID_AUDIENCE / INVALID_ISSUER / TOKEN_EXPIRED / TOKEN_REVOKED / MTLS_REQUIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "INSUFFICIENT_SCOPE — o token não tem o nível de acesso (ou o recurso `kadu/…`) que a operação exige; `details: { required, granted }`. USER_PERMISSION_DENIED — o papel da pessoa dona do token não concede a operação; `details: { required }`. NOT_A_MEMBER — a pessoa não é membro da organização. FEATURE_NOT_ENABLED — a operação não está liberada para a organização; `details: { permission }`. UNKNOWN_ORGANIZATION — o `org` do token não é uma organização do Kadu.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AS_UNAVAILABLE — a verificação do token está indisponível (Authorization Server fora do ar ou configuração ausente). Tente de novo (`Retry-After`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get-organization-slack-installations"
+      }
+    },
+    "/v1/organization/slack_installations/{installationId}": {
+      "patch": {
+        "tags": [
+          "Organizações"
+        ],
+        "summary": "Configura uma instalação do Slack",
+        "description": "Onde o bot responde (`allowed_channel_types`), arquivos de saída como link ou anexo (`files_mode`, `max_upload_bytes` até 100 MB) e detalhe na thread (`log_detail`).",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "installationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "description": "Chave opaca (até 255 caracteres), válida por 24h na organização. Mesma chave + mesma requisição devolve a resposta original com `X-Idempotent-Replay: true`; mesma chave com corpo diferente → 409 IDEMPOTENCY_KEY_REUSED. Segredo de uso único (`signing_secret` na criação e na rotação de webhook) não é guardado: no replay ele volta `null`."
+            },
+            "required": false,
+            "description": "Chave opaca (até 255 caracteres), válida por 24h na organização. Mesma chave + mesma requisição devolve a resposta original com `X-Idempotent-Replay: true`; mesma chave com corpo diferente → 409 IDEMPOTENCY_KEY_REUSED. Segredo de uso único (`signing_secret` na criação e na rotação de webhook) não é guardado: no replay ele volta `null`.",
+            "name": "X-Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "allowed_channel_types": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "im",
+                        "private_channel",
+                        "public_channel",
+                        "mpim",
+                        "shared_channel"
+                      ]
+                    },
+                    "minItems": 1
+                  },
+                  "files_mode": {
+                    "type": "string",
+                    "enum": [
+                      "link",
+                      "upload"
+                    ]
+                  },
+                  "max_upload_bytes": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 104857600
+                  },
+                  "log_detail": {
+                    "type": "string",
+                    "enum": [
+                      "milestones",
+                      "verbose"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/SlackInstallation"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_ERROR",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_TOKEN / INVALID_AUDIENCE / INVALID_ISSUER / TOKEN_EXPIRED / TOKEN_REVOKED / MTLS_REQUIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "INSUFFICIENT_SCOPE — o token não tem o nível de acesso (ou o recurso `kadu/…`) que a operação exige; `details: { required, granted }`. USER_PERMISSION_DENIED — o papel da pessoa dona do token não concede a operação; `details: { required }`. NOT_A_MEMBER — a pessoa não é membro da organização. FEATURE_NOT_ENABLED — a operação não está liberada para a organização; `details: { permission }`. UNKNOWN_ORGANIZATION — o `org` do token não é uma organização do Kadu.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "IDEMPOTENCY_KEY_REUSED / IDEMPOTENCY_REQUEST_IN_PROGRESS (ou CONFLICT da rota)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AS_UNAVAILABLE — a verificação do token está indisponível (Authorization Server fora do ar ou configuração ausente). Tente de novo (`Retry-After`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "patch-organization-slack-installations-installationid"
+      },
+      "delete": {
+        "tags": [
+          "Organizações"
+        ],
+        "summary": "Remove uma instalação do Slack",
+        "description": "Exige o nível `delete` (ou `all`). Revoga o token do bot no Slack e desfaz as conexões de conta.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "installationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "deleted": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "deleted"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "INVALID_TOKEN / INVALID_AUDIENCE / INVALID_ISSUER / TOKEN_EXPIRED / TOKEN_REVOKED / MTLS_REQUIRED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "INSUFFICIENT_SCOPE — o token não tem o nível de acesso (ou o recurso `kadu/…`) que a operação exige; `details: { required, granted }`. USER_PERMISSION_DENIED — o papel da pessoa dona do token não concede a operação; `details: { required }`. NOT_A_MEMBER — a pessoa não é membro da organização. FEATURE_NOT_ENABLED — a operação não está liberada para a organização; `details: { permission }`. UNKNOWN_ORGANIZATION — o `org` do token não é uma organização do Kadu.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AS_UNAVAILABLE — a verificação do token está indisponível (Authorization Server fora do ar ou configuração ausente). Tente de novo (`Retry-After`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "delete-organization-slack-installations-installationid"
       }
     },
     "/v1/executions/{id}/todos": {

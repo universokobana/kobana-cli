@@ -68,7 +68,7 @@ Toda rota age sobre um espaço de trabalho, informado no cabeçalho
 
 ```bash
 kobana finance payables list --params '{"status": "pending"}'
-kobana finance cash-flow list --params '{"start_date": "2026-01-01"}'
+kobana finance cash-flow get --params '{"start_date": "2026-01-01"}'
 ```
 
 Os endpoints `aggregates` de `payables`, `receivables` e
@@ -121,7 +121,7 @@ Recursos: `people`, `charges`, `collection-rules` (com `steps`), `templates`,
 
 ```bash
 kobana dunning charges list --params '{"status": "overdue"}'
-kobana dunning metrics recovery list
+kobana dunning metrics recovery get
 ```
 
 ### Dashboard Mágico — `dashboards`
@@ -475,13 +475,13 @@ kobana finance payables list \
   --fields "id,description,amount,due_date"
 
 # Totais agregados em vez da lista inteira
-kobana finance payables aggregates list --params '{"group_by": "category"}'
+kobana finance payables aggregates get --params '{"group_by": "category"}'
 
 # Enviar uma conta para pagamento no banco
 kobana finance payables send-to-bank --dry-run --params '{"id": "PAYABLE_ID"}'
 
 # Fluxo de caixa do mês
-kobana finance cash-flow list \
+kobana finance cash-flow get \
   --params '{"start_date": "2026-01-01", "end_date": "2026-01-31"}'
 ```
 

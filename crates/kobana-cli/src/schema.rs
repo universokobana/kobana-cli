@@ -139,6 +139,7 @@ fn show_endpoint_schema(
         .endpoints
         .iter()
         .find(|e| e.cli_method == method_name)
+        .or_else(|| node.endpoints.iter().find(|e| e.answers_to(method_name)))
         .ok_or_else(|| not_found(endpoint_path))?;
 
     print_endpoint(loaded, endpoint)

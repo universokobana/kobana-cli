@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **`kadu`: a organização é só a do token** (incompatível) — `kobana kadu organization get` e `organization update` (`GET`/`PATCH /v1/organization`), no singular e sem id, no lugar de `organizations list|get|update`. Não há mais listagem de organizações. As instalações do bot do Slack entram como `organization slack-installations list|update|delete`, só com o id da instalação. Spec e traduções do `kadu` atualizadas
+- **GET de um registro só vira `get`** — uma rota sem id e sem paginação cuja resposta é `{ data: { … } }` (objeto, não lista) é um singular e agora se chama `get`: `me get` (`banking`, `inbox`, `dunning`, `kadu`), `kadu organization get`, `kadu repository get`, `kadu usage get`, `inbox usage cost get`/`usage summary get`, `finance cash-flow get` e os `aggregates get` do `finance`, `dunning metrics recovery get`. O nome antigo, `list`, continua respondendo como alias oculto (inclusive em `kobana schema`), então scripts existentes não quebram
+
 ## [0.8.0] - 2026-11-01
 
 ### Added
