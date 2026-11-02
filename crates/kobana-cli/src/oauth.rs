@@ -1119,12 +1119,18 @@ fn wait_for_callback(listener: TcpListener, state: &str) -> Result<String, Koban
     // shows a meaningful message and the TCP connection is closed cleanly.
     let state_matches = query.get("state").map(|s| s.as_str()) == Some(state);
     let result = if query.contains_key("code") && !state_matches {
-        let title = tr!(
-            pt: "Retorno inválido",
-            en: "Invalid callback",
-            es: "Retorno inválido",
+        write_page(
+            &stream,
+            &CallbackPage::failure(
+                tr!(pt: "Retorno inválido", en: "Invalid callback", es: "Retorno inválido"),
+                tr!(
+                    pt: "Este retorno não pertence ao login em andamento no terminal. Rode o login de novo.",
+                    en: "This callback does not belong to the login running in the terminal. Run the login again.",
+                    es: "Este retorno no corresponde al inicio de sesión en curso en la terminal. Vuelve a iniciar sesión.",
+                ),
+                Some(("state", tr!(pt: "não confere", en: "does not match", es: "no coincide"))),
+            ),
         );
-        write_html(&stream, 400, title, &format!("<h2 style=\"color:#ef4444;\">✗ {title}</h2><p>state</p>"));
         Err(KobanaError::Auth(
             tr!(
                 pt: "o retorno da autorização não trouxe o `state` deste login",
@@ -1134,50 +1140,23 @@ fn wait_for_callback(listener: TcpListener, state: &str) -> Result<String, Koban
             .into(),
         ))
     } else if let Some(code) = query.get("code") {
-        let title = tr!(
-            pt: "Autorização concedida",
-            en: "Authorization granted",
-            es: "Autorización concedida",
-        );
-        write_html(
-            &stream,
-            200,
-            title,
-            &format!(
-                "<h2 style=\"color:#10b981;\">✓ {title}</h2>\
-                 <p><strong>{}</strong></p>\
-                 <p>{}</p>",
-                tr!(
-                    pt: "Você foi autenticado com sucesso.",
-                    en: "You have been authenticated.",
-                    es: "Te autenticaste correctamente.",
-                ),
-                close_tab()
-            ),
-        );
+        write_page(&stream, &CallbackPage::success());
         Ok(code.clone())
     } else if let Some(error) = query.get("error") {
         let description = query
             .get("error_description")
             .cloned()
             .unwrap_or_else(|| error.clone());
-        let title = tr!(
-            pt: "Autorização negada",
-            en: "Authorization denied",
-            es: "Autorización denegada",
-        );
-        write_html(
+        write_page(
             &stream,
-            400,
-            title,
-            &format!(
-                "<h2 style=\"color:#ef4444;\">✗ {title}</h2>\
-                 <p><strong>{}</strong></p>\
-                 <p>{}</p>\
-                 <p>{}</p>",
-                html_escape(error),
-                html_escape(&description),
-                close_tab()
+            &CallbackPage::failure(
+                tr!(pt: "Autorização negada", en: "Authorization denied", es: "Autorización denegada"),
+                tr!(
+                    pt: "A Conta Kobana não liberou o acesso. Volte ao terminal e tente entrar de novo.",
+                    en: "Conta Kobana did not grant access. Go back to the terminal and try to log in again.",
+                    es: "Conta Kobana no concedió el acceso. Vuelve a la terminal e intenta iniciar sesión de nuevo.",
+                ),
+                Some((error, &description)),
             ),
         );
         Err(KobanaError::Auth(trf!(
@@ -1186,22 +1165,16 @@ fn wait_for_callback(listener: TcpListener, state: &str) -> Result<String, Koban
             es: "autorización denegada: {error}: {description}",
         )))
     } else {
-        let title = tr!(
-            pt: "Retorno inválido",
-            en: "Invalid callback",
-            es: "Retorno inválido",
-        );
-        write_html(
+        write_page(
             &stream,
-            400,
-            title,
-            &format!(
-                "<h2 style=\"color:#ef4444;\">✗ {title}</h2><p>{}</p>",
+            &CallbackPage::failure(
+                tr!(pt: "Retorno inválido", en: "Invalid callback", es: "Retorno inválido"),
                 tr!(
                     pt: "A requisição não contém um código de autorização nem um erro.",
                     en: "The request carries neither an authorization code nor an error.",
                     es: "La solicitud no contiene un código de autorización ni un error.",
-                )
+                ),
+                None,
             ),
         );
         Err(KobanaError::Auth(
@@ -1217,6 +1190,87 @@ fn wait_for_callback(listener: TcpListener, state: &str) -> Result<String, Koban
     result
 }
 
+const CALLBACK_TEMPLATE: &str = include_str!("../assets/callback.html");
+const STORK_PNG: &[u8] = include_bytes!("../assets/cegonha.png");
+const LOGO_PNG: &[u8] = include_bytes!("../assets/kobana-logo-negativo.png");
+/// The Kobana "K" symbol in lime, percent-encoded for a `data:` URI
+const FAVICON_SVG: &str = "%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%23000'/%3E%3Cpath fill='%23D3FD54' d='M91 256.5V336h62.4l39.6-23.5c21.8-12.9 40.3-23.7 41.2-24 .9-.4 17.7 8.9 42.3 23.5l40.8 24 51.7-.2 51.7-.3-65-38.5c-35.7-21.2-65.6-39-66.4-39.6-1.2-.8 12.4-9.3 65.1-40.5l66.5-39.4-51.6-.3-51.6-.2-81.7 48c-45 26.4-82 48-82.4 48-.3 0-.6-21.6-.6-48v-48H91v79.5z'/%3E%3C/svg%3E";
+
+/// What the browser tab shows when the authorization server redirects back
+struct CallbackPage<'a> {
+    status: u16,
+    /// Brand colour of the headline: `lime` for success, `purple` otherwise
+    accent: &'static str,
+    headline: &'static str,
+    title: &'static str,
+    message: &'static str,
+    /// A label and a value shown verbatim (e.g. an OAuth error and its description)
+    detail: Option<(&'a str, &'a str)>,
+}
+
+impl<'a> CallbackPage<'a> {
+    fn success() -> Self {
+        Self {
+            status: 200,
+            accent: "lime",
+            headline: tr!(pt: "Pronto!", en: "All set!", es: "¡Listo!"),
+            title: tr!(
+                pt: "Autorização concedida",
+                en: "Authorization granted",
+                es: "Autorización concedida",
+            ),
+            message: tr!(
+                pt: "Você foi autenticado com sucesso. A cegonha já levou suas credenciais para o terminal.",
+                en: "You have been authenticated. The stork has already delivered your credentials to the terminal.",
+                es: "Te autenticaste correctamente. La cigüeña ya llevó tus credenciales a la terminal.",
+            ),
+            detail: None,
+        }
+    }
+
+    fn failure(title: &'static str, message: &'static str, detail: Option<(&'a str, &'a str)>) -> Self {
+        Self {
+            status: 400,
+            accent: "purple",
+            headline: tr!(pt: "Ops!", en: "Oops!", es: "¡Ups!"),
+            title,
+            message,
+            detail,
+        }
+    }
+
+    fn render(&self) -> String {
+        use base64::Engine;
+        let b64 = |bytes: &[u8]| base64::engine::general_purpose::STANDARD.encode(bytes);
+        let lang = match i18n::lang() {
+            Lang::Pt => "pt-BR",
+            Lang::En => "en",
+            Lang::Es => "es",
+        };
+        let detail = self
+            .detail
+            .map(|(label, value)| {
+                format!(
+                    "<p class=\"detail\"><b>{}</b><br>{}</p>",
+                    html_escape(label),
+                    html_escape(value)
+                )
+            })
+            .unwrap_or_default();
+        CALLBACK_TEMPLATE
+            .replace("{{lang}}", lang)
+            .replace("{{accent}}", self.accent)
+            .replace("{{headline}}", &html_escape(self.headline))
+            .replace("{{title}}", &html_escape(self.title))
+            .replace("{{message}}", &html_escape(self.message))
+            .replace("{{next_step}}", &html_escape(close_tab()))
+            .replace("{{detail}}", &detail)
+            .replace("{{favicon}}", FAVICON_SVG)
+            .replace("{{stork}}", &b64(STORK_PNG))
+            .replace("{{logo}}", &b64(LOGO_PNG))
+    }
+}
+
 fn close_tab() -> &'static str {
     tr!(
         pt: "Pode fechar esta aba e voltar ao terminal.",
@@ -1225,25 +1279,12 @@ fn close_tab() -> &'static str {
     )
 }
 
-fn write_html(stream: &std::net::TcpStream, status: u16, title: &str, body: &str) {
-    let html_lang = match i18n::lang() {
-        Lang::Pt => "pt-BR",
-        Lang::En => "en",
-        Lang::Es => "es",
-    };
-    let status_line = match status {
-        200 => "200 OK",
+fn write_page(stream: &std::net::TcpStream, page: &CallbackPage) {
+    let status_line = match page.status {
         400 => "400 Bad Request",
         _ => "200 OK",
     };
-    let html = format!(
-        "<!DOCTYPE html><html lang=\"{html_lang}\"><head>\
-         <meta charset=\"utf-8\"><title>{title}</title>\
-         <style>body{{font-family:-apple-system,system-ui,sans-serif;\
-         max-width:480px;margin:80px auto;padding:24px;text-align:center;\
-         color:#1f2937;}}h2{{margin:0 0 16px;}}p{{margin:8px 0;line-height:1.5;}}</style>\
-         </head><body>{body}</body></html>"
-    );
+    let html = page.render();
     let response = format!(
         "HTTP/1.1 {status_line}\r\nContent-Type: text/html; charset=utf-8\r\n\
          Content-Length: {}\r\nConnection: close\r\n\r\n{html}",
@@ -1330,6 +1371,24 @@ fn open_browser(url: &str) -> Result<(), KobanaError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn callback_pages_fill_every_placeholder() {
+        let detail = ("access_denied", "<script>alert(1)</script>");
+        for page in [
+            CallbackPage::success(),
+            CallbackPage::failure("t", "m", Some(detail)),
+            CallbackPage::failure("t", "m", None),
+        ] {
+            let html = page.render();
+            assert!(!html.contains("{{"), "unfilled placeholder");
+            assert!(!html.contains("<script>"), "detail must be escaped");
+            assert!(html.contains("data:image/png;base64,iVBOR"));
+        }
+        assert!(CallbackPage::success().render().contains("--accent: var(--lime)"));
+        assert!(CallbackPage::failure("t", "m", None).render().contains("--accent: var(--purple)"));
+    }
+
 
     #[test]
     fn metadata_url_goes_between_host_and_path() {

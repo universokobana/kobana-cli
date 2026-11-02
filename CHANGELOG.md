@@ -7,12 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Página de retorno do login com a marca Kobana** — a aba que abre depois de autorizar o acesso no navegador agora segue o branding (fundo preto, verde-limão, Syne e Work Sans, a cegonha da marca ilustrada) no idioma do CLI. Os erros (autorização negada, retorno inválido) usam o mesmo layout, em roxo, com o código e a descrição do erro
+
 ## [0.10.0] - 2026-11-02
 
 ### Added
 
 - **Login em qualquer produto** — `kobana <produto> auth login` (`kobana billing auth login`, `kobana kadu auth login`…) mostra os escopos que o produto publica no `/.well-known/oauth-protected-resource` do seu host MCP, lidos na hora (o `kadu`, que ainda não publica o documento, usa o catálogo da Conta Kobana filtrado por `kadu/`). Depois vêm os níveis de acesso, `read`, `write`, `delete`, `import` e `export`, que valem para todos os recursos escolhidos. O token sai da Conta Kobana com o `resource` do produto, então o `aud` é a API dele, e é renovado sozinho com o refresh token quando vence
-- **Token por produto em variável de ambiente** — `KOBANA_BANKING_TOKEN`, `KOBANA_FINANCE_TOKEN`, `KOBANA_BILLING_TOKEN`, `KOBANA_INBOX_TOKEN`, `KOBANA_DUNNING_TOKEN`, `KOBANA_DASHBOARDS_TOKEN` e `KOBANA_KADU_TOKEN` (ou `KADU_TOKEN`),, com prioridade sobre tudo
+- **Token por produto em variável de ambiente** — `KOBANA_BANKING_TOKEN`, `KOBANA_FINANCE_TOKEN`, `KOBANA_BILLING_TOKEN`, `KOBANA_INBOX_TOKEN`, `KOBANA_DUNNING_TOKEN`, `KOBANA_DASHBOARDS_TOKEN` e `KOBANA_KADU_TOKEN` (ou `KADU_TOKEN`), com prioridade sobre tudo
 - **`auth status`, `auth export` e `auth logout` por produto** — `kobana <produto> auth status|export|logout`
 
 ### Changed

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>{{title}} · Kobana CLI</title>
+<link rel="icon" href="data:image/svg+xml,{{favicon}}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Work+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --lime: #D3FD54;
+    --purple: #A630DA;
+    --black: #000000;
+    --white: #FDFDFB;
+    --gray: #9A9A9A;
+    --line: #262626;
+    --accent: var(--{{accent}});
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--black);
+    color: var(--white);
+    font-family: "Work Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    -webkit-font-smoothing: antialiased;
+  }
+  main {
+    flex: 1;
+    width: 100%;
+    max-width: 640px;
+    padding: 48px 16px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .stork {
+    width: min(360px, 80vw);
+    height: auto;
+    margin-bottom: 40px;
+    animation: fly 6s ease-in-out infinite;
+  }
+  @keyframes fly {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @media (prefers-reduced-motion: reduce) { .stork { animation: none; } }
+  .headline {
+    font-family: "Syne", "Work Sans", system-ui, sans-serif;
+    font-weight: 800;
+    font-size: clamp(56px, 14vw, 112px);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--accent);
+    margin: 0 0 12px;
+  }
+  h1 {
+    font-family: "Syne", "Work Sans", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: clamp(26px, 5vw, 38px);
+    line-height: 1.15;
+    margin: 0 0 20px;
+  }
+  .lead {
+    font-size: 19px;
+    line-height: 1.6;
+    color: var(--gray);
+    margin: 0;
+    max-width: 30em;
+  }
+  .lead strong { color: var(--white); font-weight: 500; }
+  .detail {
+    margin: 28px 0 0;
+    padding: 14px 18px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--white);
+    text-align: left;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .detail b { color: var(--accent); font-weight: 600; }
+  .terminal {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin: 32px 0 0;
+    padding: 12px 20px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--white);
+    font-weight: 500;
+    font-size: 16px;
+  }
+  .terminal svg { flex: none; color: var(--accent); }
+  footer {
+    width: 100%;
+    padding: 24px 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--gray);
+    font-size: 14px;
+  }
+  footer img { height: 18px; width: auto; display: block; }
+  footer span { border-left: 1px solid var(--line); padding-left: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <img class="stork" src="data:image/png;base64,{{stork}}" alt="">
+  <p class="headline">{{headline}}</p>
+  <h1>{{title}}</h1>
+  <p class="lead">{{message}}</p>
+  {{detail}}
+  <p class="terminal">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+    {{next_step}}
+  </p>
+</main>
+<footer>
+  <img src="data:image/png;base64,{{logo}}" alt="Kobana">
+  <span>CLI</span>
+</footer>
+</body>
+</html>

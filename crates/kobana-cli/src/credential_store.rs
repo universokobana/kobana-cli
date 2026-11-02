@@ -277,8 +277,8 @@ fn get_or_create_encryption_key() -> Result<[u8; 32], KobanaError> {
     // Some keyring backends silently "succeed" without persisting.
     let keyring_ok = save_keyring_key(&key).is_ok() && get_keyring_key().is_ok();
 
-    // Always write to file as well so we never lose the key if the keyring
-    // backend becomes unavailable between runs.
+    // Fall back to a file only when the keyring did not keep the key, so the
+    // key is never written to disk when the keyring works.
     if !keyring_ok {
         save_key_to_file(&key_path, &key)?;
     }
