@@ -3,6 +3,7 @@ use crate::i18n::{self, Lang};
 use crate::spec::HttpMethod;
 use crate::{tr, trf};
 use reqwest::header::{HeaderMap, ACCEPT_LANGUAGE, AUTHORIZATION, CONTENT_TYPE, USER_AGENT};
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 const USER_AGENT_VALUE: &str = concat!("kobana-cli/", env!("CARGO_PKG_VERSION"));
@@ -33,6 +34,99 @@ pub struct ApiRequest {
     pub idempotency_key: Option<String>,
     /// Header parameters declared by the endpoint (e.g. `X-Workspace-Id`)
     pub headers: Vec<(String, String)>,
+    /// Send `body` as `multipart/form-data` instead of JSON: its top-level
+    /// fields become text parts, next to `files`
+    pub multipart: bool,
+    /// Files of a multipart request, one part each
+    pub files: Vec<FilePart>,
+}
+
+/// One file of a multipart request: the form field and the local path.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FilePart {
+    pub field: String,
+    pub path: PathBuf,
+}
+
+/// The media type a file part is sent with, from its extension. The APIs read
+/// the content, not the name, except for a raw e-mail (`message/rfc822`).
+pub fn file_media_type(path: &Path) -> &'static str {
+    let ext = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_ascii_lowercase());
+    match ext.as_deref() {
+        Some("eml") => "message/rfc822",
+        Some("pdf") => "application/pdf",
+        Some("xml") => "application/xml",
+        Some("csv") => "text/csv",
+        Some("txt") => "text/plain",
+        Some("json") => "application/json",
+        Some("ofx") => "application/x-ofx",
+        Some("png") => "image/png",
+        Some("jpg") | Some("jpeg") => "image/jpeg",
+        Some("pem") | Some("crt") | Some("cer") | Some("key") => "application/x-pem-file",
+        Some("pfx") | Some("p12") => "application/x-pkcs12",
+        _ => "application/octet-stream",
+    }
+}
+
+/// The text parts of a multipart body: each top-level field of the JSON
+/// object, strings as they are and anything else as its JSON text. `null` is
+/// left out, as an absent field.
+pub fn multipart_text_fields(body: Option<&serde_json::Value>) -> Result<Vec<(String, String)>, KobanaError> {
+    let Some(body) = body else {
+        return Ok(Vec::new());
+    };
+    let Some(obj) = body.as_object() else {
+        return Err(KobanaError::Validation(
+            tr!(
+                pt: "com --file, o --json precisa ser um objeto (cada campo vira uma parte do formulário)",
+                en: "with --file, --json must be an object (each field becomes a form part)",
+                es: "con --file, el --json debe ser un objeto (cada campo se vuelve una parte del formulario)",
+            )
+            .to_string(),
+        ));
+    };
+    Ok(obj
+        .iter()
+        .filter(|(_, v)| !v.is_null())
+        .map(|(k, v)| {
+            let text = match v {
+                serde_json::Value::String(s) => s.clone(),
+                other => other.to_string(),
+            };
+            (k.clone(), text)
+        })
+        .collect())
+}
+
+async fn multipart_form(req: &ApiRequest) -> Result<reqwest::multipart::Form, KobanaError> {
+    let mut form = reqwest::multipart::Form::new();
+    for (name, value) in multipart_text_fields(req.body.as_ref())? {
+        form = form.text(name, value);
+    }
+    for file in &req.files {
+        let bytes = tokio::fs::read(&file.path).await.map_err(|e| {
+            let path = file.path.display();
+            KobanaError::Validation(trf!(
+                pt: "não foi possível ler {path}: {e}",
+                en: "could not read {path}: {e}",
+                es: "no se pudo leer {path}: {e}",
+            ))
+        })?;
+        let file_name = file
+            .path
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_else(|| "file".to_string());
+        let part = reqwest::multipart::Part::bytes(bytes)
+            .file_name(file_name)
+            .mime_str(file_media_type(&file.path))
+            .map_err(|e| KobanaError::Validation(e.to_string()))?;
+        form = form.part(file.field.clone(), part);
+    }
+    Ok(form)
 }
 
 #[derive(Debug, Clone)]
@@ -127,7 +221,6 @@ impl KobanaClient {
 
         builder = builder
             .header(AUTHORIZATION, format!("Bearer {}", self.token))
-            .header(CONTENT_TYPE, "application/json")
             .header(USER_AGENT, USER_AGENT_VALUE)
             // APIs that localize their messages answer in the user's language
             .header(ACCEPT_LANGUAGE, accept_language());
@@ -158,9 +251,15 @@ impl KobanaClient {
             }
         }
 
-        // Add request body
-        if let Some(body) = &req.body {
-            builder = builder.json(body);
+        // Add request body. A multipart form sets its own content type (with
+        // the boundary), so the JSON one goes only on a JSON request.
+        if req.multipart {
+            builder = builder.multipart(multipart_form(req).await?);
+        } else {
+            builder = builder.header(CONTENT_TYPE, "application/json");
+            if let Some(body) = &req.body {
+                builder = builder.json(body);
+            }
         }
 
         let response = builder.send().await?;
@@ -194,5 +293,42 @@ impl KobanaClient {
             headers,
             body,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn multipart_text_fields_keep_strings_and_encode_the_rest() {
+        let body = serde_json::json!({
+            "inbox_id": "abc",
+            "tags": ["a", "b"],
+            "custom_data": {"k": 1},
+            "draft": false,
+            "skipped": null
+        });
+        let mut fields = multipart_text_fields(Some(&body)).unwrap();
+        fields.sort();
+        assert_eq!(
+            fields,
+            vec![
+                ("custom_data".to_string(), r#"{"k":1}"#.to_string()),
+                ("draft".to_string(), "false".to_string()),
+                ("inbox_id".to_string(), "abc".to_string()),
+                ("tags".to_string(), r#"["a","b"]"#.to_string()),
+            ]
+        );
+        assert!(multipart_text_fields(None).unwrap().is_empty());
+        assert!(multipart_text_fields(Some(&serde_json::json!([1]))).is_err());
+    }
+
+    #[test]
+    fn a_raw_email_is_sent_as_message_rfc822() {
+        assert_eq!(file_media_type(Path::new("msg.EML")), "message/rfc822");
+        assert_eq!(file_media_type(Path::new("nota.pdf")), "application/pdf");
+        assert_eq!(file_media_type(Path::new("cert.pfx")), "application/x-pkcs12");
+        assert_eq!(file_media_type(Path::new("sem-extensao")), "application/octet-stream");
     }
 }

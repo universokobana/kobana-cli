@@ -409,6 +409,18 @@ kobana billing subscriptions pause --params '{"id": "SUBSCRIPTION_ID"}'
 kobana banking charge pix create --json '{"amount": 99.90, "pix_account_uid": "UID"}'
 ```
 
+Arquivos vão em `--file campo=caminho`, repetível. A requisição sai como
+`multipart/form-data`: cada arquivo é uma parte com o nome do campo, e cada
+campo de `--json` vira uma parte de texto (objetos e listas como JSON). O tipo
+do arquivo vem da extensão (`.eml` vai como `message/rfc822`). Só os endpoints
+que recebem formulário aceitam `--file`; o `--dry-run` mostra os arquivos e o
+`content_type` sem enviar nada.
+
+```bash
+kobana inbox emails create --file file=./mensagem.eml --json '{"inbox_id": "INBOX_ID"}'
+kobana finance attachments create --file file=./nota.pdf --json '{"title": "NF 123"}'
+```
+
 Toda a superfície é descoberta pelo `--help`, em qualquer nível:
 
 ```bash
@@ -502,6 +514,9 @@ kobana inbox emails list --fields "id,subject,received_at"
 
 # Reprocessar um e-mail com os agentes
 kobana inbox emails reprocess --params '{"id": "EMAIL_ID"}'
+
+# Injetar um .eml bruto numa caixa (multipart)
+kobana inbox emails create --file file=./mensagem.eml --json '{"inbox_id": "INBOX_ID"}'
 
 # Reenviar uma entrega de webhook que falhou
 kobana inbox webhooks deliveries replay \

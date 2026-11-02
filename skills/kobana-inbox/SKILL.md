@@ -48,6 +48,8 @@ The Inbox API is **not** the banking API and does not share its credentials:
 
 ### emails
 - `list`, `get`
+- `create` — inject a raw .eml: `--file file=./message.eml --json '{"inbox_id": "…"}'`
+  (multipart; `--json` fields become text parts)
 - `eml` — download the original .eml
 - `reprocess` — reprocess an email
 

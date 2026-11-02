@@ -93,6 +93,8 @@ impl Helper for EmitirBoleto {
                 body: Some(body),
                 idempotency_key: Some(uuid::Uuid::new_v4().to_string()),
                 headers: Vec::new(),
+                multipart: false,
+                files: Vec::new(),
             };
 
             let response = client.execute(&request).await?;
@@ -159,6 +161,8 @@ impl Helper for CancelarLoteBoletos {
                     body: None,
                     idempotency_key: None,
                     headers: Vec::new(),
+                    multipart: false,
+                    files: Vec::new(),
                 };
 
                 match client.execute(&request).await {

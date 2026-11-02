@@ -104,6 +104,8 @@ pub async fn paginate_all(
             body: None,
             idempotency_key: None,
             headers: headers.to_vec(),
+            multipart: false,
+            files: Vec::new(),
         };
 
         if verbose {

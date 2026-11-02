@@ -55,7 +55,8 @@ credentials with the banking product. Every request needs **two** things:
 - `categories`, `classification-centers`, `people`, `companies`, `taxes` — CRUD
 - `custom-classifiers` — CRUD plus `values create|update|delete`
 - `automatic-rules` — CRUD plus `reorder`
-- `attachments` — `list`, `create`, `get`, `delete`, plus `download`, `links`, `unlink`
+- `attachments` — `list`, `create`, `get`, `delete`, plus `download`, `links`, `unlink`;
+  `create` uploads with `--file file=./doc.pdf` (multipart, `--json` fields as text parts)
 - `ai-agents` — CRUD plus `triggers` (CRUD and `token`); `ai-skills` — CRUD
 
 ### Fiscal and identity

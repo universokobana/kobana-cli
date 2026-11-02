@@ -75,7 +75,7 @@ and bulk exports `export` (or `all`); every other method needs `write` or
 - `proposal-templates` — CRUD plus `activate`, `deactivate`, `duplicate`, `set-default`
 - `coupons` — CRUD plus `deactivate`, `redemptions`
 - `credits`, `withholdings` (`convert-to-credits`), `tax-rules`, `tax-periods`
-- `certificates`, `usage` (`summary`, `snapshots`, `credits`), `credit-purchases create`
+- `certificates` (`create` uploads with `--file file=…` / `cert_file=…` / `key_file=…`), `usage` (`summary`, `snapshots`, `credits`), `credit-purchases create`
 
 ## Examples
 

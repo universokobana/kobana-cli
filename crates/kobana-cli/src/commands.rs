@@ -122,6 +122,18 @@ pub fn build_root_command(products: &[LoadedProduct]) -> Command {
                 .value_name("JSON"),
         )
         .arg(
+            Arg::new("file")
+                .long("file")
+                .global(true)
+                .action(clap::ArgAction::Append)
+                .help(tr!(
+                    pt: "Arquivo enviado como parte de um formulário multipart, campo=caminho (repetível; os campos de --json viram partes de texto)",
+                    en: "File sent as a part of a multipart form, field=path (repeatable; --json fields become text parts)",
+                    es: "Archivo enviado como parte de un formulario multipart, campo=ruta (repetible; los campos de --json se vuelven partes de texto)",
+                ))
+                .value_name(tr!(pt: "CAMPO=CAMINHO", en: "FIELD=PATH", es: "CAMPO=RUTA")),
+        )
+        .arg(
             Arg::new("fields")
                 .long("fields")
                 .global(true)

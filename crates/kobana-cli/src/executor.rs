@@ -1,4 +1,4 @@
-use kobana::client::{ApiRequest, KobanaClient};
+use kobana::client::{ApiRequest, FilePart, KobanaClient};
 use kobana::error::KobanaError;
 use kobana::{tr, trf};
 use kobana::spec::{HttpMethod, ParameterLocation, ResolvedEndpoint};
@@ -41,6 +41,17 @@ pub async fn execute(
     }
     if let Some(ref body) = body_json {
         validate::validate_body(body)?;
+    }
+
+    let files = root_matches
+        .get_many::<String>("file")
+        .map(|values| values.map(|v| parse_file_arg(v)).collect::<Result<Vec<_>, _>>())
+        .transpose()?
+        .unwrap_or_default();
+    let multipart = sends_multipart(endpoint, !files.is_empty(), body_json.is_some())?;
+    if multipart {
+        // Fail before anything is sent, with the same message a dry run gives
+        kobana::client::multipart_text_fields(body_json.as_ref())?;
     }
 
     let fields = root_matches.get_one::<String>("fields").cloned();
@@ -132,6 +143,8 @@ pub async fn execute(
         body: body_json,
         idempotency_key,
         headers,
+        multipart,
+        files,
     };
 
     // Dry run: show the request without executing
@@ -142,6 +155,16 @@ pub async fn execute(
             "url": format!("{}{}", client.base_url(), api_request.path),
             "query_params": api_request.query_params,
             "body": api_request.body,
+            "content_type": if api_request.multipart { "multipart/form-data" } else { "application/json" },
+            "files": api_request
+                .files
+                .iter()
+                .map(|f| serde_json::json!({
+                    "field": f.field,
+                    "path": f.path.display().to_string(),
+                    "media_type": kobana::client::file_media_type(&f.path),
+                }))
+                .collect::<Vec<_>>(),
             "idempotency_key": api_request.idempotency_key,
             "headers": client
                 .request_headers(&api_request)
@@ -315,6 +338,68 @@ fn resolve_path_template(
     Ok(path)
 }
 
+/// The media types the endpoint's request body is documented with.
+fn request_media_types(endpoint: &ResolvedEndpoint) -> Vec<String> {
+    endpoint
+        .operation
+        .request_body
+        .as_ref()
+        .and_then(|b| b.get("content"))
+        .and_then(|c| c.as_object())
+        .map(|c| c.keys().cloned().collect())
+        .unwrap_or_default()
+}
+
+/// Whether the request goes as `multipart/form-data`: when it carries files,
+/// or when the endpoint takes a form and no JSON at all (its fields then go as
+/// text parts). Files on an endpoint that takes no form are refused before
+/// anything is sent.
+fn sends_multipart(endpoint: &ResolvedEndpoint, has_files: bool, has_body: bool) -> Result<bool, KobanaError> {
+    let types = request_media_types(endpoint);
+    let takes_form = types.iter().any(|t| t == "multipart/form-data");
+    let takes_json = types.is_empty() || types.iter().any(|t| t == "application/json");
+    if has_files && !takes_form {
+        return Err(KobanaError::Validation(
+            tr!(
+                pt: "este endpoint não recebe arquivos (--file); veja `kobana schema` para o corpo esperado",
+                en: "this endpoint takes no files (--file); see `kobana schema` for the expected body",
+                es: "este endpoint no recibe archivos (--file); vea `kobana schema` para el cuerpo esperado",
+            )
+            .to_string(),
+        ));
+    }
+    Ok(has_files || (takes_form && !takes_json && has_body))
+}
+
+/// `--file campo=caminho`: the form field and an existing local file.
+fn parse_file_arg(value: &str) -> Result<FilePart, KobanaError> {
+    let Some((field, path)) = value.split_once('=') else {
+        return Err(KobanaError::Validation(trf!(
+            pt: "--file espera campo=caminho (ex.: file=./mensagem.eml), recebeu {value}",
+            en: "--file expects field=path (e.g. file=./message.eml), got {value}",
+            es: "--file espera campo=ruta (ej.: file=./mensaje.eml), recibió {value}",
+        )));
+    };
+    let field = field.trim();
+    if field.is_empty() || field.chars().any(|c| c.is_control() || c == '"') {
+        return Err(KobanaError::Validation(trf!(
+            pt: "nome de campo inválido em --file: {value}",
+            en: "invalid field name in --file: {value}",
+            es: "nombre de campo inválido en --file: {value}",
+        )));
+    }
+    let path = std::path::PathBuf::from(path);
+    if !path.is_file() {
+        let shown = path.display();
+        return Err(KobanaError::Validation(trf!(
+            pt: "--file: arquivo não encontrado: {shown}",
+            en: "--file: file not found: {shown}",
+            es: "--file: archivo no encontrado: {shown}",
+        )));
+    }
+    Ok(FilePart { field: field.to_string(), path })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -382,6 +467,8 @@ mod tests {
             body: None,
             idempotency_key: None,
             headers: vec![("x-workspace-id".to_string(), "from-params".to_string())],
+            multipart: false,
+            files: Vec::new(),
         };
 
         assert_eq!(
@@ -391,5 +478,48 @@ mod tests {
                 ("X-Other".to_string(), "kept".to_string()),
             ]
         );
+    }
+
+    fn post_endpoint(content: serde_json::Value) -> ResolvedEndpoint {
+        let spec = serde_json::json!({
+            "paths": {"/v1/emails": {"post": {
+                "requestBody": {"content": content},
+                "responses": {}
+            }}}
+        });
+        let tree = ApiSpec::from_value(&spec).unwrap().build_command_tree("/v1");
+        tree.children["emails"].endpoints[0].clone()
+    }
+
+    #[test]
+    fn files_go_as_multipart_only_where_the_endpoint_takes_a_form() {
+        let form_or_eml = post_endpoint(serde_json::json!({"message/rfc822": {}, "multipart/form-data": {}}));
+        let json_only = post_endpoint(serde_json::json!({"application/json": {}}));
+        let form_only = post_endpoint(serde_json::json!({"multipart/form-data": {}}));
+        let both = post_endpoint(serde_json::json!({"application/json": {}, "multipart/form-data": {}}));
+
+        assert!(sends_multipart(&form_or_eml, true, true).unwrap());
+        assert!(sends_multipart(&json_only, true, false).is_err());
+        assert!(!sends_multipart(&json_only, false, true).unwrap());
+        // A form-only endpoint takes --json fields as text parts, files or not
+        assert!(sends_multipart(&form_only, false, true).unwrap());
+        // Where JSON is accepted too, only files switch to multipart
+        assert!(!sends_multipart(&both, false, true).unwrap());
+        assert!(sends_multipart(&both, true, true).unwrap());
+    }
+
+    #[test]
+    fn file_args_name_a_field_and_an_existing_file() {
+        let path = std::env::temp_dir().join(format!("kobana-file-arg-{}.eml", std::process::id()));
+        std::fs::write(&path, "Subject: x\r\n\r\nbody").unwrap();
+        let arg = format!("file={}", path.display());
+
+        let part = parse_file_arg(&arg).unwrap();
+        assert_eq!(part.field, "file");
+        assert_eq!(part.path, path);
+        assert!(parse_file_arg(&path.display().to_string()).is_err(), "no field");
+        assert!(parse_file_arg("=x.eml").is_err(), "empty field");
+        assert!(parse_file_arg("file=/no/such/file.eml").is_err(), "missing file");
+        std::fs::remove_file(path).ok();
     }
 }

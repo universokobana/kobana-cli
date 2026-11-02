@@ -95,6 +95,8 @@ impl Helper for CobrarPix {
                 body: Some(body),
                 idempotency_key: Some(uuid::Uuid::new_v4().to_string()),
                 headers: Vec::new(),
+                multipart: false,
+                files: Vec::new(),
             };
 
             let response = client.execute(&request).await?;
