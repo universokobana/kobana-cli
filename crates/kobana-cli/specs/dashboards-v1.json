@@ -2907,6 +2907,303 @@
           "engine"
         ]
       },
+      "DataSourceCreateRequest": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "openapi"
+                ]
+              },
+              "spec": {
+                "type": "string",
+                "description": "O documento OpenAPI 3.x ou Swagger 2.0 como texto (JSON ou YAML), até 5 MB — limitado também pelos 2 MB de corpo da API."
+              },
+              "spec_file_name": {
+                "type": "string",
+                "description": "Nome do arquivo da spec (`openapi.yaml`). Quando omitido, é deduzido do conteúdo."
+              },
+              "certificate": {
+                "type": "object",
+                "properties": {
+                  "filename": {
+                    "type": "string",
+                    "description": "Nome original do arquivo: .pfx, .p12, .pem, .crt ou .cer."
+                  },
+                  "content_base64": {
+                    "type": "string",
+                    "description": "O arquivo em base64 (até 64 KB depois de decodificado)."
+                  }
+                },
+                "required": [
+                  "filename",
+                  "content_base64"
+                ],
+                "description": "Certificado de cliente para mTLS (`auth.kind = \"cert\"`)."
+              },
+              "name": {
+                "type": "string",
+                "description": "Nome de exibição, único por workspace e tipo. Quando omitido, é derivado da spec, do host ou do banco."
+              },
+              "base_url": {
+                "type": "string",
+                "description": "Base URL da API. Quando omitida, usa o primeiro servidor absoluto da spec."
+              },
+              "auth": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "header",
+                      "query",
+                      "bearer",
+                      "basic",
+                      "cert"
+                    ]
+                  },
+                  "headers": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "name"
+                      ]
+                    }
+                  },
+                  "params": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "name"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "description": "Como a API autentica: `none`, `header`, `query`, `bearer`, `basic` ou `cert`. Em `header`/`query`, informe os nomes e valores das chaves; um valor em branco numa atualização mantém o guardado."
+              },
+              "credentials": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string"
+                  },
+                  "username": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "certificate_password": {
+                    "type": "string"
+                  }
+                },
+                "description": "Segredos da autenticação escolhida: `token` (bearer), `username`/`password` (basic), `certificate_password` (cert). Guardados criptografados e nunca devolvidos."
+              },
+              "response_format": {
+                "type": "string",
+                "enum": [
+                  "json",
+                  "xml"
+                ]
+              }
+            },
+            "required": [
+              "kind",
+              "spec"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "mcp"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "description": "Nome de exibição, único por workspace e tipo. Quando omitido, é derivado da spec, do host ou do banco."
+              },
+              "url": {
+                "type": "string",
+                "description": "URL do servidor MCP (endpoint Streamable HTTP ou SSE). Um token na query string é guardado criptografado."
+              },
+              "transport": {
+                "type": "string",
+                "enum": [
+                  "http",
+                  "sse"
+                ]
+              },
+              "headers": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "description": "Cabeçalhos extras enviados em toda chamada: um objeto, ou um `Nome: valor` por linha. Guardados criptografados."
+              },
+              "oauth": {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "dcr",
+                      "client"
+                    ]
+                  },
+                  "client_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "client_secret": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "scopes": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "mode"
+                ],
+                "description": "OAuth do servidor MCP: `none`, `dcr` (registro dinâmico de cliente) ou `client` (seu próprio client id/secret)."
+              }
+            },
+            "required": [
+              "kind",
+              "url"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "database"
+                ]
+              },
+              "engine": {
+                "type": "string",
+                "enum": [
+                  "postgres",
+                  "mysql",
+                  "mariadb",
+                  "mssql",
+                  "mongodb"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "description": "Nome de exibição, único por workspace e tipo. Quando omitido, é derivado da spec, do host ou do banco."
+              },
+              "host": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "port": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "database": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "username": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "password": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "connection_string": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Somente MongoDB: a string de conexão completa (no lugar de host, porta, usuário e senha). Autenticação só por usuário e senha (SCRAM); opções aceitas: authSource, authMechanism (SCRAM-SHA-1/SCRAM-SHA-256), replicaSet, tls/ssl, retryWrites, retryReads, w, journal, wtimeoutMS, readPreference, readConcernLevel, appName, directConnection, loadBalanced, compressors, zlibCompressionLevel e os tempos/limites de pool (maxPoolSize, minPoolSize, maxIdleTimeMS, connectTimeoutMS, socketTimeoutMS, serverSelectionTimeoutMS, heartbeatFrequencyMS, localThresholdMS, maxStalenessSeconds). Qualquer outra opção é recusada com 422."
+              },
+              "ssl": {
+                "type": "boolean"
+              },
+              "ssl_verify": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "kind",
+              "engine"
+            ]
+          }
+        ],
+        "description": "Os campos de uma fonte, conforme o `kind` (`openapi`, `mcp` ou `database`)."
+      },
       "DataSourceCatalogConnectRequest": {
         "type": "object",
         "properties": {
@@ -3731,6 +4028,47 @@
         ]
       },
       "DataSourceMcpCreatedResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "data_source": {
+                "$ref": "#/components/schemas/DataSourceV1"
+              },
+              "test": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/DataSourceConnectionTestV1"
+                  },
+                  {
+                    "type": [
+                      "object",
+                      "null"
+                    ]
+                  }
+                ]
+              },
+              "authorization_url": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Página de autorização OAuth do servidor MCP. Uma pessoa logada no dashboard precisa abri-la no navegador para concluir a conexão; `null` quando não há nada a autorizar."
+              }
+            },
+            "required": [
+              "data_source",
+              "test",
+              "authorization_url"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "DataSourceCreateResponse": {
         "type": "object",
         "properties": {
           "data": {
@@ -20126,6 +20464,183 @@
           }
         },
         "operationId": "get-data-sources"
+      },
+      "post": {
+        "tags": [
+          "Fontes de Dados"
+        ],
+        "summary": "Criar fonte de dados",
+        "description": "Salva uma fonte de dados e testa a conexão. `kind` diz qual: `openapi` (API descrita por uma spec OpenAPI — a spec vai como texto em `spec`, o certificado mTLS em base64 em `certificate`; importa as operações), `mcp` (servidor MCP — `url`; sem OAuth conecta e descobre as tools na hora, com OAuth devolve `authorization_url`, que uma pessoa logada no dashboard abre no navegador para concluir) ou `database` (banco somente leitura — `engine` e conexão; cataloga as tabelas ou coleções). Envie só os campos do `kind` escolhido. Produtos Kobana entram por `POST /data_sources/catalog`. Substitui `POST /data_sources/openapi`, `/mcp` e `/database`.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DataSourceCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Fonte criada, com o resultado do teste de conexão.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataSourceCreateResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corpo que não é JSON, ou campo com tipo errado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token bearer ausente ou inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Token válido, porém sem permissão para esta operação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado na organização atual.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Já existe uma fonte de dados com este nome no workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Corpo da requisição falhou na validação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro inesperado no servidor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post-data-sources",
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "description": "Identificação do integrador. Inclua nome e e-mail de contato — ex.: `Kevin Mitnick <kmitnick@kobana.com.br>`. Usado para suporte e auditoria.",
+            "schema": {
+              "type": "string",
+              "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+            },
+            "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Request-Source",
+            "in": "header",
+            "required": false,
+            "description": "Superfície que faz a chamada: `dashboard`, `api`, `cli`, `mcp` ou `other`. Fica gravada em `created_via` / `updated_via` dos registros criados ou alterados. Sem o cabeçalho, vale `api`. Valor desconhecido retorna 400.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dashboard",
+                "api",
+                "cli",
+                "mcp",
+                "other"
+              ],
+              "default": "api"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada atua: o `id` ou o `public_id` mostrados em Workspaces no dashboard. Dentro da organização do token, os dados ficam em workspaces. Pode ser omitido enquanto a organização tem um único workspace; com dois ou mais, a falta dele retorna `400 workspace_required`. Um workspace que não é da organização retorna `403 unknown_workspace`. Com um token de pessoa, só os workspaces a que ela tem acesso (proprietários da organização alcançam todos); os demais retornam `403 workspace_access_denied`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Request-Source-Other",
+            "in": "header",
+            "required": false,
+            "description": "Nome do aplicativo que faz a chamada. Obrigatório quando `X-Request-Source` é `other` (até 100 caracteres); ignorado nos demais casos. Fica gravado em `created_via_other` / `updated_via_other`.",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "example": "Zapier"
+            }
+          }
+        ]
       }
     },
     "/v1/data_sources/catalog": {
@@ -20450,8 +20965,9 @@
         "tags": [
           "Fontes de Dados"
         ],
+        "deprecated": true,
         "summary": "Criar fonte OpenAPI",
-        "description": "Salva uma API descrita por uma spec OpenAPI, importa suas operações e testa a conexão. A spec vai como texto em `spec`; o certificado mTLS, em base64 em `certificate`.",
+        "description": "**Descontinuada em 2026-11-02.** Use `POST /data_sources` com `kind: \"openapi\"`, que faz exatamente o mesmo. Este caminho segue respondendo por um ciclo de release, com os cabeçalhos `Deprecation: true` e `Link: <…>; rel=\"successor-version\"`.",
         "security": [
           {
             "bearerAuth": [
@@ -20798,8 +21314,9 @@
         "tags": [
           "Fontes de Dados"
         ],
+        "deprecated": true,
         "summary": "Criar fonte MCP",
-        "description": "Salva um servidor MCP. Sem OAuth, conecta e descobre as tools na hora; com OAuth, devolve `authorization_url`, que uma pessoa logada no dashboard precisa abrir no navegador para concluir.",
+        "description": "**Descontinuada em 2026-11-02.** Use `POST /data_sources` com `kind: \"mcp\"`, que faz exatamente o mesmo. Este caminho segue respondendo por um ciclo de release, com os cabeçalhos `Deprecation: true` e `Link: <…>; rel=\"successor-version\"`.",
         "security": [
           {
             "bearerAuth": [
@@ -20977,8 +21494,9 @@
         "tags": [
           "Fontes de Dados"
         ],
+        "deprecated": true,
         "summary": "Criar fonte de banco de dados",
-        "description": "Salva um banco somente leitura (PostgreSQL, MySQL, MariaDB, SQL Server ou MongoDB), conecta e cataloga as tabelas ou coleções.",
+        "description": "**Descontinuada em 2026-11-02.** Use `POST /data_sources` com `kind: \"database\"`, que faz exatamente o mesmo. Este caminho segue respondendo por um ciclo de release, com os cabeçalhos `Deprecation: true` e `Link: <…>; rel=\"successor-version\"`.",
         "security": [
           {
             "bearerAuth": [
@@ -28106,13 +28624,700 @@
         "operationId": "post-builder-versions-number-rollback"
       }
     },
-    "/v1/builder/secrets": {
+    "/v1/builder/encrypt_secret": {
       "post": {
         "tags": [
           "Construtor do Portal"
         ],
         "summary": "Criptografar um segredo de bloco",
-        "description": "Criptografa um valor que um bloco guarda no JSON da página (um cabeçalho de webhook como `Authorization`). Retorna `secret:<cifrado>`, vinculado a este workspace e à origem de `url` (obrigatória), que só o servidor abre para enviar a requisição a essa origem. Nada é armazenado: salve o valor retornado no bloco junto com o rascunho.",
+        "description": "Criptografa um valor que um bloco guarda no JSON da página (um cabeçalho de webhook como `Authorization`). Retorna `secret:<cifrado>`, vinculado a este workspace e à origem de `url` (obrigatória), que só o servidor abre para enviar a requisição a essa origem. Nada é armazenado: salve o valor retornado no bloco junto com o rascunho. Substitui `POST /builder/secrets`.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortalBuilderSecretRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "O valor criptografado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalBuilderSecretResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corpo da requisição falhou na validação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token bearer ausente ou inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Token válido, porém sem permissão para esta operação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado na organização atual.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "A `url` não tem uma origem http(s) fixa — por exemplo, uma `{{variável}}` no domínio (`ACTION_SECRET_URL_REQUIRED`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro inesperado no servidor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post-builder-encrypt-secret",
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "description": "Identificação do integrador. Inclua nome e e-mail de contato — ex.: `Kevin Mitnick <kmitnick@kobana.com.br>`. Usado para suporte e auditoria.",
+            "schema": {
+              "type": "string",
+              "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+            },
+            "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Request-Source",
+            "in": "header",
+            "required": false,
+            "description": "Superfície que faz a chamada: `dashboard`, `api`, `cli`, `mcp` ou `other`. Fica gravada em `created_via` / `updated_via` dos registros criados ou alterados. Sem o cabeçalho, vale `api`. Valor desconhecido retorna 400.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dashboard",
+                "api",
+                "cli",
+                "mcp",
+                "other"
+              ],
+              "default": "api"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada atua: o `id` ou o `public_id` mostrados em Workspaces no dashboard. Dentro da organização do token, os dados ficam em workspaces. Pode ser omitido enquanto a organização tem um único workspace; com dois ou mais, a falta dele retorna `400 workspace_required`. Um workspace que não é da organização retorna `403 unknown_workspace`. Com um token de pessoa, só os workspaces a que ela tem acesso (proprietários da organização alcançam todos); os demais retornam `403 workspace_access_denied`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Request-Source-Other",
+            "in": "header",
+            "required": false,
+            "description": "Nome do aplicativo que faz a chamada. Obrigatório quando `X-Request-Source` é `other` (até 100 caracteres); ignorado nos demais casos. Fica gravado em `created_via_other` / `updated_via_other`.",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "example": "Zapier"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/builder/upload_og_image": {
+      "post": {
+        "tags": [
+          "Construtor do Portal"
+        ],
+        "summary": "Enviar a og:image do portal",
+        "description": "Envia a og:image de uma página (ou a padrão do portal) — a imagem que as prévias de link mostram — em base64 (PNG, JPEG ou WebP, até ~1,5 MB) e devolve a URL pública, para guardar em `seo.og_image_url` (ou `seo_defaults.og_image_url`) no próximo salvamento do rascunho. Substitui `POST /builder/og_image`.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortalBuilderOgImageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Imagem enviada, com a URL pública.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalBuilderOgImageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corpo da requisição falhou na validação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token bearer ausente ou inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Token válido, porém sem permissão para esta operação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado na organização atual.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "O corpo da requisição passou de 2 MB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Tipo não aceito, base64 inválido, imagem acima do limite ou conteúdo que não corresponde ao `content_type`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro inesperado no servidor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post-builder-upload-og-image",
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "description": "Identificação do integrador. Inclua nome e e-mail de contato — ex.: `Kevin Mitnick <kmitnick@kobana.com.br>`. Usado para suporte e auditoria.",
+            "schema": {
+              "type": "string",
+              "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+            },
+            "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Request-Source",
+            "in": "header",
+            "required": false,
+            "description": "Superfície que faz a chamada: `dashboard`, `api`, `cli`, `mcp` ou `other`. Fica gravada em `created_via` / `updated_via` dos registros criados ou alterados. Sem o cabeçalho, vale `api`. Valor desconhecido retorna 400.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dashboard",
+                "api",
+                "cli",
+                "mcp",
+                "other"
+              ],
+              "default": "api"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada atua: o `id` ou o `public_id` mostrados em Workspaces no dashboard. Dentro da organização do token, os dados ficam em workspaces. Pode ser omitido enquanto a organização tem um único workspace; com dois ou mais, a falta dele retorna `400 workspace_required`. Um workspace que não é da organização retorna `403 unknown_workspace`. Com um token de pessoa, só os workspaces a que ela tem acesso (proprietários da organização alcançam todos); os demais retornam `403 workspace_access_denied`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Request-Source-Other",
+            "in": "header",
+            "required": false,
+            "description": "Nome do aplicativo que faz a chamada. Obrigatório quando `X-Request-Source` é `other` (até 100 caracteres); ignorado nos demais casos. Fica gravado em `created_via_other` / `updated_via_other`.",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "example": "Zapier"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/builder/test_form": {
+      "post": {
+        "tags": [
+          "Construtor do Portal"
+        ],
+        "summary": "Testar um formulário do rascunho",
+        "description": "Executa a ação de um bloco Formulário como a prévia do construtor: o e-mail configurado sai de verdade (ou o webhook escolhido dispara), marcado como `preview: true`. A configuração vem no corpo (o rascunho de quem chama). O e-mail de teste vai só para o operador que o token nomeia. Limitado a 20 execuções por minuto por operador, 60 por minuto e 500 por dia por organização. Substitui `POST /builder/form_submissions`.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortalBuilderFormSubmissionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Envio registrado: destinatários, notificações ou entrega do webhook.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalBuilderFormSubmissionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corpo da requisição falhou na validação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token bearer ausente ou inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Token válido, porém sem permissão para esta operação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado na organização atual.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Valores que não passam nas regras do formulário, expressão regular perigosa ou ação mal configurada; `field_errors` lista os campos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro inesperado no servidor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post-builder-test-form",
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "description": "Identificação do integrador. Inclua nome e e-mail de contato — ex.: `Kevin Mitnick <kmitnick@kobana.com.br>`. Usado para suporte e auditoria.",
+            "schema": {
+              "type": "string",
+              "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+            },
+            "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Request-Source",
+            "in": "header",
+            "required": false,
+            "description": "Superfície que faz a chamada: `dashboard`, `api`, `cli`, `mcp` ou `other`. Fica gravada em `created_via` / `updated_via` dos registros criados ou alterados. Sem o cabeçalho, vale `api`. Valor desconhecido retorna 400.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dashboard",
+                "api",
+                "cli",
+                "mcp",
+                "other"
+              ],
+              "default": "api"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada atua: o `id` ou o `public_id` mostrados em Workspaces no dashboard. Dentro da organização do token, os dados ficam em workspaces. Pode ser omitido enquanto a organização tem um único workspace; com dois ou mais, a falta dele retorna `400 workspace_required`. Um workspace que não é da organização retorna `403 unknown_workspace`. Com um token de pessoa, só os workspaces a que ela tem acesso (proprietários da organização alcançam todos); os demais retornam `403 workspace_access_denied`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Request-Source-Other",
+            "in": "header",
+            "required": false,
+            "description": "Nome do aplicativo que faz a chamada. Obrigatório quando `X-Request-Source` é `other` (até 100 caracteres); ignorado nos demais casos. Fica gravado em `created_via_other` / `updated_via_other`.",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "example": "Zapier"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/builder/test_action": {
+      "post": {
+        "tags": [
+          "Construtor do Portal"
+        ],
+        "summary": "Testar um botão de ação do rascunho",
+        "description": "Executa o webhook de um Botão de ação como a prévia do construtor: a requisição sai de verdade, marcada como `preview: true`, e a resposta traz o status HTTP devolvido pelo destino. Cabeçalhos podem levar valores `secret:` criados por `POST /builder/encrypt_secret`, que só abrem para a origem para a qual foram criados. Limitado a 20 execuções por minuto por operador, 60 por minuto e 500 por dia por organização. Substitui `POST /builder/action_runs`.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortalBuilderActionRunRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultado da execução.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalBuilderActionRunResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corpo da requisição falhou na validação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token bearer ausente ou inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Token válido, porém sem permissão para esta operação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado na organização atual.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Requisição mal configurada (URL sem https, cabeçalho inválido, segredo de outro workspace…).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro inesperado no servidor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post-builder-test-action",
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "description": "Identificação do integrador. Inclua nome e e-mail de contato — ex.: `Kevin Mitnick <kmitnick@kobana.com.br>`. Usado para suporte e auditoria.",
+            "schema": {
+              "type": "string",
+              "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+            },
+            "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Request-Source",
+            "in": "header",
+            "required": false,
+            "description": "Superfície que faz a chamada: `dashboard`, `api`, `cli`, `mcp` ou `other`. Fica gravada em `created_via` / `updated_via` dos registros criados ou alterados. Sem o cabeçalho, vale `api`. Valor desconhecido retorna 400.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dashboard",
+                "api",
+                "cli",
+                "mcp",
+                "other"
+              ],
+              "default": "api"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada atua: o `id` ou o `public_id` mostrados em Workspaces no dashboard. Dentro da organização do token, os dados ficam em workspaces. Pode ser omitido enquanto a organização tem um único workspace; com dois ou mais, a falta dele retorna `400 workspace_required`. Um workspace que não é da organização retorna `403 unknown_workspace`. Com um token de pessoa, só os workspaces a que ela tem acesso (proprietários da organização alcançam todos); os demais retornam `403 workspace_access_denied`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Request-Source-Other",
+            "in": "header",
+            "required": false,
+            "description": "Nome do aplicativo que faz a chamada. Obrigatório quando `X-Request-Source` é `other` (até 100 caracteres); ignorado nos demais casos. Fica gravado em `created_via_other` / `updated_via_other`.",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "example": "Zapier"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/builder/secrets": {
+      "post": {
+        "tags": [
+          "Construtor do Portal"
+        ],
+        "deprecated": true,
+        "summary": "Criptografar um segredo de bloco (POST /secrets)",
+        "description": "**Descontinuada em 2026-11-02.** Use `POST /builder/encrypt_secret`, que faz exatamente o mesmo. Este caminho segue respondendo por um ciclo de release, com os cabeçalhos `Deprecation: true` e `Link: <…>; rel=\"successor-version\"`.",
         "security": [
           {
             "bearerAuth": [
@@ -28280,8 +29485,9 @@
         "tags": [
           "Construtor do Portal"
         ],
+        "deprecated": true,
         "summary": "Enviar uma imagem og:image",
-        "description": "Envia a og:image de uma página (ou do SEO padrão) — a imagem que as prévias de link mostram — e retorna a URL pública, para guardar em `seo.og_image_url` (ou `seo_defaults.og_image_url`) no próximo salvamento do rascunho. PNG, JPEG ou WebP, em base64; até 2 MB de imagem, mas o corpo inteiro da requisição tem limite de 2 MB (cerca de 1,5 MB de imagem depois de codificada).",
+        "description": "**Descontinuada em 2026-11-02.** Use `POST /builder/upload_og_image`, que faz exatamente o mesmo. Este caminho segue respondendo por um ciclo de release, com os cabeçalhos `Deprecation: true` e `Link: <…>; rel=\"successor-version\"`.",
         "security": [
           {
             "bearerAuth": [
@@ -28459,8 +29665,9 @@
         "tags": [
           "Construtor do Portal"
         ],
-        "summary": "Testar um formulário do rascunho",
-        "description": "Executa a ação de um bloco Formulário como a prévia do construtor: o e-mail configurado sai de verdade (ou o webhook escolhido dispara de verdade), marcado como `preview: true`. A configuração do formulário vem no corpo. O e-mail de teste vai só para o e-mail do operador do token (um token sem operador não testa a ação de e-mail). Limitado a 20 execuções por minuto por operador, 60 por minuto e 500 por dia por organização, compartilhando o limite com a prévia do painel.",
+        "deprecated": true,
+        "summary": "Testar um formulário do rascunho (POST /form_submissions)",
+        "description": "**Descontinuada em 2026-11-02.** Use `POST /builder/test_form`, que faz exatamente o mesmo. Este caminho segue respondendo por um ciclo de release, com os cabeçalhos `Deprecation: true` e `Link: <…>; rel=\"successor-version\"`.",
         "security": [
           {
             "bearerAuth": [
@@ -28628,8 +29835,9 @@
         "tags": [
           "Construtor do Portal"
         ],
-        "summary": "Testar um botão de ação do rascunho",
-        "description": "Executa o webhook de um Botão de ação como a prévia do construtor: a requisição sai de verdade, marcada como `preview: true`, e a resposta traz o status HTTP devolvido pelo destino. Cabeçalhos podem levar valores `secret:` criados por `POST /builder/secrets`, que só abrem para a origem para a qual foram criados. Limitado a 20 execuções por minuto por operador, 60 por minuto e 500 por dia por organização.",
+        "deprecated": true,
+        "summary": "Testar um botão de ação do rascunho (POST /action_runs)",
+        "description": "**Descontinuada em 2026-11-02.** Use `POST /builder/test_action`, que faz exatamente o mesmo. Este caminho segue respondendo por um ciclo de release, com os cabeçalhos `Deprecation: true` e `Link: <…>; rel=\"successor-version\"`.",
         "security": [
           {
             "bearerAuth": [
@@ -33981,13 +35189,154 @@
         "operationId": "get-portal-settings-domain-check-slug"
       }
     },
+    "/v1/portal_settings/verify_sender": {
+      "post": {
+        "tags": [
+          "Configurações do Portal"
+        ],
+        "summary": "Verificar o e-mail remetente das notificações",
+        "description": "Pede ou reconfere a verificação no AWS SES do e-mail remetente das notificações do portal. Quando o endereço nunca foi enviado ao SES ou a verificação falhou, pede a verificação (o SES envia ao endereço um link); senão, consulta o estado atual. Retorna `status` (`pending`, `active` ou `failed`) e `verification_requested`. Substitui `POST /portal_settings/sender_identity`.",
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Situação da verificação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalSenderIdentityResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token bearer ausente ou inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Token válido, porém sem permissão para esta operação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso não encontrado na organização atual.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro inesperado no servidor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiV1Error"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post-portal-settings-verify-sender",
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "description": "Identificação do integrador. Inclua nome e e-mail de contato — ex.: `Kevin Mitnick <kmitnick@kobana.com.br>`. Usado para suporte e auditoria.",
+            "schema": {
+              "type": "string",
+              "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+            },
+            "example": "Kevin Mitnick <kmitnick@kobana.com.br>"
+          },
+          {
+            "name": "X-Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Chave única (UUID v4 recomendado) para reexecutar a mesma requisição sem efeitos colaterais. Requisições com a mesma chave em 24h retornam o resultado original.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Request-Source",
+            "in": "header",
+            "required": false,
+            "description": "Superfície que faz a chamada: `dashboard`, `api`, `cli`, `mcp` ou `other`. Fica gravada em `created_via` / `updated_via` dos registros criados ou alterados. Sem o cabeçalho, vale `api`. Valor desconhecido retorna 400.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dashboard",
+                "api",
+                "cli",
+                "mcp",
+                "other"
+              ],
+              "default": "api"
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": false,
+            "description": "Workspace em que a chamada atua: o `id` ou o `public_id` mostrados em Workspaces no dashboard. Dentro da organização do token, os dados ficam em workspaces. Pode ser omitido enquanto a organização tem um único workspace; com dois ou mais, a falta dele retorna `400 workspace_required`. Um workspace que não é da organização retorna `403 unknown_workspace`. Com um token de pessoa, só os workspaces a que ela tem acesso (proprietários da organização alcançam todos); os demais retornam `403 workspace_access_denied`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Request-Source-Other",
+            "in": "header",
+            "required": false,
+            "description": "Nome do aplicativo que faz a chamada. Obrigatório quando `X-Request-Source` é `other` (até 100 caracteres); ignorado nos demais casos. Fica gravado em `created_via_other` / `updated_via_other`.",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "example": "Zapier"
+            }
+          }
+        ]
+      }
+    },
     "/v1/portal_settings/sender_identity": {
       "post": {
         "tags": [
           "Configurações do Portal"
         ],
+        "deprecated": true,
         "summary": "Verificar remetente das notificações",
-        "description": "Pede ou confere a verificação do remetente no AWS SES. Se o endereço nunca foi enviado ao SES ou a verificação falhou, o SES envia a ele um link de confirmação; senão, consulta a situação atual.",
+        "description": "**Descontinuada em 2026-11-02.** Use `POST /portal_settings/verify_sender`, que faz exatamente o mesmo. Este caminho segue respondendo por um ciclo de release, com os cabeçalhos `Deprecation: true` e `Link: <…>; rel=\"successor-version\"`.",
         "security": [
           {
             "bearerAuth": [
