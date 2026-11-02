@@ -1,0 +1,25 @@
+crates/kobana-cli/Cargo.toml
+  s_a6378aaf095336::t_4bfb55b58c94f5 3
+crates/kobana/Cargo.toml
+  s_a6378aaf095336::t_4bfb55b58c94f5 3
+CHANGELOG.md
+  s_a6378aaf095336::t_4bfb55b58c94f5 10-11
+Cargo.lock
+  s_a6378aaf095336::t_53c2d387307eb7 1003,1018
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "141fed7466323cb9cf41f27202665a02259f547c",
+  "prompts": {},
+  "sessions": {
+    "s_a6378aaf095336": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d745fa4e-197c-487a-8e60-15258b778aaa",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Rafael Lima <contato@rafael.adm.br>"
+    }
+  }
+}
