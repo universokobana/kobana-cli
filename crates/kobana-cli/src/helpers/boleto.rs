@@ -1,7 +1,7 @@
 use clap::{Arg, Command};
 use kobana::client::{ApiRequest, KobanaClient};
 use kobana::error::KobanaError;
-use kobana::tr;
+use kobana::{tr, trf};
 use kobana::spec::HttpMethod;
 
 use super::Helper;
@@ -157,6 +157,7 @@ impl Helper for CancelarLoteBoletos {
             }
 
             let mut results = Vec::new();
+            let mut failed_status = None;
             for id in &ids {
                 let request = ApiRequest {
                     method: HttpMethod::Put,
@@ -178,19 +179,50 @@ impl Helper for CancelarLoteBoletos {
                         }));
                     }
                     Err(e) => {
+                        let status = match &e {
+                            KobanaError::Api { status, .. } => Some(*status),
+                            _ => None,
+                        };
+                        failed_status.get_or_insert(status);
                         results.push(serde_json::json!({
                             "id": id,
                             "status": "error",
+                            "status_code": status,
                             "error": e.to_string(),
                         }));
                     }
                 }
             }
 
-            println!("{}", serde_json::to_string_pretty(&serde_json::Value::Array(results))?);
-            Ok(())
+            batch_outcome(results, failed_status)
         })
     }
+}
+
+/// Print the per-id results when every cancel went through. When any failed,
+/// the run is an API error (exit 1) carrying the same results in `details`, so
+/// a script sees the failure without parsing the array. `failed_status` is the
+/// HTTP status of the first failure (`None` inside it when no response came).
+fn batch_outcome(
+    results: Vec<serde_json::Value>,
+    failed_status: Option<Option<u16>>,
+) -> Result<(), KobanaError> {
+    let Some(status) = failed_status else {
+        println!("{}", serde_json::to_string_pretty(&serde_json::Value::Array(results))?);
+        return Ok(());
+    };
+    let total = results.len();
+    let failed = results.iter().filter(|r| r["status"] == "error").count();
+    Err(KobanaError::Api {
+        // No HTTP response (network error): 0, as no status was received
+        status: status.unwrap_or(0),
+        message: trf!(
+            pt: "{failed} de {total} cancelamentos falharam",
+            en: "{failed} of {total} cancellations failed",
+            es: "{failed} de {total} cancelaciones fallaron",
+        ),
+        body: Some(serde_json::Value::Array(results)),
+    })
 }
 
 /// The ids of `--ids "1, 2,3"`, each one a path segment. Empty entries
@@ -258,6 +290,25 @@ mod tests {
         assert_eq!(parse_ids(" 1, 2,,3,").unwrap(), vec!["1", "2", "3"]);
         for bad in ["../../v2/charge/pix/x", "a?b", "1/cancel", "..", ",, ,"] {
             assert!(matches!(parse_ids(bad), Err(KobanaError::Validation(_))), "{bad}");
+        }
+    }
+
+    #[test]
+    fn a_batch_with_a_failure_is_an_api_error() {
+        let ok = serde_json::json!({"id": "1", "status": "cancelled"});
+        let bad = serde_json::json!({"id": "2", "status": "error", "status_code": 422});
+
+        assert!(batch_outcome(vec![ok.clone()], None).is_ok());
+
+        let err = batch_outcome(vec![ok.clone(), bad.clone()], Some(Some(422))).unwrap_err();
+        assert_eq!(err.exit_code(), kobana::error::ExitCode::ApiError);
+        match err {
+            KobanaError::Api { status, body, message } => {
+                assert_eq!(status, 422);
+                assert_eq!(body, Some(serde_json::json!([ok, bad])));
+                assert!(message.contains('1') && message.contains('2'), "{message}");
+            }
+            other => panic!("{other:?}"),
         }
     }
 }
