@@ -1,0 +1,25 @@
+CHANGELOG.md
+  s_a6378aaf095336::t_d701e20091fdbc 10-11
+Cargo.lock
+  s_a6378aaf095336::t_37119be4b1c196 1003,1018
+crates/kobana-cli/Cargo.toml
+  s_a6378aaf095336::t_43592e9e562084 3
+crates/kobana/Cargo.toml
+  s_a6378aaf095336::t_92757685191abe 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b0ccde7fda6297930f541ddef6722488d314afa9",
+  "prompts": {},
+  "sessions": {
+    "s_a6378aaf095336": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d745fa4e-197c-487a-8e60-15258b778aaa",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Rafael Lima <contato@rafael.adm.br>"
+    }
+  }
+}
