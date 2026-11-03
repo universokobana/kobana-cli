@@ -403,7 +403,7 @@ When adding a new feature:
 
 ## Helper Commands (`+verb`)
 
-Helpers are commands prefixed with `+` that provide multi-step workflows the dynamic commands cannot: simplified interfaces, batch operations, or multi-API composition.
+Helpers are commands prefixed with `+` that provide multi-step workflows the dynamic commands cannot: simplified interfaces, batch operations, or multi-API composition. Each helper belongs to one product (`Helper::product()`) and lives under it: `kobana <product> +verb`, never at the top level.
 
 > [!IMPORTANT]
 > **Do NOT add a helper that** wraps a single API call already available via the dynamic commands, adds flags to expose data already in the API response, or re-implements `--params`/`--json` parameters as custom flags. Helper flags must control orchestration logic.
@@ -412,9 +412,9 @@ Current helpers:
 
 | Helper | Description |
 |--------|-------------|
-| `+emitir` | Simplified bank billet creation with named flags |
-| `+cancelar-lote` | Batch cancel multiple billets by ID |
-| `+cobrar` | Simplified Pix charge creation with named flags |
+| `kobana banking +emitir` | Simplified bank billet creation with named flags |
+| `kobana banking +cancelar-lote` | Batch cancel multiple billets by ID |
+| `kobana banking +cobrar` | Simplified Pix charge creation with named flags |
 
 ## Environment Variables
 

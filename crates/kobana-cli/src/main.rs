@@ -96,25 +96,24 @@ async fn run() -> Result<(), KobanaError> {
         return completions::generate_completions(shell, &mut cmd);
     }
 
-    // Check for helper commands (+emitir, +cobrar, etc.)
-    if let Some((sub_name, sub_matches)) = matches.subcommand() {
-        if sub_name.starts_with('+') {
-            if let Some(helper) = helpers::find_helper(sub_name) {
+    // `kobana <product> +verb` helpers (+emitir, +cobrar, …)
+    if let Some((name, sub)) = matches.subcommand() {
+        if let Some((helper_name, helper_matches)) = sub.subcommand() {
+            if let Some(helper) = helpers::find_helper(name, helper_name) {
+                let loaded = product::find(&products, name).ok_or_else(|| {
+                    KobanaError::Internal(format!("product {name} is not registered"))
+                })?;
                 let env = config::resolve_environment(
                     matches.get_one::<String>("env").map(|s| s.as_str()),
                 );
-                let helper_dry_run = sub_matches.get_flag("dry-run");
-                // Helpers wrap banking endpoints (+emitir, +cobrar, …)
-                let banking = product::find(&products, "banking").ok_or_else(|| {
-                    KobanaError::Internal("banking product is not registered".into())
-                })?;
+                let helper_dry_run = helper_matches.get_flag("dry-run");
                 let token = if helper_dry_run {
-                    auth::resolve_token(banking.product, &env).await.unwrap_or_default()
+                    auth::resolve_token(loaded.product, &env).await.unwrap_or_default()
                 } else {
-                    auth::resolve_token(banking.product, &env).await?
+                    auth::resolve_token(loaded.product, &env).await?
                 };
-                let client = product::client_for(banking.product, &env, &token, helper_dry_run)?;
-                return helper.execute(&client, sub_matches).await;
+                let client = product::client_for(loaded.product, &env, &token, helper_dry_run)?;
+                return helper.execute(&client, helper_matches).await;
             }
         }
     }

@@ -15,6 +15,10 @@ impl Helper for EmitirBoleto {
         "+emitir"
     }
 
+    fn product(&self) -> &'static str {
+        "banking"
+    }
+
     fn about(&self) -> &'static str {
         tr!(
             pt: "Emitir boleto com interface simplificada",
@@ -27,7 +31,7 @@ impl Helper for EmitirBoleto {
         clap_i18n::command(
             "+emitir",
             format!(
-                "kobana +emitir --valor <VALOR> --vencimento <DATA> --nome <NOME> --cpf-cnpj <DOC> --carteira <ID> {}",
+                "kobana banking +emitir --valor <VALOR> --vencimento <DATA> --nome <NOME> --cpf-cnpj <DOC> --carteira <ID> {}",
                 clap_i18n::options_placeholder()
             ),
         )
@@ -112,6 +116,10 @@ impl Helper for CancelarLoteBoletos {
         "+cancelar-lote"
     }
 
+    fn product(&self) -> &'static str {
+        "banking"
+    }
+
     fn about(&self) -> &'static str {
         tr!(
             pt: "Cancelar múltiplos boletos de uma vez",
@@ -123,7 +131,7 @@ impl Helper for CancelarLoteBoletos {
     fn command(&self) -> Command {
         clap_i18n::command(
             "+cancelar-lote",
-            format!("kobana +cancelar-lote --ids <IDS> {}", clap_i18n::options_placeholder()),
+            format!("kobana banking +cancelar-lote --ids <IDS> {}", clap_i18n::options_placeholder()),
         )
             .about(self.about())
             .arg(Arg::new("ids").long("ids").required(true).help(tr!(pt: "IDs dos boletos separados por vírgula", en: "Comma-separated bank slip IDs", es: "IDs de los boletos separados por comas")).value_name("IDS"))

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Helpers dentro do `banking` (incompatível)** — `+emitir`, `+cancelar-lote` e `+cobrar` usam APIs do Gateway Bancário e agora ficam no produto: `kobana banking +emitir`, `kobana banking +cancelar-lote` e `kobana banking +cobrar`. As formas `kobana +emitir`, `kobana +cancelar-lote` e `kobana +cobrar` foram removidas
+
 ## [0.10.3] - 2026-11-02
 
 ### Changed

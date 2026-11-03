@@ -23,7 +23,7 @@ kobana banking charge <resource> <method> [flags]
 
 | Command | Description |
 |---------|-------------|
-| `+cobrar` | Criar cobrança Pix com interface simplificada |
+| `kobana banking +cobrar` | Criar cobrança Pix com interface simplificada |
 
 ## API Resources
 

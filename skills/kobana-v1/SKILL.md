@@ -27,8 +27,8 @@ the command — they sit directly under `banking`, next to the v2 domains
 
 | Command | Description |
 |---------|-------------|
-| `+emitir` | Emitir boleto com interface simplificada |
-| `+cancelar-lote` | Cancelar múltiplos boletos por ID |
+| `kobana banking +emitir` | Emitir boleto com interface simplificada |
+| `kobana banking +cancelar-lote` | Cancelar múltiplos boletos por ID |
 
 ## API Resources
 

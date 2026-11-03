@@ -103,6 +103,11 @@ fn build_product_command(loaded: &LoadedProduct) -> Command {
         cmd = cmd.subcommand(build_method_command(endpoint, &path));
     }
 
+    // Helpers (`kobana banking +emitir`, …)
+    for helper in helpers::for_product(loaded.product.slug) {
+        cmd = cmd.subcommand(helper.command());
+    }
+
     cmd.subcommand(auth_command(&format!("{path} auth")))
 }
 
@@ -331,11 +336,6 @@ pub fn build_root_command(products: &[LoadedProduct]) -> Command {
         ),
     );
 
-    // Add helper commands
-    for helper in helpers::all_helpers() {
-        root = root.subcommand(helper.command());
-    }
-
     // Add completions command
     root = root.subcommand(
         clap_i18n::command("completions", format!("kobana completions <{}>", tr!(pt: "SHELL", en: "SHELL", es: "SHELL")))
@@ -495,4 +495,27 @@ pub fn auth_command(path: &str) -> Command {
             en: "Export the credentials as JSON",
             es: "Exporta las credenciales en JSON",
         )))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn helpers_live_under_their_product_only() {
+        let products = product::load_all().unwrap();
+        let root = build_root_command(&products);
+        for helper in helpers::all_helpers() {
+            let name = helper.name();
+            assert!(root.find_subcommand(name).is_none(), "{name} at the top level");
+            for cmd in root.get_subcommands() {
+                let found = cmd.find_subcommand(name).is_some();
+                assert_eq!(found, cmd.get_name() == helper.product(), "{name} under {}", cmd.get_name());
+            }
+        }
+        let banking = root.find_subcommand("banking").unwrap();
+        for name in ["+emitir", "+cancelar-lote", "+cobrar"] {
+            assert!(banking.find_subcommand(name).is_some(), "{name} missing under banking");
+        }
+    }
 }

@@ -15,6 +15,10 @@ impl Helper for CobrarPix {
         "+cobrar"
     }
 
+    fn product(&self) -> &'static str {
+        "banking"
+    }
+
     fn about(&self) -> &'static str {
         tr!(
             pt: "Criar cobrança Pix com interface simplificada",
@@ -27,7 +31,7 @@ impl Helper for CobrarPix {
         clap_i18n::command(
             "+cobrar",
             format!(
-                "kobana +cobrar --valor <VALOR> --conta-pix <UID> {}",
+                "kobana banking +cobrar --valor <VALOR> --conta-pix <UID> {}",
                 clap_i18n::options_placeholder()
             ),
         )
