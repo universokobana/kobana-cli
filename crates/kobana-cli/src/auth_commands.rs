@@ -226,7 +226,7 @@ pub async fn handle_auth(
 ) -> Result<(), KobanaError> {
     let env = config::resolve_environment(
         root_matches.get_one::<String>("env").map(|s| s.as_str()),
-    );
+    )?;
     match matches.subcommand() {
         Some(("login", m)) => handle_login(product, m, &env, root_matches.get_flag("verbose")).await,
         Some(("logout", _)) => handle_logout(product, &env),

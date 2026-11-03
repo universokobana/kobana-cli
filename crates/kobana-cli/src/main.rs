@@ -105,7 +105,7 @@ async fn run() -> Result<(), KobanaError> {
                 })?;
                 let env = config::resolve_environment(
                     matches.get_one::<String>("env").map(|s| s.as_str()),
-                );
+                )?;
                 let helper_dry_run = helper_matches.get_flag("dry-run");
                 let token = if helper_dry_run {
                     auth::resolve_token(loaded.product, &env).await.unwrap_or_default()
@@ -134,7 +134,7 @@ async fn run() -> Result<(), KobanaError> {
     // Resolve environment
     let env = config::resolve_environment(
         matches.get_one::<String>("env").map(|s| s.as_str()),
-    );
+    )?;
 
     // For dry-run, we don't need auth
     let dry_run = matches.get_flag("dry-run");
