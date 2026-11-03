@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.2] - 2026-11-02
+
 ### Fixed
 
 - **Mensagem dos erros do kadu** — erros no formato `{"error": {"code", "message"}}` mostravam "erro desconhecido"; agora mostram a mensagem que a API mandou
