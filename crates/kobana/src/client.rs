@@ -274,12 +274,7 @@ impl KobanaClient {
         };
 
         if status >= 400 {
-            let message = body["error"]
-                .as_str()
-                .or_else(|| body["errors"][0]["message"].as_str())
-                .or_else(|| body["message"].as_str())
-                .unwrap_or(tr!(pt: "erro desconhecido", en: "unknown error", es: "error desconocido"))
-                .to_string();
+            let message = error_message(&body);
 
             return Err(KobanaError::Api {
                 status,
@@ -296,9 +291,34 @@ impl KobanaClient {
     }
 }
 
+/// The human message in an error body. The products answer in different
+/// shapes: `{"error": "..."}`, `{"error": {"code", "message"}}` (kadu),
+/// `{"errors": [{"message"}]}` and `{"message": "..."}`.
+fn error_message(body: &serde_json::Value) -> String {
+    body["error"]
+        .as_str()
+        .or_else(|| body["error"]["message"].as_str())
+        .or_else(|| body["errors"][0]["message"].as_str())
+        .or_else(|| body["message"].as_str())
+        .unwrap_or(tr!(pt: "erro desconhecido", en: "unknown error", es: "error desconocido"))
+        .to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn error_message_reads_every_product_shape() {
+        use serde_json::json;
+        assert_eq!(error_message(&json!({"error": "invalid_token"})), "invalid_token");
+        assert_eq!(
+            error_message(&json!({"error": {"code": "AS_UNAVAILABLE", "message": "Retry shortly."}})),
+            "Retry shortly."
+        );
+        assert_eq!(error_message(&json!({"errors": [{"message": "bad"}]})), "bad");
+        assert_eq!(error_message(&json!({"message": "nope"})), "nope");
+    }
 
     #[test]
     fn multipart_text_fields_keep_strings_and_encode_the_rest() {
