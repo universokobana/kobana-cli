@@ -139,11 +139,11 @@ impl Helper for CancelarLoteBoletos {
         client: &'a KobanaClient,
         matches: &'a clap::ArgMatches,
     ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), KobanaError>> + Send + 'a>> {
-        let ids_str = matches.get_one::<String>("ids").unwrap().clone();
+        let ids = parse_ids(matches.get_one::<String>("ids").unwrap());
         let dry_run = matches.get_flag("dry-run");
 
         Box::pin(async move {
-            let ids: Vec<&str> = ids_str.split(',').map(|s| s.trim()).collect();
+            let ids = ids?;
 
             if dry_run {
                 let output = serde_json::json!({
@@ -193,6 +193,32 @@ impl Helper for CancelarLoteBoletos {
     }
 }
 
+/// The ids of `--ids "1, 2,3"`, each one a path segment. Empty entries
+/// (`1,,2`, a trailing comma) are dropped; a bad id fails the whole batch
+/// before anything is sent.
+fn parse_ids(value: &str) -> Result<Vec<String>, KobanaError> {
+    let ids: Vec<String> = value
+        .split(',')
+        .map(str::trim)
+        .filter(|id| !id.is_empty())
+        .map(String::from)
+        .collect();
+    if ids.is_empty() {
+        return Err(KobanaError::Validation(
+            tr!(
+                pt: "--ids não tem nenhum id",
+                en: "--ids has no id",
+                es: "--ids no tiene ningún id",
+            )
+            .to_string(),
+        ));
+    }
+    for id in &ids {
+        kobana::validate::validate_identifier(id, "id")?;
+    }
+    Ok(ids)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -224,6 +250,14 @@ mod tests {
         for (valor, carteira) in [("150,50", "7"), ("150.50", "zz")] {
             let err = request_body(&emitir(&emitir_args(valor, carteira))).unwrap_err();
             assert!(matches!(err, KobanaError::Validation(_)), "{valor} {carteira}");
+        }
+    }
+
+    #[test]
+    fn cancel_ids_are_path_segments_and_empty_ones_are_dropped() {
+        assert_eq!(parse_ids(" 1, 2,,3,").unwrap(), vec!["1", "2", "3"]);
+        for bad in ["../../v2/charge/pix/x", "a?b", "1/cancel", "..", ",, ,"] {
+            assert!(matches!(parse_ids(bad), Err(KobanaError::Validation(_))), "{bad}");
         }
     }
 }
