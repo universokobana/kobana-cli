@@ -1000,7 +1000,7 @@ dependencies = [
 
 [[package]]
 name = "kobana"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "anyhow",
  "percent-encoding",
@@ -1015,7 +1015,7 @@ dependencies = [
 
 [[package]]
 name = "kobana-cli"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "aes-gcm",
  "anyhow",
