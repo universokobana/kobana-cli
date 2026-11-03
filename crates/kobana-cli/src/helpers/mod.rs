@@ -15,7 +15,6 @@ pub trait Helper: Send + Sync {
     /// Slug of the product the helper lives under (`kobana <product> +verb`)
     fn product(&self) -> &'static str;
     /// Short description
-    #[allow(dead_code)]
     fn about(&self) -> &'static str;
     /// Build the clap Command for this helper
     fn command(&self) -> clap::Command;

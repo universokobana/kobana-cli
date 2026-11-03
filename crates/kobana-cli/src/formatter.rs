@@ -30,8 +30,9 @@ pub fn filter_fields(value: &serde_json::Value, fields: &str) -> serde_json::Val
                 arr.iter().map(|item| filter_object(item, &field_list)).collect();
             serde_json::Value::Array(filtered)
         }
+        // An object may wrap its records in `data`: filter_object looks inside
         serde_json::Value::Object(_) => filter_object(value, &field_list),
-        // If there's a "data" wrapper, filter inside it
+        // Scalars have no fields to pick
         other => other.clone(),
     }
 }

@@ -143,9 +143,9 @@ impl KobanaClient {
 
     /// Client that presents a certificate during the TLS handshake.
     ///
-    /// `pem` must hold the certificate chain and its private key. Products
-    /// behind mTLS (inbox) require this; the fingerprint of the presented
-    /// certificate is what their edge forwards to the origin.
+    /// `pem` must hold the certificate chain and its private key. For a
+    /// product whose edge terminates mTLS (`Product::client_cert_env`); none
+    /// does today — inbox did until its API dropped mTLS on 2026-10-31.
     pub fn with_client_cert(base_url: &str, token: &str, pem: &[u8]) -> Result<Self, KobanaError> {
         let identity = reqwest::Identity::from_pem(pem).map_err(|e| {
             KobanaError::Auth(trf!(

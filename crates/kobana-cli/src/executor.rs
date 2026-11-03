@@ -148,7 +148,6 @@ pub async fn send(client: &KobanaClient, request: &ApiRequest, verbose: bool) ->
 pub async fn execute(
     client: &KobanaClient,
     endpoint: &ResolvedEndpoint,
-    _method_matches: &clap::ArgMatches,
     root_matches: &clap::ArgMatches,
 ) -> Result<(), KobanaError> {
     let params_json = json_arg(root_matches, "params")?;

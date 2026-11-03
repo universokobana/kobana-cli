@@ -420,41 +420,27 @@ pub fn update_json_flag(update_matches: &clap::ArgMatches) -> Result<bool, koban
 pub fn resolve_endpoint<'a>(
     matches: &clap::ArgMatches,
     products: &'a [LoadedProduct],
-) -> Option<(&'a LoadedProduct, &'a ResolvedEndpoint, clap::ArgMatches)> {
+) -> Option<(&'a LoadedProduct, &'a ResolvedEndpoint)> {
     let (product_name, product_matches) = matches.subcommand()?;
 
     // Special commands (schema, auth, update, completions, help, helpers) are not products
     let loaded = product::find(products, product_name)?;
 
-    let (endpoint, method_matches) = resolve_in_tree(&loaded.tree, product_matches)?;
-    Some((loaded, endpoint, method_matches))
+    let endpoint = resolve_in_tree(&loaded.tree, product_matches)?;
+    Some((loaded, endpoint))
 }
 
-fn resolve_in_tree<'a>(
-    node: &'a CommandNode,
-    matches: &clap::ArgMatches,
-) -> Option<(&'a ResolvedEndpoint, clap::ArgMatches)> {
-    if let Some((sub_name, sub_matches)) = matches.subcommand() {
-        // Check if it's a child node (resource group)
-        if let Some(child) = node.children.get(sub_name) {
-            return resolve_in_tree(child, sub_matches);
-        }
+fn resolve_in_tree<'a>(node: &'a CommandNode, matches: &clap::ArgMatches) -> Option<&'a ResolvedEndpoint> {
+    let (sub_name, sub_matches) = matches.subcommand()?;
 
-        // Check if it's an endpoint method
-        for endpoint in &node.endpoints {
-            if endpoint.cli_method == sub_name {
-                // `<action> create`, the line before it became an action
-                if let Some(("create", legacy)) = sub_matches.subcommand() {
-                    if endpoint.legacy_create {
-                        return Some((endpoint, legacy.clone()));
-                    }
-                }
-                return Some((endpoint, sub_matches.clone()));
-            }
-        }
+    // A child node (resource group)
+    if let Some(child) = node.children.get(sub_name) {
+        return resolve_in_tree(child, sub_matches);
     }
 
-    None
+    // An endpoint method; its hidden `<action> create` (the line before it
+    // became an action) runs the same endpoint
+    node.endpoints.iter().find(|endpoint| endpoint.cli_method == sub_name)
 }
 
 /// `<path> login|logout|status|export` — the product's credentials. `path`

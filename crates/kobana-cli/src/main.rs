@@ -115,7 +115,7 @@ async fn run() -> Result<(), KobanaError> {
     }
 
     // Resolve endpoint
-    let (loaded_product, endpoint, method_matches) =
+    let (loaded_product, endpoint) =
         commands::resolve_endpoint(&matches, &products).ok_or_else(|| {
             KobanaError::Validation(
                 kobana::tr!(
@@ -139,7 +139,7 @@ async fn run() -> Result<(), KobanaError> {
     let client = product::client_for(loaded_product.product, &env, &token, dry_run)?;
 
     // Execute
-    executor::execute(&client, endpoint, &method_matches, &matches).await
+    executor::execute(&client, endpoint, &matches).await
 }
 
 /// The product's token, or none for a dry run. A dry run sends nothing and

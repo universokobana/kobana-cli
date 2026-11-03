@@ -2,9 +2,11 @@
 //! progress lines and error messages. Machine-facing output (JSON keys, exit
 //! codes, command and flag names) never changes with it.
 //!
-//! The language comes from `KOBANA_LANG`, then the usual locale variables
-//! (`LC_ALL`, `LC_MESSAGES`, `LANG`), then the operating system. Portuguese and
-//! Spanish locales get their language; everything else gets English.
+//! The language comes from `--lang` (read by the CLI from the raw arguments,
+//! before any command is built, and fixed with [`set_lang`]), then
+//! `KOBANA_LANG`, then the usual locale variables (`LC_ALL`, `LC_MESSAGES`,
+//! `LANG`), then the operating system. Portuguese and Spanish locales get their
+//! language; everything else gets English.
 //!
 //! Strings are written in place, all three side by side:
 //!
