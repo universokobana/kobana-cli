@@ -258,7 +258,7 @@ kobana banking charge pix list --page-all --page-limit 5
 | `KOBANA_<PRODUTO>_TOKEN` | Token Bearer de um produto (maior prioridade) |
 | `KOBANA_CREDENTIALS_FILE` | Caminho para arquivo JSON de credenciais OAuth (vale só para o `product` e o `environment` que ele indica) |
 | `KOBANA_CLIENT_ID` | OAuth client ID |
-| `KOBANA_CLIENT_SECRET` | OAuth client secret |
+| `KOBANA_CLIENT_SECRET` | OAuth client secret: escolhe o fluxo Client Credentials (só no `banking`, com client ID) |
 | `KOBANA_CONFIG_DIR` | Diretorio de configuracao (default: `~/.config/kobana`) |
 | `KOBANA_ENVIRONMENT` | `sandbox` (default) ou `production` |
 | `KOBANA_LOG` | Nivel de log para stderr (ex: `kobana=debug`) |

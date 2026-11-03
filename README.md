@@ -633,7 +633,7 @@ OpenAPI specs embutidos. O caminho segue a mesma forma do comando:
 | `KOBANA_WORKSPACE_ID` | Espaço de trabalho enviado em `X-Workspace-Id` pelo `finance` (obrigatório), pelo `dashboards` e pelo `dunning` |
 | `KOBANA_CREDENTIALS_FILE` | Caminho para um arquivo JSON de credenciais (o formato que `auth export` imprime). Vale só para o `product` (sem ele, `banking`) e o `environment` que o arquivo indica |
 | `KOBANA_CLIENT_ID` | OAuth client ID do login (default: `kobana-cli`) |
-| `KOBANA_CLIENT_SECRET` | OAuth client secret (opcional com PKCE) |
+| `KOBANA_CLIENT_SECRET` | OAuth client secret. Como `--client-secret`, escolhe o fluxo Client Credentials (só no `banking`, com `KOBANA_CLIENT_ID` ou `--client-id`); o login de uma pessoa (PKCE) não usa secret |
 | `KOBANA_CONFIG_DIR` | Diretório de config (default: `~/.config/kobana`) |
 | `KOBANA_ENVIRONMENT` | `production` (default), `sandbox` ou `development` |
 | `KOBANA_LOG` | Nível de log para stderr (ex: `kobana=debug`) |

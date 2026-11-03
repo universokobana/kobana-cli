@@ -99,7 +99,7 @@ kobana banking charge pix list --params '{"per_page": 5}'
 | `KOBANA_<PRODUCT>_TOKEN` | A product's Bearer token (highest priority), e.g. `KOBANA_BILLING_TOKEN`; Kadu also reads `KADU_TOKEN` |
 | `KOBANA_CREDENTIALS_FILE` | Path to a credentials JSON file (the shape `auth export` prints), used only for the `product` (absent = `banking`) and `environment` it names |
 | `KOBANA_CLIENT_ID` | OAuth client ID |
-| `KOBANA_CLIENT_SECRET` | OAuth client secret |
+| `KOBANA_CLIENT_SECRET` | OAuth client secret. Like `--client-secret`, it selects the Client Credentials flow (banking only, with a client ID) |
 | `KOBANA_WORKSPACE_ID` | Workspace sent as `X-Workspace-Id` by `finance` (required) and `dashboards` |
 | `KOBANA_ENVIRONMENT` | `production` (default), `sandbox` or `development` |
 | `KOBANA_CONFIG_DIR` | Override config directory (default: `~/.config/kobana`) |

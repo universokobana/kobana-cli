@@ -259,20 +259,38 @@ async fn handle_login(
 ) -> Result<(), KobanaError> {
     let interactive = is_terminal();
     let slug = product.slug;
-    let client_id = matches.get_one::<String>("client-id").cloned();
-    let client_secret = matches.get_one::<String>("client-secret").cloned();
+    // Flags win over their env vars, and both choose the flow the same way
+    let client_id = matches
+        .get_one::<String>("client-id")
+        .cloned()
+        .or_else(|| std::env::var("KOBANA_CLIENT_ID").ok().filter(|v| !v.is_empty()));
+    let client_secret = matches
+        .get_one::<String>("client-secret")
+        .cloned()
+        .or_else(|| std::env::var("KOBANA_CLIENT_SECRET").ok().filter(|v| !v.is_empty()));
 
-    // Client credentials: an application token, not a person's. The Conta
-    // Kobana only binds tokens to a product's `resource` on behalf of a user,
-    // so this flow is banking's legacy API token.
-    if let (Some(id), Some(secret)) = (&client_id, &client_secret) {
+    // A secret means client credentials: an application token, not a
+    // person's. The Conta Kobana only binds tokens to a product's `resource`
+    // on behalf of a user, so this flow is banking's legacy API token. The
+    // login of a person (PKCE) takes no secret.
+    if let Some(secret) = &client_secret {
         if slug != "banking" {
             return Err(KobanaError::Validation(trf!(
-                pt: "--client-secret (client credentials) só vale para banking; {slug} exige o login de uma pessoa",
-                en: "--client-secret (client credentials) only works for banking; {slug} requires a person's login",
-                es: "--client-secret (client credentials) solo vale para banking; {slug} exige el inicio de sesión de una persona",
+                pt: "--client-secret/KOBANA_CLIENT_SECRET (client credentials) só vale para banking; {slug} exige o login de uma pessoa",
+                en: "--client-secret/KOBANA_CLIENT_SECRET (client credentials) only works for banking; {slug} requires a person's login",
+                es: "--client-secret/KOBANA_CLIENT_SECRET (client credentials) solo vale para banking; {slug} exige el inicio de sesión de una persona",
             )));
         }
+        let Some(id) = &client_id else {
+            return Err(KobanaError::Validation(
+                tr!(
+                    pt: "--client-secret/KOBANA_CLIENT_SECRET exige --client-id ou KOBANA_CLIENT_ID",
+                    en: "--client-secret/KOBANA_CLIENT_SECRET requires --client-id or KOBANA_CLIENT_ID",
+                    es: "--client-secret/KOBANA_CLIENT_SECRET exige --client-id o KOBANA_CLIENT_ID",
+                )
+                .into(),
+            ));
+        };
         eprintln!(
             "{}",
             tr!(
@@ -316,11 +334,7 @@ async fn handle_login(
     }
 
     // Priority: --client-id flag > KOBANA_CLIENT_ID env > default "kobana-cli"
-    let id = client_id
-        .or_else(|| std::env::var("KOBANA_CLIENT_ID").ok().filter(|v| !v.is_empty()))
-        .unwrap_or_else(|| oauth::DEFAULT_CLIENT_ID.to_string());
-    // Secret is optional with PKCE
-    let secret = client_secret.or_else(|| std::env::var("KOBANA_CLIENT_SECRET").ok().filter(|v| !v.is_empty()));
+    let id = client_id.unwrap_or_else(|| oauth::DEFAULT_CLIENT_ID.to_string());
 
     let account = oauth::authorization_server(env);
     eprintln!(
@@ -333,7 +347,6 @@ async fn handle_login(
     );
     let response = oauth::authorization_code_flow(
         &id,
-        secret.as_deref(),
         &scopes.join(" "),
         resource.api,
         env,

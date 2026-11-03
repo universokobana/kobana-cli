@@ -425,7 +425,7 @@ Current helpers:
 | `KOBANA_<PRODUCT>_TOKEN` | A product's Bearer token (highest priority): `KOBANA_BANKING_TOKEN`, `KOBANA_FINANCE_TOKEN`… Kadu also reads `KADU_TOKEN` (`Product::token_env_aliases`) |
 | `KOBANA_CREDENTIALS_FILE` | Path to a credentials JSON file (the shape `auth export` prints). Used only for the product and environment it names in `product` (absent = `banking`) and `environment` (absent = any) |
 | `KOBANA_CLIENT_ID` | OAuth client ID (for `kobana <product> auth login`, default `kobana-cli`) |
-| `KOBANA_CLIENT_SECRET` | OAuth client secret |
+| `KOBANA_CLIENT_SECRET` | OAuth client secret. Like `--client-secret`, it selects the Client Credentials flow (banking only, with a client ID); the PKCE login sends no secret |
 | `KOBANA_ACCOUNT_URL` | Overrides the Conta Kobana (authorization server) URL |
 | `KOBANA_WORKSPACE_ID` | Workspace sent as `X-Workspace-Id` by `finance` (required) and `dashboards` (optional). A value in `--params` wins |
 

@@ -486,9 +486,9 @@ pub fn auth_command(path: &str) -> Command {
                     Arg::new("client-secret")
                         .long("client-secret")
                         .help(tr!(
-                            pt: "Client secret OAuth (só para o fluxo Client Credentials, no banking)",
-                            en: "OAuth client secret (only for the Client Credentials flow, in banking)",
-                            es: "Client secret OAuth (solo para el flujo Client Credentials, en banking)",
+                            pt: "Client secret OAuth: usa o fluxo Client Credentials, só no banking e com --client-id (também: KOBANA_CLIENT_SECRET)",
+                            en: "OAuth client secret: uses the Client Credentials flow, banking only, with --client-id (also: KOBANA_CLIENT_SECRET)",
+                            es: "Client secret OAuth: usa el flujo Client Credentials, solo en banking y con --client-id (también: KOBANA_CLIENT_SECRET)",
                         ))
                         .value_name("SECRET"),
                 )

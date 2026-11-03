@@ -85,15 +85,32 @@ pub fn product_scopes(metadata: &serde_json::Value, product: &str) -> Vec<String
     scopes
 }
 
-async fn fetch_json(url: &str) -> Result<serde_json::Value, String> {
-    let client = reqwest::Client::builder()
-        .user_agent(format!("kobana-cli/{}", env!("CARGO_PKG_VERSION")))
-        .timeout(std::time::Duration::from_secs(15))
+/// The `User-Agent` of every request the CLI sends to the Conta Kobana
+fn user_agent() -> String {
+    format!("kobana-cli/{}", env!("CARGO_PKG_VERSION"))
+}
+
+/// The HTTP client of every OAuth request (discovery, token, refresh):
+/// identified, with a timeout, and asking for JSON
+fn http_client() -> Result<reqwest::Client, KobanaError> {
+    let mut headers = reqwest::header::HeaderMap::new();
+    headers.insert(reqwest::header::ACCEPT, reqwest::header::HeaderValue::from_static("application/json"));
+    reqwest::Client::builder()
+        .user_agent(user_agent())
+        .default_headers(headers)
+        .timeout(std::time::Duration::from_secs(30))
         .build()
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| KobanaError::Internal(trf!(
+            pt: "não foi possível criar o cliente HTTP: {e}",
+            en: "failed to build client: {e}",
+            es: "no se pudo crear el cliente HTTP: {e}",
+        )))
+}
+
+async fn fetch_json(url: &str) -> Result<serde_json::Value, String> {
+    let client = http_client().map_err(|e| e.to_string())?;
     let response = client
         .get(url)
-        .header("Accept", "application/json")
         .send()
         .await
         .map_err(|e| e.to_string())?;
@@ -786,10 +803,11 @@ fn generate_code_challenge(verifier: &str) -> String {
     base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(digest)
 }
 
-/// Authorization Code flow with PKCE: open browser, listen for callback
+/// Authorization Code flow with PKCE: open browser, listen for callback.
+/// The CLI is a public client: no secret, which it could not keep, and which
+/// a refresh would need again.
 pub async fn authorization_code_flow(
     client_id: &str,
-    client_secret: Option<&str>,
     scopes: &str,
     resource: &str,
     env: &Environment,
@@ -859,7 +877,6 @@ pub async fn authorization_code_flow(
     exchange_code(
         &token_url,
         client_id,
-        client_secret,
         &code,
         &redirect_uri,
         &code_verifier,
@@ -877,7 +894,7 @@ pub async fn client_credentials_flow(
 ) -> Result<TokenResponse, KobanaError> {
     let token_url = oauth_token_url(env);
 
-    let client = reqwest::Client::new();
+    let client = http_client()?;
     let response = client
         .post(&token_url)
         .form(&[
@@ -931,7 +948,7 @@ pub async fn refresh_token(
         form.push(("resource", resource));
     }
 
-    let client = reqwest::Client::new();
+    let client = http_client()?;
     let response = client
         .post(&token_url)
         .form(&form)
@@ -962,28 +979,19 @@ pub async fn refresh_token(
         )))
 }
 
-#[allow(clippy::too_many_arguments)]
 async fn exchange_code(
     token_url: &str,
     client_id: &str,
-    client_secret: Option<&str>,
     code: &str,
     redirect_uri: &str,
     code_verifier: &str,
     resource: &str,
     verbose: bool,
 ) -> Result<TokenResponse, KobanaError> {
-    let user_agent = format!("kobana-cli/{}", env!("CARGO_PKG_VERSION"));
-    let client = reqwest::Client::builder()
-        .user_agent(&user_agent)
-        .build()
-        .map_err(|e| KobanaError::Internal(trf!(
-            pt: "não foi possível criar o cliente HTTP: {e}",
-            en: "failed to build client: {e}",
-            es: "no se pudo crear el cliente HTTP: {e}",
-        )))?;
+    let user_agent = user_agent();
+    let client = http_client()?;
 
-    let mut params = vec![
+    let params = [
         ("grant_type", "authorization_code"),
         ("client_id", client_id),
         ("code", code),
@@ -992,13 +1000,6 @@ async fn exchange_code(
         ("resource", resource),
     ];
 
-    // Only include client_secret if provided (not needed for PKCE public clients)
-    let secret_string;
-    if let Some(secret) = client_secret {
-        secret_string = secret.to_string();
-        params.push(("client_secret", &secret_string));
-    }
-
     if verbose {
         eprintln!("\n--- POST {token_url} ---");
         eprintln!("User-Agent: {user_agent}");
@@ -1006,7 +1007,7 @@ async fn exchange_code(
         eprintln!("Accept: application/json");
         eprintln!("{}", tr!(pt: "Corpo (form):", en: "Body (form):", es: "Cuerpo (form):"));
         for (k, v) in &params {
-            let display = if *k == "code" || *k == "code_verifier" || *k == "client_secret" {
+            let display = if *k == "code" || *k == "code_verifier" {
                 redact(v)
             } else {
                 v.to_string()
@@ -1018,7 +1019,6 @@ async fn exchange_code(
 
     let response = client
         .post(token_url)
-        .header("Accept", "application/json")
         .form(&params)
         .send()
         .await
