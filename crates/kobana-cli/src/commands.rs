@@ -376,6 +376,8 @@ pub fn build_root_command(products: &[LoadedProduct]) -> Command {
                     )),
             )
             .arg(
+                // Shadows the global `--json <JSON>` (same id and long name,
+                // which clap requires); read it with `update_json_flag`
                 Arg::new("json")
                     .long("json")
                     .action(clap::ArgAction::SetTrue)
@@ -388,6 +390,23 @@ pub fn build_root_command(products: &[LoadedProduct]) -> Command {
     );
 
     root.subcommand(clap_i18n::help_subcommand())
+}
+
+/// `kobana update --json`. Its flag shares the id of the global
+/// `--json <JSON>`, so `kobana --json '{}' update` hands it a string, which
+/// `get_flag` would panic on.
+pub fn update_json_flag(update_matches: &clap::ArgMatches) -> Result<bool, kobana::error::KobanaError> {
+    match update_matches.try_get_one::<bool>("json") {
+        Ok(flag) => Ok(flag.copied().unwrap_or(false)),
+        Err(_) => Err(kobana::error::KobanaError::Validation(
+            tr!(
+                pt: "`update` não recebe --json <JSON>; para a saída em JSON use `kobana update --json`",
+                en: "`update` takes no --json <JSON>; for JSON output use `kobana update --json`",
+                es: "`update` no recibe --json <JSON>; para la salida en JSON use `kobana update --json`",
+            )
+            .to_string(),
+        )),
+    }
 }
 
 /// Resolve which endpoint was matched from the clap matches
@@ -500,6 +519,22 @@ pub fn auth_command(path: &str) -> Command {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn update_json_flag_does_not_clash_with_the_global_json() {
+        let products = product::load_all().unwrap();
+        let update = |args: &[&str]| {
+            let matches = build_root_command(&products).try_get_matches_from(args).unwrap();
+            update_json_flag(matches.subcommand().unwrap().1)
+        };
+        assert!(!update(&["kobana", "update"]).unwrap());
+        assert!(update(&["kobana", "update", "--json"]).unwrap());
+        // The global `--json <JSON>` reaches `update` as a string: an error, not a panic
+        assert!(matches!(
+            update(&["kobana", "--json", "{}", "update"]),
+            Err(kobana::error::KobanaError::Validation(_))
+        ));
+    }
 
     #[test]
     fn helpers_live_under_their_product_only() {
