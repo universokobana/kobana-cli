@@ -79,7 +79,7 @@ credentials with the banking product:
 export KOBANA_WORKSPACE_ID=WORKSPACE_ID
 
 kobana dashboards data-sources list --fields "id,name,status"
-kobana dashboards entities records get --params '{"id": "ENTITY_ID"}'
+kobana dashboards entities records list --params '{"id": "ENTITY_ID"}'
 
 # Mutations: always dry-run first
 kobana dashboards data-sources sync --dry-run --params '{"id": "DATA_SOURCE_ID"}'

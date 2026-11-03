@@ -74,7 +74,7 @@ pub async fn execute(
         .unwrap_or(100);
 
     // Resolve path parameters from --params
-    let path = resolve_path_template(&endpoint.path_template, &params_json)?;
+    let (path, path_keys) = resolve_path_template(&endpoint.path_template, &params_json)?;
 
     // Header parameters travel in --params too; move them out of the query
     let mut params_json = params_json;
@@ -82,15 +82,7 @@ pub async fn execute(
 
     // Handle auto-pagination (skip if dry-run)
     if page_all && !dry_run && endpoint.http_method == HttpMethod::Get {
-        // Strip path params from query params
-        let query_params = params_json.map(|mut params| {
-            if let Some(obj) = params.as_object_mut() {
-                for param_name in &endpoint.path_params {
-                    obj.remove(param_name);
-                }
-            }
-            params
-        });
+        let query_params = query_without(params_json, &path_keys);
 
         return pagination::paginate_all(
             client,
@@ -126,15 +118,8 @@ pub async fn execute(
         None
     };
 
-    // Strip path params from query params (they're already in the URL)
-    let query_params = params_json.map(|mut params| {
-        if let Some(obj) = params.as_object_mut() {
-            for param_name in &endpoint.path_params {
-                obj.remove(param_name);
-            }
-        }
-        params
-    });
+    // The keys that went into the path stay out of the query
+    let query_params = query_without(params_json, &path_keys);
 
     let api_request = ApiRequest {
         method: endpoint.http_method,
@@ -283,59 +268,80 @@ fn take_header_params(
     Ok(headers)
 }
 
-/// Replace path template parameters with values from --params
+/// The `{name}` placeholders of a path template, in order
+fn template_params(template: &str) -> Vec<&str> {
+    template
+        .split('{')
+        .skip(1)
+        .filter_map(|rest| rest.split_once('}').map(|(name, _)| name))
+        .collect()
+}
+
+/// Replace path template parameters with values from --params. Returns the
+/// path and the `--params` keys it consumed, which must leave the query.
+///
+/// A `*_uid`/`*_id` placeholder missing from `--params` falls back to `uid`
+/// or `id` — but only to one that is not a placeholder of the same template:
+/// in `/charge/pix/{pix_uid}/commands/{uid}` the `uid` is the command's, never
+/// the Pix's.
 fn resolve_path_template(
     template: &str,
     params: &Option<serde_json::Value>,
-) -> Result<String, KobanaError> {
-    let mut path = template.to_string();
+) -> Result<(String, Vec<String>), KobanaError> {
+    let placeholders = template_params(template);
+    let lookup = |key: &str| params.as_ref().and_then(|p| p.get(key));
 
-    // Find all {param} placeholders
-    let mut start = 0;
-    while let Some(open) = path[start..].find('{') {
-        let open = start + open;
-        if let Some(close) = path[open..].find('}') {
-            let close = open + close;
-            let param_name = &path[open + 1..close];
-
-            // Look up value in params
-            let value = params
-                .as_ref()
-                .and_then(|p| p.get(param_name))
-                .or_else(|| {
-                    // Also try common aliases: uid, id
-                    params.as_ref().and_then(|p| {
-                        if param_name.ends_with("_uid") || param_name.ends_with("_id") {
-                            p.get("uid").or_else(|| p.get("id"))
-                        } else {
-                            None
-                        }
-                    })
-                })
-                .ok_or_else(|| {
-                    KobanaError::Validation(trf!(
-                        pt: "falta o parâmetro de caminho obrigatório '{param_name}' em --params",
-                        en: "missing required path parameter '{param_name}' in --params",
-                        es: "falta el parámetro de ruta obligatorio '{param_name}' en --params",
-                    ))
-                })?;
-
-            let value_str = match value {
-                serde_json::Value::String(s) => s.clone(),
-                serde_json::Value::Number(n) => n.to_string(),
-                other => other.to_string().trim_matches('"').to_string(),
-            };
-
-            validate_identifier(&value_str, param_name)?;
-
-            path = format!("{}{}{}", &path[..open], value_str, &path[close + 1..]);
-            start = open + value_str.len();
+    // Built segment by segment, so a value is never read as a placeholder
+    let mut path = String::new();
+    let mut rest = template;
+    let mut used = Vec::new();
+    for param_name in &placeholders {
+        let fallbacks: &[&str] = if param_name.ends_with("_uid") || param_name.ends_with("_id") {
+            &["uid", "id"]
         } else {
-            break;
-        }
-    }
+            &[]
+        };
+        let key = std::iter::once(*param_name)
+            .chain(fallbacks.iter().copied().filter(|f| !placeholders.contains(f)))
+            .find(|key| lookup(key).is_some())
+            .ok_or_else(|| {
+                KobanaError::Validation(trf!(
+                    pt: "falta o parâmetro de caminho obrigatório '{param_name}' em --params",
+                    en: "missing required path parameter '{param_name}' in --params",
+                    es: "falta el parámetro de ruta obligatorio '{param_name}' en --params",
+                ))
+            })?;
 
-    Ok(path)
+        let value_str = match lookup(key).unwrap() {
+            serde_json::Value::String(s) => s.clone(),
+            serde_json::Value::Number(n) => n.to_string(),
+            other => other.to_string().trim_matches('"').to_string(),
+        };
+
+        validate_identifier(&value_str, param_name)?;
+
+        let placeholder = format!("{{{param_name}}}");
+        let (before, after) = rest.split_once(&placeholder).expect("placeholder comes from the template");
+        path.push_str(before);
+        path.push_str(&value_str);
+        rest = after;
+        used.push(key.to_string());
+    }
+    path.push_str(rest);
+
+    Ok((path, used))
+}
+
+/// `--params` without the keys that went into the path
+fn query_without(params: Option<serde_json::Value>, used: &[String]) -> Option<serde_json::Value> {
+    params.map(|mut params| {
+        if let Some(obj) = params.as_object_mut() {
+            for key in used {
+                obj.remove(key);
+            }
+        }
+        params
+    })
 }
 
 /// The media types the endpoint's request body is documented with.
@@ -421,6 +427,43 @@ mod tests {
         }"#;
         let tree = ApiSpec::parse(SPEC).unwrap().build_command_tree("/v1");
         tree.children["payables"].endpoints[0].clone()
+    }
+
+    fn resolve(template: &str, params: serde_json::Value) -> Result<(String, Option<serde_json::Value>), KobanaError> {
+        let params = Some(params);
+        let (path, used) = resolve_path_template(template, &params)?;
+        Ok((path, query_without(params, &used)))
+    }
+
+    #[test]
+    fn path_params_take_their_own_name_first() {
+        let (path, query) = resolve(
+            "/v2/charge/pix/{pix_uid}/commands/{uid}",
+            serde_json::json!({"pix_uid": "P", "uid": "C", "x": 1}),
+        )
+        .unwrap();
+        assert_eq!(path, "/v2/charge/pix/P/commands/C");
+        assert_eq!(query, Some(serde_json::json!({"x": 1})));
+    }
+
+    #[test]
+    fn a_fallback_that_is_a_placeholder_of_the_template_is_not_used() {
+        // The command's uid used to fill the Pix's too
+        let err = resolve("/v2/charge/pix/{pix_uid}/commands/{uid}", serde_json::json!({"uid": "C"})).unwrap_err();
+        assert!(matches!(err, KobanaError::Validation(ref m) if m.contains("pix_uid")), "{err}");
+
+        let err = resolve("/v1/entities/{entity_id}/records/{id}", serde_json::json!({"id": "E"})).unwrap_err();
+        assert!(matches!(err, KobanaError::Validation(ref m) if m.contains("entity_id")), "{err}");
+    }
+
+    #[test]
+    fn the_fallback_key_leaves_the_query() {
+        let (path, query) = resolve("/v2/charge/pix/{pix_uid}/cancel", serde_json::json!({"uid": "P1"})).unwrap();
+        assert_eq!(path, "/v2/charge/pix/P1/cancel");
+        assert_eq!(query, Some(serde_json::json!({})));
+
+        let (path, _) = resolve("/v1/entities/{entity_id}/records", serde_json::json!({"id": "E"})).unwrap();
+        assert_eq!(path, "/v1/entities/E/records");
     }
 
     #[test]

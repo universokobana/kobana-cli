@@ -551,7 +551,7 @@ kobana dashboards data-sources list --fields "id,name,status"
 kobana dashboards data-sources sync --dry-run --params '{"id": "DATA_SOURCE_ID"}'
 
 # Registros de uma entidade
-kobana dashboards entities records get --params '{"id": "ENTITY_ID"}'
+kobana dashboards entities records list --params '{"id": "ENTITY_ID"}'
 ```
 
 #### Agente Kadu
