@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`--verbose` imprimia cookies de sessão** — os cabeçalhos das respostas (no login e nas chamadas à API) saíam inteiros no stderr, inclusive `Set-Cookie`, que vale como uma sessão aberta. `Set-Cookie`, `Cookie`, `Authorization` e `Proxy-Authorization` agora aparecem omitidos (de um cookie, só o nome)
 - **O refresh token podia ir para outro servidor** — a renovação usava a Conta Kobana do momento, e `KOBANA_ACCOUNT_URL` (inclusive vinda de um `.env` de um repositório de terceiros) desviava o refresh token salvo para qualquer endereço, sem aviso. As credenciais agora guardam o servidor que emitiu o token (`issuer`) e a renovação vai sempre para ele. Credenciais salvas antes renovam na Conta Kobana padrão do ambiente; quem fez login por um `KOBANA_ACCOUNT_URL` próprio precisa entrar de novo uma vez
 
 - **`+cobrar` montava um corpo que a API recusa** — o documento do pagador ia em `payer.document` (o campo é `payer.document_number`) e faltava o vencimento, que a API exige. Agora `--vencimento` (data e hora ISO 8601) é obrigatório, e `--nome` e `--cpf-cnpj` vêm juntos ou não vêm
@@ -58,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`--verbose` imprimia cookies de sessão** — os cabeçalhos das respostas (no login e nas chamadas à API) saíam inteiros no stderr, inclusive `Set-Cookie`, que vale como uma sessão aberta. `Set-Cookie`, `Cookie`, `Authorization` e `Proxy-Authorization` agora aparecem omitidos (de um cookie, só o nome)
 - **Mensagem dos erros do kadu** — erros no formato `{"error": {"code", "message"}}` mostravam "erro desconhecido"; agora mostram a mensagem que a API mandou
 
 ## [0.10.1] - 2026-11-02
@@ -120,6 +122,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`--verbose` imprimia cookies de sessão** — os cabeçalhos das respostas (no login e nas chamadas à API) saíam inteiros no stderr, inclusive `Set-Cookie`, que vale como uma sessão aberta. `Set-Cookie`, `Cookie`, `Authorization` e `Proxy-Authorization` agora aparecem omitidos (de um cookie, só o nome)
 - **Singular com envelope em `$ref`** — a inferência do `get` agora segue o `$ref` local da resposta (`#/components/schemas/OrganizationResponse`), como publicam `billing`, `dashboards` e `finance`: `me get`, `organization get`, `settings get`, `usage get` e os demais singulares desses produtos deixam de aparecer como `list` (alias oculto mantido). Um singular ao lado de uma rota de item (`dashboards data-purges` e `data-purges get <id>`) segue `list`, para não esconder o `get` por id
 
 ## [0.8.0] - 2026-11-01
@@ -131,6 +134,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`--verbose` imprimia cookies de sessão** — os cabeçalhos das respostas (no login e nas chamadas à API) saíam inteiros no stderr, inclusive `Set-Cookie`, que vale como uma sessão aberta. `Set-Cookie`, `Cookie`, `Authorization` e `Proxy-Authorization` agora aparecem omitidos (de um cookie, só o nome)
 - **`--page-all` em rotas paginadas por cursor** — rotas que declaram o parâmetro `cursor` (`finance`, `inbox`, `kadu`) agora seguem `meta.next_cursor` até ele acabar. Antes o CLI mandava `page`/`per_page`, que essas APIs ignoram, e parava na primeira página sem avisar
 
 ### Changed
@@ -160,6 +164,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`--verbose` imprimia cookies de sessão** — os cabeçalhos das respostas (no login e nas chamadas à API) saíam inteiros no stderr, inclusive `Set-Cookie`, que vale como uma sessão aberta. `Set-Cookie`, `Cookie`, `Authorization` e `Proxy-Authorization` agora aparecem omitidos (de um cookie, só o nome)
 - **`--env sandbox` em `inbox` e `dashboards`** — os dois produtos não têm sandbox, e o CLI mandava as requisições para hosts que não existem. Agora termina com erro pedindo `--env production`, em vez de cair em produção sem avisar
 - **Specs do Inbox e do Dashboard Mágico** não listam mais o servidor de sandbox
 
@@ -183,12 +188,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`--verbose` imprimia cookies de sessão** — os cabeçalhos das respostas (no login e nas chamadas à API) saíam inteiros no stderr, inclusive `Set-Cookie`, que vale como uma sessão aberta. `Set-Cookie`, `Cookie`, `Authorization` e `Proxy-Authorization` agora aparecem omitidos (de um cookie, só o nome)
 - **`kobana update` por um link simbólico** — o binário instalado pelo script é chamado por `~/.local/bin/kobana`; o update substituía o link em vez do binário. Agora resolve o caminho real antes
 
 ## [0.5.1] - 2026-10-26
 
 ### Fixed
 
+- **`--verbose` imprimia cookies de sessão** — os cabeçalhos das respostas (no login e nas chamadas à API) saíam inteiros no stderr, inclusive `Set-Cookie`, que vale como uma sessão aberta. `Set-Cookie`, `Cookie`, `Authorization` e `Proxy-Authorization` agora aparecem omitidos (de um cookie, só o nome)
 - **Coleções sob um recurso pai viravam `get`** — um `GET` com parâmetro de caminho era sempre `get`, então `GET /webhooks/{id}/deliveries` (a lista) e `GET /webhooks/{id}/deliveries/{delivery_id}` (uma entrega) disputavam o mesmo nome e um dos dois sumia. Agora um `GET` que não termina em parâmetro e aceita paginação (`page`, `per_page`, `cursor`, `limit`) é `list`; recursos singulares sob um pai (`companies fiscal-profile`, `balances latest`) continuam `get`
   - **BREAKING:** listagens que se chamavam `get` passam a `list` — `banking financial accounts balances`, `statement-transactions`, `statement-transactions imports` e `statement-transactions syncs`; `billing customers statement` e `customers users`; `dashboards entities records`, `entities tenant-syncs`, `portal-users activity timeline` e `webhooks deliveries`; `dunning people contact-points` e `webhook-endpoints deliveries`; `finance financial-accounts balances`
   - Voltaram comandos que estavam inacessíveis: `banking financial accounts balances get`, `statement-transactions imports get` e `statement-transactions syncs get` (agora leem **um** item); `billing customers users get` e `billing nfes requests list`; `dashboards data-sources logs list`, `entities logs list` e `entities records get`; `inbox webhooks deliveries list`
@@ -231,6 +238,7 @@ Seis produtos no mesmo binário: Gateway Bancário (`banking`), Inbox Autônomo 
 
 ### Fixed
 
+- **`--verbose` imprimia cookies de sessão** — os cabeçalhos das respostas (no login e nas chamadas à API) saíam inteiros no stderr, inclusive `Set-Cookie`, que vale como uma sessão aberta. `Set-Cookie`, `Cookie`, `Authorization` e `Proxy-Authorization` agora aparecem omitidos (de um cookie, só o nome)
 - **Descrições de recursos vazando entre produtos** — o texto de ajuda era mapeado só pelo nome do recurso, então `kobana billing payments` exibia "Pagamentos (unificado)" e `kobana finance transfers` exibia "Transferências (unificado)", ambos do Gateway Bancário. Agora o mapa é chaveado por `(produto, recurso)`
 - **Panic na inicialização em paths de ação com mais de um verbo HTTP** — `/v2/admin/connections/{uid}/associations` (POST+DELETE), os canais de `/v2/mailbox/entries/{entry_id}/*` e `/v1/inboxes/{id}/recipients` geravam o mesmo nome de subcomando duas vezes, e o clap aborta nesse caso. Isso quebrava `kobana completions <shell>` e o `--help` desses recursos. Agora a ação vira um nó de recurso e cada verbo recebe seu método (`inboxes recipients create` / `... delete`)
 - **User-Agent** — as requisições se identificavam como `kobana-cli/0.1.0` em qualquer versão; agora enviam a versão real
@@ -277,6 +285,7 @@ Seis produtos no mesmo binário: Gateway Bancário (`banking`), Inbox Autônomo 
 
 ### Fixed
 
+- **`--verbose` imprimia cookies de sessão** — os cabeçalhos das respostas (no login e nas chamadas à API) saíam inteiros no stderr, inclusive `Set-Cookie`, que vale como uma sessão aberta. `Set-Cookie`, `Cookie`, `Authorization` e `Proxy-Authorization` agora aparecem omitidos (de um cookie, só o nome)
 - **Credential key persistence** — enable `keyring` backend features (`apple-native`, `windows-native`, `sync-secret-service`); without features, keyring v3 silently "succeeded" and the encryption key was lost between runs, breaking every follow-up command after `auth login`
 - **`resolve_token` error visibility** — propagate credential store errors instead of masking them behind a generic "No authentication configured" message
 
@@ -303,6 +312,7 @@ Seis produtos no mesmo binário: Gateway Bancário (`banking`), Inbox Autônomo 
 
 ### Fixed
 
+- **`--verbose` imprimia cookies de sessão** — os cabeçalhos das respostas (no login e nas chamadas à API) saíam inteiros no stderr, inclusive `Set-Cookie`, que vale como uma sessão aberta. `Set-Cookie`, `Cookie`, `Authorization` e `Proxy-Authorization` agora aparecem omitidos (de um cookie, só o nome)
 - **OAuth token endpoint** — Use `app.kobana.com.br/oauth/token` instead of `api.kobana.com.br` (404)
 - **OAuth redirect URI** — Use `127.0.0.1` instead of `localhost` to allow wildcard ports
 - **OAuth default scope** — Request `read` only by default (was sending an invalid list of 57 resource scopes)
@@ -321,6 +331,7 @@ Seis produtos no mesmo binário: Gateway Bancário (`banking`), Inbox Autônomo 
 
 ### Fixed
 
+- **`--verbose` imprimia cookies de sessão** — os cabeçalhos das respostas (no login e nas chamadas à API) saíam inteiros no stderr, inclusive `Set-Cookie`, que vale como uma sessão aberta. `Set-Cookie`, `Cookie`, `Authorization` e `Proxy-Authorization` agora aparecem omitidos (de um cookie, só o nome)
 - **OAuth authorize URL** — Separate URLs per environment (sandbox: `app-sandbox.kobana.com.br`, production: `app.kobana.com.br`)
 - **Clippy warnings** — Resolved `derivable_impls`, `manual_split_once`, `too_many_arguments`
 - **GitHub Actions** — Upgraded to v5 to fix Node.js 20 deprecation warnings

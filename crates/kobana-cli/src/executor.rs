@@ -141,7 +141,7 @@ pub async fn send(client: &KobanaClient, request: &ApiRequest, verbose: bool) ->
         );
         for (key, value) in response.headers.iter() {
             if let Ok(v) = value.to_str() {
-                eprintln!("<< {}: {}", key, v);
+                eprintln!("<< {}: {}", key, crate::oauth::header_for_log(key.as_str(), v));
             }
         }
     }

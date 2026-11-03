@@ -1047,7 +1047,7 @@ async fn exchange_code(
             tr!(pt: "Resposta:", en: "Response:", es: "Respuesta:")
         );
         for (name, value) in headers.iter() {
-            eprintln!("{name}: {}", value.to_str().unwrap_or("<binary>"));
+            eprintln!("{name}: {}", header_for_log(name.as_str(), value.to_str().unwrap_or("<binary>")));
         }
         eprintln!();
         let size = body.len();
@@ -1077,6 +1077,25 @@ async fn exchange_code(
             en: "invalid token response: {e}",
             es: "respuesta de token inválida: {e}",
         )))
+}
+
+/// Headers whose value is a credential: a session cookie of the Conta Kobana
+/// is as good as a login
+const SECRET_HEADERS: &[&str] = &["set-cookie", "cookie", "authorization", "proxy-authorization"];
+
+/// A header value as `--verbose` prints it: a credential is reduced to its
+/// cookie name (or omitted), the rest is shown as is. `--verbose` output ends
+/// up in CI logs.
+pub(crate) fn header_for_log(name: &str, value: &str) -> String {
+    if !SECRET_HEADERS.iter().any(|h| name.eq_ignore_ascii_case(h)) {
+        return value.to_string();
+    }
+    let hidden = tr!(pt: "<omitido>", en: "<redacted>", es: "<omitido>");
+    match value.split_once('=') {
+        // `Set-Cookie: _session=abc; path=/` → `_session=<redacted>`
+        Some((cookie, _)) if name.to_ascii_lowercase().contains("cookie") => format!("{}={hidden}", cookie.trim()),
+        _ => hidden.to_string(),
+    }
 }
 
 /// The first characters of a secret, enough to tell two apart in a log
@@ -1410,6 +1429,13 @@ fn open_browser(url: &str) -> Result<(), KobanaError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn verbose_headers_hide_credentials() {
+        assert_eq!(header_for_log("Set-Cookie", "_session=abc123; path=/; HttpOnly"), format!("_session={}", tr!(pt: "<omitido>", en: "<redacted>", es: "<omitido>")));
+        assert!(!header_for_log("authorization", "Bearer xyz").contains("xyz"));
+        assert_eq!(header_for_log("content-type", "application/json"), "application/json");
+    }
 
     #[test]
     fn verbose_token_bodies_hide_the_tokens() {
