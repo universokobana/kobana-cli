@@ -205,9 +205,7 @@ pub async fn execute(
             &headers,
             page_limit,
             page_delay,
-            &output.fields,
-            &output.format,
-            output.verbose,
+            &output,
         )
         .await;
     }

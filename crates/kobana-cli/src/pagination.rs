@@ -3,6 +3,9 @@ use kobana::error::KobanaError;
 use kobana::trf;
 use kobana::spec::{ParameterLocation, ResolvedEndpoint};
 
+use std::io::Write;
+
+use crate::executor::Output;
 use crate::formatter::{filter_fields, format_output};
 
 /// How an endpoint pages its results, read from the parameters its spec declares
@@ -37,11 +40,70 @@ fn next_cursor(body: &serde_json::Value) -> Option<String> {
         .map(str::to_string)
 }
 
+/// Where `--page-all` writes: the `--output` file, or stdout. The file is
+/// created on the first write, so a run that fails before any page arrives
+/// leaves an existing file alone, as a single request does.
+struct Sink {
+    path: Option<String>,
+    inner: Option<Box<dyn Write>>,
+}
+
+impl Sink {
+    fn new(path: Option<&str>) -> Self {
+        Self { path: path.map(String::from), inner: None }
+    }
+
+    fn writer(&mut self) -> std::io::Result<&mut Box<dyn Write>> {
+        if self.inner.is_none() {
+            let writer: Box<dyn Write> = match &self.path {
+                Some(path) => Box::new(std::io::BufWriter::new(std::fs::File::create(path)?)),
+                None => Box::new(std::io::stdout().lock()),
+            };
+            self.inner = Some(writer);
+        }
+        Ok(self.inner.as_mut().expect("just set"))
+    }
+
+    fn write(&mut self, text: &str) -> Result<(), KobanaError> {
+        self.writer()
+            .and_then(|w| w.write_all(text.as_bytes()))
+            .map_err(|e| self.failed(e))
+    }
+
+    fn finish(mut self) -> Result<(), KobanaError> {
+        let flushed = match self.inner.as_mut() {
+            Some(w) => w.flush(),
+            None => Ok(()),
+        };
+        flushed.map_err(|e| self.failed(e))?;
+        if let (Some(path), Some(_)) = (&self.path, &self.inner) {
+            eprintln!(
+                "{}",
+                trf!(
+                    pt: "Resposta salva em {path}",
+                    en: "Response saved to {path}",
+                    es: "Respuesta guardada en {path}",
+                )
+            );
+        }
+        Ok(())
+    }
+
+    fn failed(&self, e: std::io::Error) -> KobanaError {
+        let path = self.path.as_deref().unwrap_or("stdout");
+        KobanaError::Internal(trf!(
+            pt: "não foi possível gravar em {path}: {e}",
+            en: "failed to write to {path}: {e}",
+            es: "no se pudo guardar en {path}: {e}",
+        ))
+    }
+}
+
 /// Handle paginated requests with --page-all
 ///
-/// Emits NDJSON (one JSON line per page) for streaming consumption. Endpoints
-/// that declare a `cursor` query parameter follow `meta.next_cursor`; the rest
-/// walk `page`/`per_page`.
+/// Emits NDJSON (one JSON line per item) for streaming consumption, to stdout
+/// or the `--output` file. Endpoints that declare a `cursor` query parameter
+/// follow `meta.next_cursor`; the rest walk `page`/`per_page`.
 #[allow(clippy::too_many_arguments)]
 pub async fn paginate_all(
     client: &KobanaClient,
@@ -51,10 +113,10 @@ pub async fn paginate_all(
     headers: &[(String, String)],
     page_limit: usize,
     page_delay_ms: u64,
-    fields: &Option<String>,
-    output_format: &str,
-    verbose: bool,
+    output: &Output,
 ) -> Result<(), KobanaError> {
+    let (fields, output_format, verbose) = (&output.fields, output.format.as_str(), output.verbose);
+    let mut sink = Sink::new(output.path.as_deref());
     let strategy = strategy(endpoint);
     let mut page = 1u64;
     let mut cursor: Option<String> = None;
@@ -149,7 +211,7 @@ pub async fn paginate_all(
         }
 
         // Apply field mask and output as NDJSON
-        let output = if output_format == "json" {
+        let formatted = if output_format == "json" {
             // NDJSON: one JSON per line for each item
             for item in &items {
                 let filtered = if let Some(ref f) = fields {
@@ -157,7 +219,7 @@ pub async fn paginate_all(
                 } else {
                     item.clone()
                 };
-                println!("{}", serde_json::to_string(&filtered)?);
+                sink.write(&format!("{}\n", serde_json::to_string(&filtered)?))?;
             }
             pages_fetched += 1;
             page += 1;
@@ -188,7 +250,7 @@ pub async fn paginate_all(
             format_output(&all_items, output_format)?
         };
 
-        print!("{output}");
+        sink.write(&formatted)?;
         pages_fetched += 1;
         page += 1;
 
@@ -200,6 +262,8 @@ pub async fn paginate_all(
             tokio::time::sleep(std::time::Duration::from_millis(page_delay_ms)).await;
         }
     }
+
+    sink.finish()?;
 
     if verbose {
         eprintln!(
@@ -243,6 +307,24 @@ fn extract_page_items(response: &ApiResponse) -> Vec<serde_json::Value> {
 mod tests {
     use super::*;
     use kobana::spec::ApiSpec;
+
+    #[test]
+    fn the_output_file_is_written_only_once_a_page_arrives() {
+        let path = std::env::temp_dir().join(format!("kobana-page-all-{}.ndjson", std::process::id()));
+        std::fs::write(&path, "previous").unwrap();
+        let shown = path.display().to_string();
+
+        // Nothing written: the file stays as it was
+        Sink::new(Some(&shown)).finish().unwrap();
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "previous");
+
+        let mut sink = Sink::new(Some(&shown));
+        sink.write("{\"id\":1}\n").unwrap();
+        sink.write("{\"id\":2}\n").unwrap();
+        sink.finish().unwrap();
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "{\"id\":1}\n{\"id\":2}\n");
+        std::fs::remove_file(path).ok();
+    }
 
     fn endpoint(params: &str) -> ResolvedEndpoint {
         let spec = format!(
