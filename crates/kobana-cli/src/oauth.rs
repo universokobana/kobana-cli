@@ -1007,7 +1007,7 @@ async fn exchange_code(
         eprintln!("{}", tr!(pt: "Corpo (form):", en: "Body (form):", es: "Cuerpo (form):"));
         for (k, v) in &params {
             let display = if *k == "code" || *k == "code_verifier" || *k == "client_secret" {
-                format!("{}...", &v[..v.len().min(8)])
+                redact(v)
             } else {
                 v.to_string()
             };
@@ -1043,12 +1043,13 @@ async fn exchange_code(
         }
         eprintln!();
         let size = body.len();
+        let shown = redact_token_body(&body);
         eprintln!(
             "{}",
             trf!(
-                pt: "Corpo ({size} bytes): {body}",
-                en: "Body ({size} bytes): {body}",
-                es: "Cuerpo ({size} bytes): {body}",
+                pt: "Corpo ({size} bytes): {shown}",
+                en: "Body ({size} bytes): {shown}",
+                es: "Cuerpo ({size} bytes): {shown}",
             )
         );
         eprintln!("---\n");
@@ -1068,6 +1069,36 @@ async fn exchange_code(
             en: "invalid token response: {e}",
             es: "respuesta de token inválida: {e}",
         )))
+}
+
+/// The first characters of a secret, enough to tell two apart in a log
+fn redact(value: &str) -> String {
+    let prefix: String = value.chars().take(8).collect();
+    format!("{prefix}...")
+}
+
+/// A token response as `--verbose` prints it: the tokens cut to a prefix, as
+/// the request's `code`, `code_verifier` and `client_secret` are. `--verbose`
+/// output ends up in CI logs.
+fn redact_token_body(body: &str) -> String {
+    const SECRETS: [&str; 3] = ["access_token", "refresh_token", "id_token"];
+    match serde_json::from_str::<serde_json::Value>(body) {
+        Ok(serde_json::Value::Object(mut obj)) => {
+            for key in SECRETS {
+                if let Some(serde_json::Value::String(token)) = obj.get(key) {
+                    let shown = redact(token);
+                    obj.insert(key.to_string(), serde_json::Value::String(shown));
+                }
+            }
+            serde_json::Value::Object(obj).to_string()
+        }
+        Ok(other) => other.to_string(),
+        // Not JSON: nothing structured to keep, and it may still hold a token
+        Err(_) if SECRETS.iter().any(|k| body.contains(k)) => {
+            tr!(pt: "<omitido>", en: "<redacted>", es: "<omitido>").to_string()
+        }
+        Err(_) => body.to_string(),
+    }
 }
 
 fn wait_for_callback(listener: TcpListener, state: &str) -> Result<String, KobanaError> {
@@ -1373,6 +1404,19 @@ mod tests {
     use super::*;
 
     #[test]
+    fn verbose_token_bodies_hide_the_tokens() {
+        let body = r#"{"access_token":"AAAAAAAAsecret-access","refresh_token":"RRRRRRRRsecret-refresh","id_token":"IIIIIIIIsecret-id","token_type":"Bearer","expires_in":3600}"#;
+        let shown = redact_token_body(body);
+        for secret in ["secret-access", "secret-refresh", "secret-id"] {
+            assert!(!shown.contains(secret), "{shown}");
+        }
+        assert!(shown.contains("AAAAAAAA...") && shown.contains("\"expires_in\":3600"), "{shown}");
+
+        assert_eq!(redact_token_body(r#"{"error":"invalid_grant"}"#), r#"{"error":"invalid_grant"}"#);
+        assert!(!redact_token_body("access_token=xyz&x=1").contains("xyz"));
+    }
+
+    #[test]
     fn callback_pages_fill_every_placeholder() {
         let detail = ("access_denied", "<script>alert(1)</script>");
         for page in [
@@ -1388,7 +1432,6 @@ mod tests {
         assert!(CallbackPage::success().render().contains("--accent: var(--lime)"));
         assert!(CallbackPage::failure("t", "m", None).render().contains("--accent: var(--purple)"));
     }
-
 
     #[test]
     fn metadata_url_goes_between_host_and_path() {
