@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`auth login --verbose` imprimia os tokens** — o corpo da resposta do token ia inteiro para o stderr, com `access_token` e `refresh_token`. Agora eles (e `id_token`) aparecem cortados nos 8 primeiros caracteres, como o `code`, o `code_verifier` e o `client_secret` da requisição
 - **`KOBANA_ENVIRONMENT` inválido virava produção** — `KOBANA_ENVIRONMENT=sandbx` mandava testes e logins para produção sem aviso. Valores que não são `production`, `sandbox` ou `development` agora saem com erro de validação (código 3), como o `--env` já fazia
 - **`kobana --json '{}' update` dava panic** — o `--json` do `update` divide o nome com o `--json <JSON>` global, que chegava a ele como string. Agora isso é um erro de validação (código 3) que aponta `kobana update --json`
+- **`--output-format` inválido só era recusado depois da requisição** — `--output-format xml` num `create` criava o registro e só então saía com erro. O valor agora é conferido na leitura dos argumentos, antes de qualquer requisição
 
 ## [0.10.3] - 2026-11-02
 

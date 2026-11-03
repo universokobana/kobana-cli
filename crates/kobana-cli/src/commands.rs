@@ -230,6 +230,10 @@ pub fn build_root_command(products: &[LoadedProduct]) -> Command {
                     es: "Formato de salida: json (predeterminado), table, csv",
                 ))
                 .value_name(tr!(pt: "FORMATO", en: "FORMAT", es: "FORMATO"))
+                // Checked by clap, before any request: a POST with a bad
+                // format used to create the record and then fail
+                .value_parser(clap::builder::PossibleValuesParser::new(["json", "table", "csv"]))
+                .hide_possible_values(true)
                 .default_value("json")
                 .hide_default_value(true),
         )
@@ -519,6 +523,20 @@ pub fn auth_command(path: &str) -> Command {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn output_format_is_checked_before_anything_runs() {
+        let products = product::load_all().unwrap();
+        let parse = |format: &str| {
+            build_root_command(&products).try_get_matches_from([
+                "kobana", "banking", "bank-billets", "create", "--output-format", format,
+            ])
+        };
+        for ok in ["json", "table", "csv"] {
+            assert!(parse(ok).is_ok(), "{ok}");
+        }
+        assert_eq!(parse("xml").unwrap_err().kind(), clap::error::ErrorKind::InvalidValue);
+    }
 
     #[test]
     fn update_json_flag_does_not_clash_with_the_global_json() {
