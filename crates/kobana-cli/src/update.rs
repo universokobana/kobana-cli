@@ -16,6 +16,59 @@ const USER_AGENT: &str = concat!("kobana-cli/", env!("CARGO_PKG_VERSION"));
 struct GitHubRelease {
     tag_name: String,
     html_url: String,
+    #[serde(default)]
+    assets: Vec<GitHubAsset>,
+}
+
+/// A file of a release. GitHub publishes each one's SHA-256 as
+/// `digest: "sha256:<hex>"`, which `install.sh` checks too.
+#[derive(Debug, Deserialize)]
+struct GitHubAsset {
+    name: String,
+    #[serde(default)]
+    digest: Option<String>,
+}
+
+/// The published SHA-256 (hex) of `asset` in a release, when GitHub lists one
+#[cfg_attr(not(unix), allow(dead_code))]
+fn asset_sha256(release: &GitHubRelease, asset: &str) -> Option<String> {
+    release
+        .assets
+        .iter()
+        .find(|a| a.name == asset)
+        .and_then(|a| a.digest.as_deref())
+        .and_then(|d| d.strip_prefix("sha256:"))
+        .map(str::to_ascii_lowercase)
+}
+
+#[cfg_attr(not(unix), allow(dead_code))]
+fn sha256_hex(bytes: &[u8]) -> String {
+    use sha2::{Digest, Sha256};
+    Sha256::digest(bytes).iter().map(|b| format!("{b:02x}")).collect()
+}
+
+/// The release of a tag (`v0.10.3`), with its assets
+#[cfg_attr(not(unix), allow(dead_code))]
+async fn fetch_release(tag: &str) -> Result<GitHubRelease, KobanaError> {
+    let url = format!("https://api.github.com/repos/universokobana/kobana-cli/releases/tags/{tag}");
+    http_client(Duration::from_secs(15))?
+        .get(&url)
+        .header("Accept", "application/vnd.github+json")
+        .send()
+        .await
+        .and_then(|r| r.error_for_status())
+        .map_err(|e| KobanaError::Internal(trf!(
+            pt: "não foi possível consultar a versão {tag}: {e}",
+            en: "failed to fetch release {tag}: {e}",
+            es: "no se pudo consultar la versión {tag}: {e}",
+        )))?
+        .json()
+        .await
+        .map_err(|e| KobanaError::Internal(trf!(
+            pt: "resposta de versão inválida: {e}",
+            en: "invalid release response: {e}",
+            es: "respuesta de versión inválida: {e}",
+        )))
 }
 
 #[derive(Debug, PartialEq)]
@@ -338,6 +391,17 @@ async fn perform_self_update(version: &str) -> Result<(), KobanaError> {
         )
     );
 
+    // The SHA-256 GitHub published for the asset, checked before anything
+    // replaces the running binary
+    let release = fetch_release(&format!("v{version}")).await?;
+    let Some(expected_sha) = asset_sha256(&release, &asset) else {
+        return Err(KobanaError::Internal(trf!(
+            pt: "a v{version} não publica o SHA-256 de {asset}; a atualização foi cancelada",
+            en: "v{version} publishes no SHA-256 for {asset}; update cancelled",
+            es: "la v{version} no publica el SHA-256 de {asset}; se canceló la actualización",
+        )));
+    };
+
     let client = http_client(Duration::from_secs(120))?;
     let bytes = client
         .get(&download_url)
@@ -356,6 +420,15 @@ async fn perform_self_update(version: &str) -> Result<(), KobanaError> {
             en: "read download body: {e}",
             es: "no se pudo leer la descarga: {e}",
         )))?;
+
+    let actual_sha = sha256_hex(&bytes);
+    if actual_sha != expected_sha {
+        return Err(KobanaError::Internal(trf!(
+            pt: "o SHA-256 do download ({actual_sha}) não bate com o publicado ({expected_sha}); a atualização foi cancelada",
+            en: "the download's SHA-256 ({actual_sha}) does not match the published one ({expected_sha}); update cancelled",
+            es: "el SHA-256 de la descarga ({actual_sha}) no coincide con el publicado ({expected_sha}); se canceló la actualización",
+        )));
+    }
 
     // Resolve symlinks: install.sh links ~/.local/bin/kobana to
     // ~/.kobana/bin/kobana, and replacing the link itself would leave the
@@ -532,5 +605,34 @@ fn notify_if_outdated(latest: &str) {
         eprintln!("\x1b[33m{msg}\x1b[0m");
     } else {
         eprintln!("{msg}");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_published_digest_of_the_asset_is_found() {
+        let release: GitHubRelease = serde_json::from_value(serde_json::json!({
+            "tag_name": "v1.0.0",
+            "html_url": "https://example",
+            "assets": [
+                {"name": "kobana-x86_64-unknown-linux-gnu", "digest": "sha256:ABC123"},
+                {"name": "kobana-aarch64-apple-darwin"}
+            ]
+        }))
+        .unwrap();
+        assert_eq!(asset_sha256(&release, "kobana-x86_64-unknown-linux-gnu").as_deref(), Some("abc123"));
+        assert_eq!(asset_sha256(&release, "kobana-aarch64-apple-darwin"), None, "no digest");
+        assert_eq!(asset_sha256(&release, "kobana-other"), None, "no asset");
+    }
+
+    #[test]
+    fn sha256_is_lowercase_hex() {
+        assert_eq!(
+            sha256_hex(b"abc"),
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        );
     }
 }

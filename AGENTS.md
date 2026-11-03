@@ -290,6 +290,9 @@ lives in `load_messages` as an `M_*` printf format — add a new one to all thre
 languages. The ASCII banner is in the brand lime (`#D3FD54`, 24-bit color; off
 when stdout is not a TTY or `NO_COLOR` is set).
 
+`kobana update` checks the same `digest` before replacing the binary and refuses
+an asset whose SHA-256 is missing or does not match.
+
 > [!IMPORTANT]
 > `kobana update` on a standalone install replaces `std::env::current_exe()`
 > **after `canonicalize()`**. Without it, running through the `~/.local/bin`
