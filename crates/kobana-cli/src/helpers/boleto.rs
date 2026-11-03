@@ -115,6 +115,7 @@ impl Helper for CancelarLoteBoletos {
         Box::pin(async move {
             super::reject_options(matches, "+cancelar-lote", &["params", "json", "file"])?;
             let ids = parse_ids(matches.get_one::<String>("ids").unwrap())?;
+            let output = executor::Output::from_matches(matches)?;
             let requests: Vec<ApiRequest> = ids
                 .iter()
                 .map(|id| ApiRequest {
@@ -136,7 +137,6 @@ impl Helper for CancelarLoteBoletos {
                 return Ok(());
             }
 
-            let output = executor::Output::from_matches(matches);
             let mut results = Vec::new();
             let mut failed_status = None;
             for (id, request) in ids.iter().zip(&requests) {

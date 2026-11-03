@@ -18,9 +18,13 @@ pub struct Output {
 }
 
 impl Output {
-    /// Read from any matches the global options reach (root or a subcommand)
-    pub fn from_matches(matches: &clap::ArgMatches) -> Self {
-        Self {
+    /// Read from any matches the global options reach (root or a subcommand).
+    /// `--output` is validated here, before anything is sent.
+    pub fn from_matches(matches: &clap::ArgMatches) -> Result<Self, KobanaError> {
+        if let Some(path) = matches.get_one::<String>("output") {
+            validate::validate_output_path(path)?;
+        }
+        Ok(Self {
             fields: matches.get_one::<String>("fields").cloned(),
             format: matches
                 .get_one::<String>("output-format")
@@ -28,7 +32,7 @@ impl Output {
                 .unwrap_or_else(|| "json".into()),
             path: matches.get_one::<String>("output").cloned(),
             verbose: matches.get_flag("verbose"),
-        }
+        })
     }
 
     /// Apply `--fields`, format, and print or save to `--output`
@@ -172,7 +176,7 @@ pub async fn execute(
         kobana::client::multipart_text_fields(body_json.as_ref())?;
     }
 
-    let output = Output::from_matches(root_matches);
+    let output = Output::from_matches(root_matches)?;
     let dry_run = root_matches.get_flag("dry-run");
 
     let page_all = root_matches.get_flag("page-all");

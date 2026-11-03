@@ -638,7 +638,7 @@ OpenAPI specs embutidos. O caminho segue a mesma forma do comando:
 | `--page-delay <MS>` | Delay entre páginas (default: 100ms) |
 | `--env <ENV>` | Ambiente: `production` (default), `sandbox`, `development` |
 | `--verbose` | Detalhes da requisição no stderr |
-| `--output <PATH>` | Salva resposta em arquivo |
+| `--output <PATH>` | Salva resposta em arquivo (sem `..`; não pode ser link simbólico, pasta ou dispositivo) |
 | `--output-format <FMT>` | Formato: `json`, `table`, `csv` |
 | `--idempotency-key <KEY>` | Chave de idempotência customizada |
 | `--file <CAMPO=CAMINHO>` | Arquivo enviado como parte de um formulário multipart (repetível) |

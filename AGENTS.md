@@ -406,7 +406,7 @@ When adding a new feature:
 1. **URL path segments** → Validate with `validate_identifier()`
 2. **Query parameters** → Use reqwest `.query()` builder (via `--params`)
 3. **Request bodies** → Validate structure with `validate::validate_body()`
-4. **File paths** → Validate for path traversal before writing
+4. **File paths** → Validate before writing (`validate::validate_output_path`: no `..`, no control characters, a regular file or nothing — never a symlink)
 5. **Write tests** for both the happy path AND the rejection path
 
 ## Helper Commands (`+verb`)

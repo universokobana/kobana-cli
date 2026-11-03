@@ -104,11 +104,11 @@ pub(crate) async fn post(
         multipart: false,
         files: Vec::new(),
     };
+    let output = executor::Output::from_matches(matches)?;
     if matches.get_flag("dry-run") {
         println!("{}", serde_json::to_string_pretty(&executor::dry_run_report(client, &request))?);
         return Ok(());
     }
-    let output = executor::Output::from_matches(matches);
     let response = executor::send(client, &request, output.verbose).await?;
     output.print(&response)
 }
@@ -161,7 +161,7 @@ mod tests {
             "--dry-run", "--fields", "uid", "--output-format", "table", "--idempotency-key", "K",
         ]);
         assert!(m.get_flag("dry-run"));
-        let output = executor::Output::from_matches(&m);
+        let output = executor::Output::from_matches(&m).unwrap();
         assert_eq!((output.fields.as_deref(), output.format.as_str()), (Some("uid"), "table"));
         assert_eq!(executor::idempotency_key(&m, HttpMethod::Post).as_deref(), Some("K"));
     }

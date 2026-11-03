@@ -53,6 +53,45 @@ pub fn validate_body(body: &serde_json::Value) -> Result<(), KobanaError> {
     Ok(())
 }
 
+/// Validate `--output` before anything is sent: the path may come from an
+/// agent. It may not climb out of a directory (`..`), hold control
+/// characters, or name a symlink or anything but a regular file — writing
+/// through a link would overwrite whatever it points to. An absolute path or
+/// one under the current directory is the caller's choice.
+pub fn validate_output_path(path: &str) -> Result<(), KobanaError> {
+    if path.is_empty() || path.chars().any(char::is_control) {
+        return Err(KobanaError::Validation(
+            tr!(
+                pt: "--output precisa ser um caminho sem caracteres de controle",
+                en: "--output must be a path without control characters",
+                es: "--output debe ser una ruta sin caracteres de control",
+            )
+            .into(),
+        ));
+    }
+    let candidate = std::path::Path::new(path);
+    if candidate
+        .components()
+        .any(|c| matches!(c, std::path::Component::ParentDir))
+    {
+        return Err(KobanaError::Validation(trf!(
+            pt: "--output não pode subir de pasta com '..': {path}",
+            en: "--output cannot climb directories with '..': {path}",
+            es: "--output no puede subir de carpeta con '..': {path}",
+        )));
+    }
+    if let Ok(meta) = std::fs::symlink_metadata(candidate) {
+        if !meta.file_type().is_file() {
+            return Err(KobanaError::Validation(trf!(
+                pt: "--output precisa ser um arquivo comum (não um link, pasta ou dispositivo): {path}",
+                en: "--output must be a regular file (not a link, directory or device): {path}",
+                es: "--output debe ser un archivo común (no un enlace, carpeta o dispositivo): {path}",
+            )));
+        }
+    }
+    Ok(())
+}
+
 /// Validate a parameter value for common injection patterns
 fn validate_param_value(value: &str, param_name: &str) -> Result<(), KobanaError> {
     // Control characters
@@ -65,4 +104,33 @@ fn validate_param_value(value: &str, param_name: &str) -> Result<(), KobanaError
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn output_paths_stay_regular_files_without_parent_jumps() {
+        let dir = std::env::temp_dir().join(format!("kobana-output-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("out.json");
+        std::fs::write(&file, "x").unwrap();
+
+        assert!(validate_output_path("./boleto.pdf").is_ok());
+        assert!(validate_output_path(&file.display().to_string()).is_ok(), "existing file");
+        assert!(validate_output_path(&dir.join("new.json").display().to_string()).is_ok(), "new file");
+
+        for bad in ["", "../x.json", "a/../../x", "x\nY"] {
+            assert!(matches!(validate_output_path(bad), Err(KobanaError::Validation(_))), "{bad:?}");
+        }
+        assert!(validate_output_path(&dir.display().to_string()).is_err(), "directory");
+        #[cfg(unix)]
+        {
+            let link = dir.join("link.json");
+            std::os::unix::fs::symlink(&file, &link).unwrap();
+            assert!(validate_output_path(&link.display().to_string()).is_err(), "symlink");
+        }
+        std::fs::remove_dir_all(dir).ok();
+    }
 }
