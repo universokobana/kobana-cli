@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Helpers dentro do `banking` (incompatível)** — `+emitir`, `+cancelar-lote` e `+cobrar` usam APIs do Gateway Bancário e agora ficam no produto: `kobana banking +emitir`, `kobana banking +cancelar-lote` e `kobana banking +cobrar`. As formas `kobana +emitir`, `kobana +cancelar-lote` e `kobana +cobrar` foram removidas
 
+### Fixed
+
+- **`+cobrar` montava um corpo que a API recusa** — o documento do pagador ia em `payer.document` (o campo é `payer.document_number`) e faltava o vencimento, que a API exige. Agora `--vencimento` (data e hora ISO 8601) é obrigatório, e `--nome` e `--cpf-cnpj` vêm juntos ou não vêm
+
 ## [0.10.3] - 2026-11-02
 
 ### Changed

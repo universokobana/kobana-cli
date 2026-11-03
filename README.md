@@ -580,8 +580,8 @@ kobana banking +emitir --valor 150.50 --vencimento 2026-05-01 \
   --nome "Maria Silva" --cpf-cnpj "012.345.678-90" --carteira 1
 
 # Criar cobrança Pix
-kobana banking +cobrar --valor 99.90 --conta-pix "UID" \
-  --nome "João" --cpf-cnpj "012.345.678-90"
+kobana banking +cobrar --valor 99.90 --vencimento 2026-05-01T23:59:59-03:00 \
+  --conta-pix "UID" --nome "João" --cpf-cnpj "012.345.678-90"
 
 # Cancelar boletos em lote
 kobana banking +cancelar-lote --ids "123,456,789"

@@ -31,15 +31,20 @@ impl Helper for CobrarPix {
         clap_i18n::command(
             "+cobrar",
             format!(
-                "kobana banking +cobrar --valor <VALOR> --conta-pix <UID> {}",
+                "kobana banking +cobrar --valor <VALOR> --vencimento <DATA> --conta-pix <UID> {}",
                 clap_i18n::options_placeholder()
             ),
         )
             .about(self.about())
             .arg(Arg::new("valor").long("valor").required(true).help(tr!(pt: "Valor da cobrança", en: "Charge amount", es: "Monto del cobro")).value_name("VALOR"))
+            .arg(Arg::new("vencimento").long("vencimento").required(true).help(tr!(
+                pt: "Data e hora de vencimento, ISO 8601 (ex.: 2026-12-02T10:00:00-03:00)",
+                en: "Due date and time, ISO 8601 (e.g. 2026-12-02T10:00:00-03:00)",
+                es: "Fecha y hora de vencimiento, ISO 8601 (ej.: 2026-12-02T10:00:00-03:00)",
+            )).value_name("DATA"))
             .arg(Arg::new("conta-pix").long("conta-pix").required(true).help(tr!(pt: "UID da conta Pix", en: "Pix account UID", es: "UID de la cuenta Pix")).value_name("UID"))
-            .arg(Arg::new("nome").long("nome").help(tr!(pt: "Nome do pagador", en: "Payer name", es: "Nombre del pagador")).value_name("NOME"))
-            .arg(Arg::new("cpf-cnpj").long("cpf-cnpj").help(tr!(pt: "CPF ou CNPJ do pagador", en: "Payer CPF or CNPJ", es: "CPF o CNPJ del pagador")).value_name("DOC"))
+            .arg(Arg::new("nome").long("nome").requires("cpf-cnpj").help(tr!(pt: "Nome do pagador (com --cpf-cnpj)", en: "Payer name (with --cpf-cnpj)", es: "Nombre del pagador (con --cpf-cnpj)")).value_name("NOME"))
+            .arg(Arg::new("cpf-cnpj").long("cpf-cnpj").requires("nome").help(tr!(pt: "CPF ou CNPJ do pagador (com --nome)", en: "Payer CPF or CNPJ (with --nome)", es: "CPF o CNPJ del pagador (con --nome)")).value_name("DOC"))
             .arg(Arg::new("descricao").long("descricao").help(tr!(pt: "Descrição da cobrança", en: "Charge description", es: "Descripción del cobro")).value_name("TEXT"))
             .arg(Arg::new("dry-run").long("dry-run").action(clap::ArgAction::SetTrue).help(tr!(pt: "Mostra a requisição sem executar", en: "Show the request without executing", es: "Muestra la solicitud sin ejecutarla")))
     }
@@ -49,37 +54,11 @@ impl Helper for CobrarPix {
         client: &'a KobanaClient,
         matches: &'a clap::ArgMatches,
     ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), KobanaError>> + Send + 'a>> {
-        let valor: f64 = matches
-            .get_one::<String>("valor")
-            .unwrap()
-            .parse()
-            .unwrap_or(0.0);
-        let conta_pix = matches.get_one::<String>("conta-pix").unwrap().clone();
-        let nome = matches.get_one::<String>("nome").cloned();
-        let cpf_cnpj = matches.get_one::<String>("cpf-cnpj").cloned();
-        let descricao = matches.get_one::<String>("descricao").cloned();
+        let body = request_body(matches);
         let dry_run = matches.get_flag("dry-run");
 
         Box::pin(async move {
-            let mut body = serde_json::json!({
-                "amount": valor,
-                "pix_account_uid": conta_pix,
-            });
-
-            if nome.is_some() || cpf_cnpj.is_some() {
-                let mut payer = serde_json::Map::new();
-                if let Some(n) = nome {
-                    payer.insert("name".to_string(), serde_json::json!(n));
-                }
-                if let Some(doc) = cpf_cnpj {
-                    payer.insert("document".to_string(), serde_json::json!(doc));
-                }
-                body["payer"] = serde_json::Value::Object(payer);
-            }
-
-            if let Some(desc) = descricao {
-                body["description"] = serde_json::json!(desc);
-            }
+            let body = body?;
 
             if dry_run {
                 let output = serde_json::json!({
@@ -107,5 +86,75 @@ impl Helper for CobrarPix {
             println!("{}", serde_json::to_string_pretty(&response.body)?);
             Ok(())
         })
+    }
+}
+
+/// The `POST /v2/charge/pix` body the flags describe
+fn request_body(matches: &clap::ArgMatches) -> Result<serde_json::Value, KobanaError> {
+    let arg = |name: &str| matches.get_one::<String>(name).cloned();
+    let valor: f64 = arg("valor").unwrap().parse().unwrap_or(0.0);
+
+    let mut body = serde_json::json!({
+        "amount": valor,
+        "pix_account_uid": arg("conta-pix").unwrap(),
+        "expire_at": arg("vencimento").unwrap(),
+    });
+
+    // The API takes the payer whole: name and document together
+    if let (Some(name), Some(document)) = (arg("nome"), arg("cpf-cnpj")) {
+        body["payer"] = serde_json::json!({
+            "name": name,
+            "document_number": document,
+        });
+    }
+
+    if let Some(desc) = arg("descricao") {
+        body["description"] = serde_json::json!(desc);
+    }
+
+    Ok(body)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(args: &[&str]) -> Result<clap::ArgMatches, clap::Error> {
+        CobrarPix.command().try_get_matches_from(std::iter::once("+cobrar").chain(args.iter().copied()))
+    }
+
+    const REQUIRED: [&str; 6] = ["--valor", "10.5", "--vencimento", "2026-12-01T10:00:00-03:00", "--conta-pix", "U"];
+
+    #[test]
+    fn body_follows_the_v2_pix_schema() {
+        let mut args = REQUIRED.to_vec();
+        args.extend(["--nome", "João", "--cpf-cnpj", "111.321.322-09"]);
+        let body = request_body(&parse(&args).unwrap()).unwrap();
+
+        assert_eq!(
+            body,
+            serde_json::json!({
+                "amount": 10.5,
+                "pix_account_uid": "U",
+                "expire_at": "2026-12-01T10:00:00-03:00",
+                "payer": {"name": "João", "document_number": "111.321.322-09"},
+            })
+        );
+    }
+
+    #[test]
+    fn due_date_is_required_and_the_payer_comes_whole() {
+        assert!(parse(&["--valor", "1", "--conta-pix", "U"]).is_err(), "no --vencimento");
+
+        let mut only_name = REQUIRED.to_vec();
+        only_name.extend(["--nome", "João"]);
+        assert!(parse(&only_name).is_err(), "--nome without --cpf-cnpj");
+
+        let mut only_doc = REQUIRED.to_vec();
+        only_doc.extend(["--cpf-cnpj", "1"]);
+        assert!(parse(&only_doc).is_err(), "--cpf-cnpj without --nome");
+
+        let body = request_body(&parse(&REQUIRED).unwrap()).unwrap();
+        assert!(body.get("payer").is_none());
     }
 }
