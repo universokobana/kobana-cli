@@ -224,6 +224,7 @@ ruby scripts/build-spec-translations.rb
 | `config.rs`          | Config directory, `.env` loading, environment management       |
 | `logging.rs`         | Structured logging (stderr + JSON file rotation) via `tracing` |
 | `completions.rs`     | Shell completion generation (bash, zsh, fish, powershell, elvish) |
+| `update.rs`          | `kobana update` (self-update of standalone installs, checked against the published SHA-256) and the daily new-version notice |
 | `helpers/mod.rs`     | Helper trait, registry, and dispatch                           |
 | `helpers/boleto.rs`  | `+emitir` and `+cancelar-lote` helpers                         |
 | `helpers/pix.rs`     | `+cobrar` helper                                               |
@@ -440,7 +441,7 @@ Current helpers:
 | `KOBANA_CLIENT_ID` | OAuth client ID (for `kobana <product> auth login`, default `kobana-cli`) |
 | `KOBANA_CLIENT_SECRET` | OAuth client secret. Like `--client-secret`, it selects the Client Credentials flow (banking only, with a client ID); the PKCE login sends no secret |
 | `KOBANA_ACCOUNT_URL` | Overrides the Conta Kobana (authorization server) URL |
-| `KOBANA_WORKSPACE_ID` | Workspace sent as `X-Workspace-Id` by `finance` (required) and `dashboards` (optional). A value in `--params` wins |
+| `KOBANA_WORKSPACE_ID` | Workspace sent as `X-Workspace-Id` by `finance` (required), `dashboards` and `dunning` (optional while the organization has a single workspace). A value in `--params` wins |
 
 > [!NOTE]
 > Products do not share credentials. Every token is issued by the Conta Kobana
