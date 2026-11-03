@@ -122,7 +122,7 @@ async fn saved_credentials(product: &Product, env: &Environment) -> Result<Store
     let slug = product.slug;
     let env_name = env.as_str();
     if !credential_store::has_credentials(slug, env_name) {
-        return Err(KobanaError::Auth(not_configured_for(product)));
+        return Err(not_configured_for(product, env));
     }
     let creds = credential_store::load_credentials(slug, env_name)?;
     if !is_expired(&creds) {
@@ -260,20 +260,59 @@ pub fn read_credentials_file(file_path: &str) -> Result<CredentialsFile, KobanaE
     })
 }
 
-/// Told when a product has no token source set up at all
-pub fn not_configured_for(product: &Product) -> String {
+/// Told when a product has no token source set up at all. The hint matches
+/// what the environment offers: no login where the Conta Kobana has no
+/// resource for the product, and the environment's own error where the
+/// product does not exist in it at all.
+pub fn not_configured_for(product: &Product, env: &Environment) -> KobanaError {
+    if let Err(e) = product.base_url(env) {
+        return e;
+    }
     let slug = product.slug;
     let var = product.token_env();
-    trf!(
+    if product.oauth_resource(env).is_err() {
+        let env = env.as_str();
+        return KobanaError::Auth(trf!(
+            pt: "Nenhuma autenticação configurada para {slug} em {env}, que não tem login pela Conta Kobana. Defina {var}.",
+            en: "No authentication configured for {slug} in {env}, which has no Conta Kobana login. Set {var}.",
+            es: "No hay autenticación configurada para {slug} en {env}, que no tiene inicio de sesión con la Conta Kobana. Define {var}.",
+        ));
+    }
+    KobanaError::Auth(trf!(
         pt: "Nenhuma autenticação configurada para {slug}. Defina {var} ou rode 'kobana {slug} auth login'.",
         en: "No authentication configured for {slug}. Set {var} or run 'kobana {slug} auth login'.",
         es: "No hay autenticación configurada para {slug}. Define {var} o ejecuta 'kobana {slug} auth login'.",
-    )
+    ))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_hint_matches_what_the_environment_offers() {
+        let kadu = crate::product::by_slug("kadu").unwrap();
+        let billing = crate::product::by_slug("billing").unwrap();
+
+        // Kadu has no sandbox at all: say so, do not send to `auth login`
+        let err = not_configured_for(kadu, &Environment::Sandbox);
+        assert!(matches!(err, KobanaError::Validation(_)), "{err}");
+        assert!(!err.to_string().contains("auth login"), "{err}");
+
+        let err = not_configured_for(billing, &Environment::Production);
+        assert!(matches!(err, KobanaError::Auth(_)));
+        assert!(err.to_string().contains("kobana billing auth login"), "{err}");
+
+        // A host without a Conta Kobana resource: the token variable only
+        for product in crate::product::REGISTRY {
+            for env in [Environment::Production, Environment::Sandbox, Environment::Development] {
+                if product.base_url(&env).is_ok() && product.oauth_resource(&env).is_err() {
+                    let err = not_configured_for(product, &env);
+                    assert!(!err.to_string().contains("auth login"), "{} {}: {err}", product.slug, env.as_str());
+                }
+            }
+        }
+    }
 
     fn file(json: serde_json::Value) -> CredentialsFile {
         serde_json::from_value(json).unwrap()

@@ -459,7 +459,10 @@ fn product_status(product: &Product, env: &Environment) -> serde_json::Value {
     if !credential_store::has_credentials(product.slug, env.as_str()) {
         return serde_json::json!({
             "authenticated": false,
-            "message": auth::not_configured_for(product),
+            "message": match auth::not_configured_for(product, env) {
+                KobanaError::Auth(message) | KobanaError::Validation(message) => message,
+                other => other.to_string(),
+            },
         });
     }
     match credential_store::load_credentials(product.slug, env.as_str()) {
