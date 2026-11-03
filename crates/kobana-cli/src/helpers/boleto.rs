@@ -50,34 +50,11 @@ impl Helper for EmitirBoleto {
         client: &'a KobanaClient,
         matches: &'a clap::ArgMatches,
     ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), KobanaError>> + Send + 'a>> {
-        let valor: f64 = matches
-            .get_one::<String>("valor")
-            .unwrap()
-            .parse()
-            .unwrap_or(0.0);
-        let vencimento = matches.get_one::<String>("vencimento").unwrap().clone();
-        let nome = matches.get_one::<String>("nome").unwrap().clone();
-        let cpf_cnpj = matches.get_one::<String>("cpf-cnpj").unwrap().clone();
-        let carteira: i64 = matches
-            .get_one::<String>("carteira")
-            .unwrap()
-            .parse()
-            .unwrap_or(0);
-        let descricao = matches.get_one::<String>("descricao").cloned();
+        let body = request_body(matches);
         let dry_run = matches.get_flag("dry-run");
 
         Box::pin(async move {
-            let mut body = serde_json::json!({
-                "amount": valor,
-                "expire_at": vencimento,
-                "customer_person_name": nome,
-                "customer_cnpj_cpf": cpf_cnpj,
-                "bank_billet_account_id": carteira,
-            });
-
-            if let Some(desc) = descricao {
-                body["description"] = serde_json::json!(desc);
-            }
+            let body = body?;
 
             if dry_run {
                 let output = serde_json::json!({
@@ -106,6 +83,25 @@ impl Helper for EmitirBoleto {
             Ok(())
         })
     }
+}
+
+/// The `POST /v1/bank_billets` body the flags describe
+fn request_body(matches: &clap::ArgMatches) -> Result<serde_json::Value, KobanaError> {
+    let arg = |name: &str| matches.get_one::<String>(name).cloned();
+
+    let mut body = serde_json::json!({
+        "amount": super::parse_amount(&arg("valor").unwrap(), "--valor")?,
+        "expire_at": arg("vencimento").unwrap(),
+        "customer_person_name": arg("nome").unwrap(),
+        "customer_cnpj_cpf": arg("cpf-cnpj").unwrap(),
+        "bank_billet_account_id": super::parse_id(&arg("carteira").unwrap(), "--carteira")?,
+    });
+
+    if let Some(desc) = arg("descricao") {
+        body["description"] = serde_json::json!(desc);
+    }
+
+    Ok(body)
 }
 
 /// Helper: +cancelar-lote — Cancel multiple bank billets
@@ -194,5 +190,40 @@ impl Helper for CancelarLoteBoletos {
             println!("{}", serde_json::to_string_pretty(&serde_json::Value::Array(results))?);
             Ok(())
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn emitir(args: &[&str]) -> clap::ArgMatches {
+        EmitirBoleto
+            .command()
+            .try_get_matches_from(std::iter::once("+emitir").chain(args.iter().copied()))
+            .unwrap()
+    }
+
+    fn emitir_args(valor: &'static str, carteira: &'static str) -> Vec<&'static str> {
+        vec![
+            "--valor", valor, "--vencimento", "2026-05-01", "--nome", "Maria",
+            "--cpf-cnpj", "012.345.678-90", "--carteira", carteira,
+        ]
+    }
+
+    #[test]
+    fn emitir_body_carries_the_parsed_numbers() {
+        let body = request_body(&emitir(&emitir_args("150.50", "7"))).unwrap();
+        assert_eq!(body["amount"], serde_json::json!(150.5));
+        assert_eq!(body["bank_billet_account_id"], serde_json::json!(7));
+    }
+
+    #[test]
+    fn emitir_refuses_numbers_that_do_not_parse() {
+        // `150,50` used to become a R$ 0,00 billet on wallet 0
+        for (valor, carteira) in [("150,50", "7"), ("150.50", "zz")] {
+            let err = request_body(&emitir(&emitir_args(valor, carteira))).unwrap_err();
+            assert!(matches!(err, KobanaError::Validation(_)), "{valor} {carteira}");
+        }
     }
 }

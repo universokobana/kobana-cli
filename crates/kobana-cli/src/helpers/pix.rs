@@ -92,7 +92,7 @@ impl Helper for CobrarPix {
 /// The `POST /v2/charge/pix` body the flags describe
 fn request_body(matches: &clap::ArgMatches) -> Result<serde_json::Value, KobanaError> {
     let arg = |name: &str| matches.get_one::<String>(name).cloned();
-    let valor: f64 = arg("valor").unwrap().parse().unwrap_or(0.0);
+    let valor = super::parse_amount(&arg("valor").unwrap(), "--valor")?;
 
     let mut body = serde_json::json!({
         "amount": valor,
@@ -140,6 +140,13 @@ mod tests {
                 "payer": {"name": "João", "document_number": "111.321.322-09"},
             })
         );
+    }
+
+    #[test]
+    fn an_amount_that_does_not_parse_is_refused() {
+        let mut args = REQUIRED.to_vec();
+        args[1] = "10,50";
+        assert!(matches!(request_body(&parse(&args).unwrap()), Err(KobanaError::Validation(_))));
     }
 
     #[test]

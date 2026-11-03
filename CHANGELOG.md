@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **`+cobrar` montava um corpo que a API recusa** — o documento do pagador ia em `payer.document` (o campo é `payer.document_number`) e faltava o vencimento, que a API exige. Agora `--vencimento` (data e hora ISO 8601) é obrigatório, e `--nome` e `--cpf-cnpj` vêm juntos ou não vêm
+- **Helpers trocavam número inválido por 0** — `kobana banking +emitir --valor 150,50` emitia um boleto de R$ 0,00 e `--carteira zz` ia como carteira 0. `--valor` e `--carteira` de `+emitir` e `--valor` de `+cobrar` agora saem com erro de validação (código 3) quando não são um número positivo; a mensagem lembra que o separador decimal é o ponto
 
 ## [0.10.3] - 2026-11-02
 
