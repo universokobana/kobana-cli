@@ -210,6 +210,24 @@ cargo install --path crates/kobana-cli
 
 Requer [Rust](https://rustup.rs/) 1.86+.
 
+### Atualização
+
+```bash
+kobana update            # instala a versão mais recente (instalação pelo script)
+kobana update --check    # só diz se há versão nova
+kobana update --check --json
+```
+
+Na instalação pelo script, `kobana update` baixa o binário da release, confere o
+SHA-256 que o GitHub publica e substitui o executável. No Homebrew, no Cargo e
+nos outros casos ele mostra o comando de atualização de cada um. `--json`
+imprime `current`, `latest`, `update_available`, `release_url`,
+`install_method` e `install_command`.
+
+Os outros comandos avisam no stderr quando há versão nova ("Nova versão
+disponível… Rode `kobana update`"), consultando o GitHub no máximo uma vez por
+dia e com timeout curto; `kobana update` e `kobana completions` não avisam.
+
 ## Autenticação
 
 Cada produto autentica separadamente: **o token de um produto não vale para
@@ -623,6 +641,8 @@ OpenAPI specs embutidos. O caminho segue a mesma forma do comando:
 | `--output <PATH>` | Salva resposta em arquivo |
 | `--output-format <FMT>` | Formato: `json`, `table`, `csv` |
 | `--idempotency-key <KEY>` | Chave de idempotência customizada |
+| `--file <CAMPO=CAMINHO>` | Arquivo enviado como parte de um formulário multipart (repetível) |
+| `--lang <IDIOMA>` | Idioma das mensagens: `pt`, `en` ou `es` |
 
 ## Variáveis de Ambiente
 
@@ -635,7 +655,8 @@ OpenAPI specs embutidos. O caminho segue a mesma forma do comando:
 | `KOBANA_CLIENT_ID` | OAuth client ID do login (default: `kobana-cli`) |
 | `KOBANA_CLIENT_SECRET` | OAuth client secret. Como `--client-secret`, escolhe o fluxo Client Credentials (só no `banking`, com `KOBANA_CLIENT_ID` ou `--client-id`); o login de uma pessoa (PKCE) não usa secret |
 | `KOBANA_CONFIG_DIR` | Diretório de config (default: `~/.config/kobana`) |
-| `KOBANA_ENVIRONMENT` | `production` (default), `sandbox` ou `development` |
+| `KOBANA_ENVIRONMENT` | `production` (default), `sandbox` ou `development`; outro valor é erro |
+| `KOBANA_LANG` | `pt`, `en` ou `es` (default: `LC_ALL`/`LC_MESSAGES`/`LANG`, depois o idioma do sistema). `--lang` vence |
 | `KOBANA_LOG` | Nível de log para stderr (ex: `kobana=debug`) |
 | `KOBANA_LOG_FILE` | Diretório para logs JSON com rotação diária |
 
