@@ -379,6 +379,8 @@ fn save_and_report(
         client_id,
         resource,
         scopes,
+        // The server the token came from: the only one it is refreshed at
+        issuer: Some(oauth::authorization_server(env)),
     };
     credential_store::save_credentials(slug, env_name, &creds)?;
 

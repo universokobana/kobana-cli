@@ -35,6 +35,11 @@ pub struct StoredCredentials {
     pub resource: Option<String>,
     #[serde(default)]
     pub scopes: Vec<String>,
+    /// The authorization server that issued the token (`https://account.kobana.com.br`),
+    /// the only place its refresh token is sent. Absent in credentials saved
+    /// before 0.11, which refresh at the environment's default Conta Kobana.
+    #[serde(default)]
+    pub issuer: Option<String>,
 }
 
 /// Save a product's credentials encrypted to disk

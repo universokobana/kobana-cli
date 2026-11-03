@@ -142,7 +142,7 @@ async fn saved_credentials(product: &Product, env: &Environment) -> Result<Store
     match (&creds.refresh_token, &creds.client_id) {
         (Some(refresh), Some(client_id)) => {
             let response =
-                oauth::refresh_token(refresh, client_id, creds.resource.as_deref(), env)
+                oauth::refresh_token(refresh, client_id, creds.resource.as_deref(), &issuer_of(&creds, env))
                     .await
                     .map_err(|e| {
                         KobanaError::Auth(trf!(
@@ -171,6 +171,17 @@ async fn saved_credentials(product: &Product, env: &Environment) -> Result<Store
             es: "las credenciales guardadas de {slug} expiraron. Ejecuta 'kobana {slug} auth login' para volver a entrar.",
         ))),
     }
+}
+
+/// Where a saved token is refreshed: the server that issued it, or for
+/// credentials saved before the issuer was kept, the environment's default
+/// Conta Kobana. Never `KOBANA_ACCOUNT_URL`, which a `.env` could point
+/// anywhere after the login.
+fn issuer_of(creds: &StoredCredentials, env: &Environment) -> String {
+    creds
+        .issuer
+        .clone()
+        .unwrap_or_else(|| oauth::default_authorization_server(env))
 }
 
 pub fn is_expired(creds: &StoredCredentials) -> bool {
@@ -294,6 +305,27 @@ pub fn not_configured_for(product: &Product, env: &Environment) -> KobanaError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_token_is_refreshed_where_it_was_issued() {
+        let mut creds = StoredCredentials {
+            access_token: "a".into(),
+            refresh_token: Some("r".into()),
+            token_type: "Bearer".into(),
+            expires_at: None,
+            environment: "sandbox".into(),
+            product: Some("billing".into()),
+            client_id: Some("kobana-cli".into()),
+            resource: None,
+            scopes: Vec::new(),
+            issuer: Some("https://account.sandbox.kobana.com.br".into()),
+        };
+        assert_eq!(issuer_of(&creds, &Environment::Sandbox), "https://account.sandbox.kobana.com.br");
+        // Saved before the issuer was kept: the environment's Conta Kobana,
+        // whatever KOBANA_ACCOUNT_URL says
+        creds.issuer = None;
+        assert_eq!(issuer_of(&creds, &Environment::Production), "https://account.kobana.com.br");
+    }
 
     #[test]
     fn the_hint_matches_what_the_environment_offers() {

@@ -17,6 +17,11 @@ pub fn authorization_server(env: &Environment) -> String {
             return url.trim_end_matches('/').to_string();
         }
     }
+    default_authorization_server(env)
+}
+
+/// The Conta Kobana of an environment, ignoring `KOBANA_ACCOUNT_URL`
+pub fn default_authorization_server(env: &Environment) -> String {
     match env {
         Environment::Production => "https://account.kobana.com.br".into(),
         Environment::Sandbox => "https://account.sandbox.kobana.com.br".into(),
@@ -929,15 +934,18 @@ pub async fn client_credentials_flow(
         )))
 }
 
-/// Refresh an access token. A public client identifies itself with its
-/// `client_id`, and `resource` keeps the new token bound to the same `aud`.
+/// Refresh an access token at `issuer`, the authorization server that
+/// issued it — never wherever `KOBANA_ACCOUNT_URL` points now, so the refresh
+/// token cannot be sent to another server. A public client identifies itself
+/// with its `client_id`, and `resource` keeps the new token bound to the same
+/// `aud`.
 pub async fn refresh_token(
     refresh_token: &str,
     client_id: &str,
     resource: Option<&str>,
-    env: &Environment,
+    issuer: &str,
 ) -> Result<TokenResponse, KobanaError> {
-    let token_url = oauth_token_url(env);
+    let token_url = format!("{}/oauth/token", issuer.trim_end_matches('/'));
 
     let mut form = vec![
         ("grant_type", "refresh_token"),
