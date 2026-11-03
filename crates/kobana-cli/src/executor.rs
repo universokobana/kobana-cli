@@ -8,6 +8,142 @@ use crate::formatter::{filter_fields, format_output};
 use crate::pagination;
 use crate::validate;
 
+/// How a response is shown: the global `--fields`, `--output-format`,
+/// `--output` and `--verbose`. Dynamic commands and helpers share it.
+pub struct Output {
+    pub fields: Option<String>,
+    pub format: String,
+    pub path: Option<String>,
+    pub verbose: bool,
+}
+
+impl Output {
+    /// Read from any matches the global options reach (root or a subcommand)
+    pub fn from_matches(matches: &clap::ArgMatches) -> Self {
+        Self {
+            fields: matches.get_one::<String>("fields").cloned(),
+            format: matches
+                .get_one::<String>("output-format")
+                .cloned()
+                .unwrap_or_else(|| "json".into()),
+            path: matches.get_one::<String>("output").cloned(),
+            verbose: matches.get_flag("verbose"),
+        }
+    }
+
+    /// Apply `--fields`, format, and print or save to `--output`
+    pub fn print(&self, value: &serde_json::Value) -> Result<(), KobanaError> {
+        let output = match &self.fields {
+            Some(fields) => filter_fields(value, fields),
+            None => value.clone(),
+        };
+        let formatted = format_output(&output, &self.format)?;
+
+        let Some(path) = &self.path else {
+            println!("{formatted}");
+            return Ok(());
+        };
+        std::fs::write(path, &formatted).map_err(|e| {
+            KobanaError::Internal(trf!(
+                pt: "não foi possível gravar em {path}: {e}",
+                en: "failed to write to {path}: {e}",
+                es: "no se pudo guardar en {path}: {e}",
+            ))
+        })?;
+        eprintln!(
+            "{}",
+            trf!(
+                pt: "Resposta salva em {path}",
+                en: "Response saved to {path}",
+                es: "Respuesta guardada en {path}",
+            )
+        );
+        Ok(())
+    }
+}
+
+/// `--params` or `--json`, parsed
+pub fn json_arg(matches: &clap::ArgMatches, name: &str) -> Result<Option<serde_json::Value>, KobanaError> {
+    matches
+        .get_one::<String>(name)
+        .map(|s| serde_json::from_str::<serde_json::Value>(s))
+        .transpose()
+        .map_err(|e| KobanaError::Validation(trf!(
+            pt: "JSON inválido em --{name}: {e}",
+            en: "invalid --{name} JSON: {e}",
+            es: "JSON inválido en --{name}: {e}",
+        )))
+}
+
+/// `--idempotency-key`, or a new key for a POST
+pub fn idempotency_key(matches: &clap::ArgMatches, method: HttpMethod) -> Option<String> {
+    match method {
+        HttpMethod::Post | HttpMethod::Put | HttpMethod::Patch => matches
+            .get_one::<String>("idempotency-key")
+            .cloned()
+            .or_else(|| (method == HttpMethod::Post).then(|| uuid::Uuid::new_v4().to_string())),
+        _ => None,
+    }
+}
+
+/// What `--dry-run` prints for one request
+pub fn dry_run_report(client: &KobanaClient, request: &ApiRequest) -> serde_json::Value {
+    serde_json::json!({
+        "dry_run": true,
+        "method": request.method.as_str(),
+        "url": format!("{}{}", client.base_url(), request.path),
+        "query_params": request.query_params,
+        "body": request.body,
+        "content_type": if request.multipart { "multipart/form-data" } else { "application/json" },
+        "files": request
+            .files
+            .iter()
+            .map(|f| serde_json::json!({
+                "field": f.field,
+                "path": f.path.display().to_string(),
+                "media_type": kobana::client::file_media_type(&f.path),
+            }))
+            .collect::<Vec<_>>(),
+        "idempotency_key": request.idempotency_key,
+        "headers": client
+            .request_headers(request)
+            .into_iter()
+            .map(|(name, value)| (name, serde_json::Value::String(value)))
+            .collect::<serde_json::Map<_, _>>(),
+    })
+}
+
+/// Send one request, logging it to stderr with `--verbose`, and return the
+/// response body
+pub async fn send(client: &KobanaClient, request: &ApiRequest, verbose: bool) -> Result<serde_json::Value, KobanaError> {
+    if verbose {
+        eprintln!(">> {} {}{}", request.method, client.base_url(), request.path);
+        if let Some(body) = &request.body {
+            eprintln!(
+                ">> {} {}",
+                tr!(pt: "Corpo:", en: "Body:", es: "Cuerpo:"),
+                serde_json::to_string(body)?
+            );
+        }
+    }
+
+    let response = client.execute(request).await?;
+
+    if verbose {
+        eprintln!(
+            "<< {} {}",
+            tr!(pt: "Status:", en: "Status:", es: "Estado:"),
+            response.status
+        );
+        for (key, value) in response.headers.iter() {
+            if let Ok(v) = value.to_str() {
+                eprintln!("<< {}: {}", key, v);
+            }
+        }
+    }
+    Ok(response.body)
+}
+
 /// Execute an API request based on the resolved endpoint and CLI args
 pub async fn execute(
     client: &KobanaClient,
@@ -15,25 +151,8 @@ pub async fn execute(
     _method_matches: &clap::ArgMatches,
     root_matches: &clap::ArgMatches,
 ) -> Result<(), KobanaError> {
-    let params_json = root_matches
-        .get_one::<String>("params")
-        .map(|s| serde_json::from_str::<serde_json::Value>(s))
-        .transpose()
-        .map_err(|e| KobanaError::Validation(trf!(
-            pt: "JSON inválido em --params: {e}",
-            en: "invalid --params JSON: {e}",
-            es: "JSON inválido en --params: {e}",
-        )))?;
-
-    let body_json = root_matches
-        .get_one::<String>("json")
-        .map(|s| serde_json::from_str::<serde_json::Value>(s))
-        .transpose()
-        .map_err(|e| KobanaError::Validation(trf!(
-            pt: "JSON inválido em --json: {e}",
-            en: "invalid --json JSON: {e}",
-            es: "JSON inválido en --json: {e}",
-        )))?;
+    let params_json = json_arg(root_matches, "params")?;
+    let body_json = json_arg(root_matches, "json")?;
 
     // Validate inputs
     if let Some(ref params) = params_json {
@@ -54,14 +173,8 @@ pub async fn execute(
         kobana::client::multipart_text_fields(body_json.as_ref())?;
     }
 
-    let fields = root_matches.get_one::<String>("fields").cloned();
+    let output = Output::from_matches(root_matches);
     let dry_run = root_matches.get_flag("dry-run");
-    let verbose = root_matches.get_flag("verbose");
-    let output_path = root_matches.get_one::<String>("output").cloned();
-    let output_format = root_matches
-        .get_one::<String>("output-format")
-        .map(|s| s.as_str())
-        .unwrap_or("json");
 
     let page_all = root_matches.get_flag("page-all");
     let page_limit: usize = root_matches
@@ -92,31 +205,14 @@ pub async fn execute(
             &headers,
             page_limit,
             page_delay,
-            &fields,
-            output_format,
-            verbose,
+            &output.fields,
+            &output.format,
+            output.verbose,
         )
         .await;
     }
 
-    // Generate idempotency key for mutations
-    let idempotency_key = if matches!(
-        endpoint.http_method,
-        HttpMethod::Post | HttpMethod::Put | HttpMethod::Patch
-    ) {
-        root_matches
-            .get_one::<String>("idempotency-key")
-            .cloned()
-            .or_else(|| {
-                if endpoint.http_method == HttpMethod::Post {
-                    Some(uuid::Uuid::new_v4().to_string())
-                } else {
-                    None
-                }
-            })
-    } else {
-        None
-    };
+    let idempotency_key = idempotency_key(root_matches, endpoint.http_method);
 
     // The keys that went into the path stay out of the query
     let query_params = query_without(params_json, &path_keys);
@@ -134,96 +230,12 @@ pub async fn execute(
 
     // Dry run: show the request without executing
     if dry_run {
-        let dry_run_output = serde_json::json!({
-            "dry_run": true,
-            "method": endpoint.http_method.as_str(),
-            "url": format!("{}{}", client.base_url(), api_request.path),
-            "query_params": api_request.query_params,
-            "body": api_request.body,
-            "content_type": if api_request.multipart { "multipart/form-data" } else { "application/json" },
-            "files": api_request
-                .files
-                .iter()
-                .map(|f| serde_json::json!({
-                    "field": f.field,
-                    "path": f.path.display().to_string(),
-                    "media_type": kobana::client::file_media_type(&f.path),
-                }))
-                .collect::<Vec<_>>(),
-            "idempotency_key": api_request.idempotency_key,
-            "headers": client
-                .request_headers(&api_request)
-                .into_iter()
-                .map(|(name, value)| (name, serde_json::Value::String(value)))
-                .collect::<serde_json::Map<_, _>>(),
-        });
-        println!("{}", serde_json::to_string_pretty(&dry_run_output)?);
+        println!("{}", serde_json::to_string_pretty(&dry_run_report(client, &api_request))?);
         return Ok(());
     }
 
-    if verbose {
-        eprintln!(
-            ">> {} {}{}",
-            endpoint.http_method,
-            client.base_url(),
-            api_request.path
-        );
-        if let Some(body) = &api_request.body {
-            eprintln!(
-                ">> {} {}",
-                tr!(pt: "Corpo:", en: "Body:", es: "Cuerpo:"),
-                serde_json::to_string(body)?
-            );
-        }
-    }
-
-    let response = client.execute(&api_request).await?;
-
-    if verbose {
-        eprintln!(
-            "<< {} {}",
-            tr!(pt: "Status:", en: "Status:", es: "Estado:"),
-            response.status
-        );
-        for (key, value) in response.headers.iter() {
-            if let Ok(v) = value.to_str() {
-                eprintln!("<< {}: {}", key, v);
-            }
-        }
-    }
-
-    // Apply field mask
-    let output = if let Some(ref fields_str) = fields {
-        filter_fields(&response.body, fields_str)
-    } else {
-        response.body.clone()
-    };
-
-    // Format and output
-    let formatted = format_output(&output, output_format)?;
-
-    if let Some(path) = output_path {
-        std::fs::write(&path, &formatted)
-            .map_err(|e| {
-                KobanaError::Internal(trf!(
-                    pt: "não foi possível gravar em {path}: {e}",
-                    en: "failed to write to {path}: {e}",
-                    es: "no se pudo guardar en {path}: {e}",
-                ))
-            })?;
-        eprintln!(
-            "{}",
-            trf!(
-                pt: "Resposta salva em {path}",
-                en: "Response saved to {path}",
-                es: "Respuesta guardada en {path}",
-            )
-        );
-    } else {
-        println!("{formatted}");
-    }
-
-    Ok(())
+    let body = send(client, &api_request, output.verbose).await?;
+    output.print(&body)
 }
 
 /// Headers the client always sets itself; a spec declaring them as parameters

@@ -6,6 +6,7 @@ use kobana::spec::HttpMethod;
 
 use super::Helper;
 use crate::clap_i18n;
+use crate::executor;
 
 /// Helper: +emitir — Create a bank billet with simplified interface
 pub struct EmitirBoleto;
@@ -42,7 +43,6 @@ impl Helper for EmitirBoleto {
             .arg(Arg::new("cpf-cnpj").long("cpf-cnpj").required(true).help(tr!(pt: "CPF ou CNPJ do pagador", en: "Payer CPF or CNPJ", es: "CPF o CNPJ del pagador")).value_name("DOC"))
             .arg(Arg::new("carteira").long("carteira").required(true).help(tr!(pt: "ID da carteira de cobrança", en: "Billing wallet ID", es: "ID de la cartera de cobro")).value_name("ID"))
             .arg(Arg::new("descricao").long("descricao").help(tr!(pt: "Descrição/instruções do boleto", en: "Bank slip description/instructions", es: "Descripción/instrucciones del boleto")).value_name("TEXT"))
-            .arg(Arg::new("dry-run").long("dry-run").action(clap::ArgAction::SetTrue).help(tr!(pt: "Mostra a requisição sem executar", en: "Show the request without executing", es: "Muestra la solicitud sin ejecutarla")))
     }
 
     fn execute<'a>(
@@ -50,37 +50,11 @@ impl Helper for EmitirBoleto {
         client: &'a KobanaClient,
         matches: &'a clap::ArgMatches,
     ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), KobanaError>> + Send + 'a>> {
-        let body = request_body(matches);
-        let dry_run = matches.get_flag("dry-run");
-
         Box::pin(async move {
-            let body = body?;
-
-            if dry_run {
-                let output = serde_json::json!({
-                    "dry_run": true,
-                    "method": "POST",
-                    "url": format!("{}/v1/bank_billets", client.base_url()),
-                    "body": body,
-                });
-                println!("{}", serde_json::to_string_pretty(&output)?);
-                return Ok(());
-            }
-
-            let request = ApiRequest {
-                method: HttpMethod::Post,
-                path: "/v1/bank_billets".to_string(),
-                query_params: None,
-                body: Some(body),
-                idempotency_key: Some(uuid::Uuid::new_v4().to_string()),
-                headers: Vec::new(),
-                multipart: false,
-                files: Vec::new(),
-            };
-
-            let response = client.execute(&request).await?;
-            println!("{}", serde_json::to_string_pretty(&response.body)?);
-            Ok(())
+            super::reject_options(matches, "+emitir", &["params", "file"])?;
+            let mut body = request_body(matches)?;
+            super::merge_json_body(matches, &mut body)?;
+            super::post(client, matches, "/v1/bank_billets", body).await
         })
     }
 }
@@ -131,7 +105,6 @@ impl Helper for CancelarLoteBoletos {
         )
             .about(self.about())
             .arg(Arg::new("ids").long("ids").required(true).help(tr!(pt: "IDs dos boletos separados por vírgula", en: "Comma-separated bank slip IDs", es: "IDs de los boletos separados por comas")).value_name("IDS"))
-            .arg(Arg::new("dry-run").long("dry-run").action(clap::ArgAction::SetTrue).help(tr!(pt: "Mostra a requisição sem executar", en: "Show the request without executing", es: "Muestra la solicitud sin ejecutarla")))
     }
 
     fn execute<'a>(
@@ -139,27 +112,12 @@ impl Helper for CancelarLoteBoletos {
         client: &'a KobanaClient,
         matches: &'a clap::ArgMatches,
     ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), KobanaError>> + Send + 'a>> {
-        let ids = parse_ids(matches.get_one::<String>("ids").unwrap());
-        let dry_run = matches.get_flag("dry-run");
-
         Box::pin(async move {
-            let ids = ids?;
-
-            if dry_run {
-                let output = serde_json::json!({
-                    "dry_run": true,
-                    "action": "cancel_billets",
-                    "count": ids.len(),
-                    "ids": ids,
-                });
-                println!("{}", serde_json::to_string_pretty(&output)?);
-                return Ok(());
-            }
-
-            let mut results = Vec::new();
-            let mut failed_status = None;
-            for id in &ids {
-                let request = ApiRequest {
+            super::reject_options(matches, "+cancelar-lote", &["params", "json", "file"])?;
+            let ids = parse_ids(matches.get_one::<String>("ids").unwrap())?;
+            let requests: Vec<ApiRequest> = ids
+                .iter()
+                .map(|id| ApiRequest {
                     method: HttpMethod::Put,
                     path: format!("/v1/bank_billets/{id}/cancel"),
                     query_params: None,
@@ -168,14 +126,26 @@ impl Helper for CancelarLoteBoletos {
                     headers: Vec::new(),
                     multipart: false,
                     files: Vec::new(),
-                };
+                })
+                .collect();
 
-                match client.execute(&request).await {
+            // One dry-run report per request, as each would be sent
+            if matches.get_flag("dry-run") {
+                let reports: Vec<_> = requests.iter().map(|r| executor::dry_run_report(client, r)).collect();
+                println!("{}", serde_json::to_string_pretty(&reports)?);
+                return Ok(());
+            }
+
+            let output = executor::Output::from_matches(matches);
+            let mut results = Vec::new();
+            let mut failed_status = None;
+            for (id, request) in ids.iter().zip(&requests) {
+                match executor::send(client, request, output.verbose).await {
                     Ok(response) => {
                         results.push(serde_json::json!({
                             "id": id,
                             "status": "cancelled",
-                            "response": response.body,
+                            "response": response,
                         }));
                     }
                     Err(e) => {
@@ -194,7 +164,7 @@ impl Helper for CancelarLoteBoletos {
                 }
             }
 
-            batch_outcome(results, failed_status)
+            batch_outcome(results, failed_status, &output)
         })
     }
 }
@@ -206,10 +176,10 @@ impl Helper for CancelarLoteBoletos {
 fn batch_outcome(
     results: Vec<serde_json::Value>,
     failed_status: Option<Option<u16>>,
+    output: &executor::Output,
 ) -> Result<(), KobanaError> {
     let Some(status) = failed_status else {
-        println!("{}", serde_json::to_string_pretty(&serde_json::Value::Array(results))?);
-        return Ok(());
+        return output.print(&serde_json::Value::Array(results));
     };
     let total = results.len();
     let failed = results.iter().filter(|r| r["status"] == "error").count();
@@ -298,9 +268,10 @@ mod tests {
         let ok = serde_json::json!({"id": "1", "status": "cancelled"});
         let bad = serde_json::json!({"id": "2", "status": "error", "status_code": 422});
 
-        assert!(batch_outcome(vec![ok.clone()], None).is_ok());
+        let output = executor::Output { fields: None, format: "json".into(), path: None, verbose: false };
+        assert!(batch_outcome(vec![ok.clone()], None, &output).is_ok());
 
-        let err = batch_outcome(vec![ok.clone(), bad.clone()], Some(Some(422))).unwrap_err();
+        let err = batch_outcome(vec![ok.clone(), bad.clone()], Some(Some(422)), &output).unwrap_err();
         assert_eq!(err.exit_code(), kobana::error::ExitCode::ApiError);
         match err {
             KobanaError::Api { status, body, message } => {

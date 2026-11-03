@@ -412,6 +412,12 @@ Helpers are commands prefixed with `+` that provide multi-step workflows the dyn
 > [!IMPORTANT]
 > **Do NOT add a helper that** wraps a single API call already available via the dynamic commands, adds flags to expose data already in the API response, or re-implements `--params`/`--json` parameters as custom flags. Helper flags must control orchestration logic.
 
+Helpers send through the executor's pieces (`executor::Output`, `dry_run_report`,
+`send`, `idempotency_key`), so the global options behave as in a dynamic
+command: same `--dry-run` report, `--fields`/`--output-format`/`--output`/`--verbose`,
+`--idempotency-key`. A global option a helper has no use for is refused with
+`helpers::reject_options`, never silently dropped.
+
 Current helpers:
 
 | Helper | Description |

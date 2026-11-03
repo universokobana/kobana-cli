@@ -1,8 +1,7 @@
 use clap::{Arg, Command};
-use kobana::client::{ApiRequest, KobanaClient};
+use kobana::client::KobanaClient;
 use kobana::error::KobanaError;
 use kobana::tr;
-use kobana::spec::HttpMethod;
 
 use super::Helper;
 use crate::clap_i18n;
@@ -46,7 +45,6 @@ impl Helper for CobrarPix {
             .arg(Arg::new("nome").long("nome").requires("cpf-cnpj").help(tr!(pt: "Nome do pagador (com --cpf-cnpj)", en: "Payer name (with --cpf-cnpj)", es: "Nombre del pagador (con --cpf-cnpj)")).value_name("NOME"))
             .arg(Arg::new("cpf-cnpj").long("cpf-cnpj").requires("nome").help(tr!(pt: "CPF ou CNPJ do pagador (com --nome)", en: "Payer CPF or CNPJ (with --nome)", es: "CPF o CNPJ del pagador (con --nome)")).value_name("DOC"))
             .arg(Arg::new("descricao").long("descricao").help(tr!(pt: "Descrição da cobrança", en: "Charge description", es: "Descripción del cobro")).value_name("TEXT"))
-            .arg(Arg::new("dry-run").long("dry-run").action(clap::ArgAction::SetTrue).help(tr!(pt: "Mostra a requisição sem executar", en: "Show the request without executing", es: "Muestra la solicitud sin ejecutarla")))
     }
 
     fn execute<'a>(
@@ -54,37 +52,11 @@ impl Helper for CobrarPix {
         client: &'a KobanaClient,
         matches: &'a clap::ArgMatches,
     ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), KobanaError>> + Send + 'a>> {
-        let body = request_body(matches);
-        let dry_run = matches.get_flag("dry-run");
-
         Box::pin(async move {
-            let body = body?;
-
-            if dry_run {
-                let output = serde_json::json!({
-                    "dry_run": true,
-                    "method": "POST",
-                    "url": format!("{}/v2/charge/pix", client.base_url()),
-                    "body": body,
-                });
-                println!("{}", serde_json::to_string_pretty(&output)?);
-                return Ok(());
-            }
-
-            let request = ApiRequest {
-                method: HttpMethod::Post,
-                path: "/v2/charge/pix".to_string(),
-                query_params: None,
-                body: Some(body),
-                idempotency_key: Some(uuid::Uuid::new_v4().to_string()),
-                headers: Vec::new(),
-                multipart: false,
-                files: Vec::new(),
-            };
-
-            let response = client.execute(&request).await?;
-            println!("{}", serde_json::to_string_pretty(&response.body)?);
-            Ok(())
+            super::reject_options(matches, "+cobrar", &["params", "file"])?;
+            let mut body = request_body(matches)?;
+            super::merge_json_body(matches, &mut body)?;
+            super::post(client, matches, "/v2/charge/pix", body).await
         })
     }
 }
