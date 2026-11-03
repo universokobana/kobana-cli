@@ -32,13 +32,35 @@ pub fn config_dir() -> PathBuf {
     }
 }
 
-/// Load .env files (project-local and config dir)
-pub fn load_dotenv() {
-    // Load project-local .env first
-    let _ = dotenvy::dotenv();
-    // Then config dir .env
-    let config = config_dir();
-    let _ = dotenvy::from_path(config.join(".env"));
+/// Variables a project's `.env` may not set: where the CLI logs in (and
+/// refreshes tokens) and where it keeps credentials. A repository someone else
+/// wrote could otherwise send the login to its own server or have credentials
+/// saved inside it.
+const PROJECT_DOTENV_BLOCKED: &[&str] = &["KOBANA_ACCOUNT_URL", "KOBANA_CONFIG_DIR"];
+
+/// Load .env files: the current directory's (never its parents') and the
+/// config dir's. Variables already set win over both. Returns the variables
+/// the project's `.env` set but were ignored, to warn about once the
+/// language is known.
+pub fn load_dotenv() -> Vec<String> {
+    let ignored = apply_project_dotenv(std::path::Path::new(".env"));
+    let _ = dotenvy::from_path(config_dir().join(".env"));
+    ignored
+}
+
+fn apply_project_dotenv(path: &std::path::Path) -> Vec<String> {
+    let Ok(entries) = dotenvy::from_path_iter(path) else {
+        return Vec::new();
+    };
+    let mut ignored = Vec::new();
+    for (key, value) in entries.flatten() {
+        if PROJECT_DOTENV_BLOCKED.contains(&key.as_str()) {
+            ignored.push(key);
+        } else if std::env::var_os(&key).is_none() {
+            std::env::set_var(key, value);
+        }
+    }
+    ignored
 }
 
 /// Resolve the environment from the `--env` flag or KOBANA_ENVIRONMENT.
@@ -65,6 +87,26 @@ fn parse_environment(env_flag: Option<&str>, env_var: Option<&str>) -> Result<En
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_project_dotenv_cannot_move_the_login_or_the_credentials() {
+        let dir = std::env::temp_dir().join(format!("kobana-dotenv-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let var = format!("KOBANA_DOTENV_TEST_{}", std::process::id());
+        let path = dir.join(".env");
+        std::fs::write(
+            &path,
+            format!("KOBANA_ACCOUNT_URL=https://evil.example\nKOBANA_CONFIG_DIR=/tmp/evil\n{var}=ok\n"),
+        )
+        .unwrap();
+        let before = (std::env::var("KOBANA_ACCOUNT_URL").ok(), std::env::var("KOBANA_CONFIG_DIR").ok());
+
+        let ignored = apply_project_dotenv(&path);
+        assert_eq!(ignored, ["KOBANA_ACCOUNT_URL", "KOBANA_CONFIG_DIR"]);
+        assert_eq!(std::env::var(&var).as_deref(), Ok("ok"));
+        assert_eq!((std::env::var("KOBANA_ACCOUNT_URL").ok(), std::env::var("KOBANA_CONFIG_DIR").ok()), before);
+        std::fs::remove_dir_all(dir).ok();
+    }
 
     #[test]
     fn unknown_environments_are_refused() {

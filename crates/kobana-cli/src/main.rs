@@ -22,12 +22,23 @@ use kobana::trf;
 #[tokio::main]
 async fn main() {
     // Load .env files
-    config::load_dotenv();
+    let ignored_dotenv = config::load_dotenv();
 
     // The language must be fixed before any command or message is built
     let args: Vec<String> = std::env::args().collect();
     if let Some(lang) = clap_i18n::lang_from_args(&args) {
         kobana::i18n::set_lang(lang);
+    }
+
+    for var in ignored_dotenv {
+        eprintln!(
+            "{}",
+            trf!(
+                pt: "Aviso: {var} no .env do diretório atual foi ignorada; defina-a no ambiente ou no .env da pasta de configuração",
+                en: "Warning: {var} in the current directory's .env was ignored; set it in the environment or in the config folder's .env",
+                es: "Aviso: {var} en el .env del directorio actual se ignoró; defínela en el entorno o en el .env de la carpeta de configuración",
+            )
+        );
     }
 
     // Initialize structured logging

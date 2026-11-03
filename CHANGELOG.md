@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`.env` do projeto mais restrito (incompatível)** — o CLI lia o `.env` do diretório atual e de todas as pastas acima dele. Agora lê só o do diretório atual (além do da pasta de configuração), e esse `.env` não pode mais definir `KOBANA_ACCOUNT_URL` nem `KOBANA_CONFIG_DIR`: o CLI avisa no stderr e ignora. Um repositório de terceiros podia mandar o login para outro servidor ou guardar as credenciais dentro dele. Defina essas duas no ambiente ou no `.env` da pasta de configuração
 - **`KOBANA_CREDENTIALS_FILE` exige `product` (incompatível)** — um arquivo de credenciais sem o campo `product` é recusado com erro de autenticação (código 2), que pede o campo ou um arquivo gerado por `kobana <produto> auth export`. Antes, o arquivo sem `product` valia para todos os produtos
 - **Erro de uso sai com 3, não 2 (incompatível)** — uma linha de comando inválida (comando ou opção desconhecida, argumento faltando) saía com 2, o mesmo código do erro de autenticação. Agora sai com 3, o erro de validação, como já dizia a especificação. `kobana help banking nope` passa pelo mesmo caminho de `kobana banking nope` (mensagem e sugestão no stderr, código 3), em vez de um JSON na saída padrão; um comando incompleto (`kobana banking`) mostra a ajuda e sai com 3
 - **Listagens que estavam escondidas (incompatível)** — uma coleção ao lado da rota de item dela virava `get`, e o `get` de um item na mesma pasta sumia. Agora a coleção é `list` e o item é `get`: `banking charge pix commands list|get`, `banking financial accounts commands list|get`, `banking imports list|get` e `billing proposals items list|get`. Em `banking imports` e `billing proposals items`, o `get` era a listagem e agora lê um item (`id`/`item_id` em `--params`); use `list` para listar
@@ -48,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`.env` do projeto mais restrito (incompatível)** — o CLI lia o `.env` do diretório atual e de todas as pastas acima dele. Agora lê só o do diretório atual (além do da pasta de configuração), e esse `.env` não pode mais definir `KOBANA_ACCOUNT_URL` nem `KOBANA_CONFIG_DIR`: o CLI avisa no stderr e ignora. Um repositório de terceiros podia mandar o login para outro servidor ou guardar as credenciais dentro dele. Defina essas duas no ambiente ou no `.env` da pasta de configuração
 - **Aviso de versão nova em todos os comandos** — o aviso "Nova versão disponível… Rode `kobana update`" (no stderr, com a versão consultada no máximo uma vez por dia) agora aparece também em `kobana <produto> auth …`, `kobana help` e `kobana schema`, e não só nas chamadas à API. Ficam de fora `kobana update`, que já informa a versão, e `kobana completions`, que os shells carregam ao iniciar
 
 ## [0.10.2] - 2026-11-02
@@ -60,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`.env` do projeto mais restrito (incompatível)** — o CLI lia o `.env` do diretório atual e de todas as pastas acima dele. Agora lê só o do diretório atual (além do da pasta de configuração), e esse `.env` não pode mais definir `KOBANA_ACCOUNT_URL` nem `KOBANA_CONFIG_DIR`: o CLI avisa no stderr e ignora. Um repositório de terceiros podia mandar o login para outro servidor ou guardar as credenciais dentro dele. Defina essas duas no ambiente ou no `.env` da pasta de configuração
 - **Página de retorno do login com a marca Kobana** — a aba que abre depois de autorizar o acesso no navegador agora segue o branding (fundo preto, verde-limão, Syne e Work Sans, a cegonha da marca ilustrada) no idioma do CLI. Os erros (autorização negada, retorno inválido) usam o mesmo layout, em roxo, com o código e a descrição do erro
 
 ## [0.10.0] - 2026-11-02
@@ -72,6 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`.env` do projeto mais restrito (incompatível)** — o CLI lia o `.env` do diretório atual e de todas as pastas acima dele. Agora lê só o do diretório atual (além do da pasta de configuração), e esse `.env` não pode mais definir `KOBANA_ACCOUNT_URL` nem `KOBANA_CONFIG_DIR`: o CLI avisa no stderr e ignora. Um repositório de terceiros podia mandar o login para outro servidor ou guardar as credenciais dentro dele. Defina essas duas no ambiente ou no `.env` da pasta de configuração
 - **O login usa a Conta Kobana** (`account.kobana.com.br`, `account.sandbox.kobana.com.br`; a kobana-app local em development) no lugar de `app.kobana.com.br`; `KOBANA_ACCOUNT_URL` troca o endereço. Os escopos do `banking` passam a ser os publicados por ele (`banking/charge.bank_billets`…), e não mais a lista embutida no CLI
 - **Credenciais salvas por produto e ambiente** (`credentials-<produto>-<ambiente>.enc`). O `credentials.enc` das versões anteriores continua valendo como credencial do `banking`
 - **`auth` dentro do produto** — `kobana <produto> auth login|logout|status|export`, no formato `kobana <produto> <comando>` de todo o CLI. `--client-id`/`--client-secret` (client credentials) só valem para o `banking`
@@ -98,6 +102,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`.env` do projeto mais restrito (incompatível)** — o CLI lia o `.env` do diretório atual e de todas as pastas acima dele. Agora lê só o do diretório atual (além do da pasta de configuração), e esse `.env` não pode mais definir `KOBANA_ACCOUNT_URL` nem `KOBANA_CONFIG_DIR`: o CLI avisa no stderr e ignora. Um repositório de terceiros podia mandar o login para outro servidor ou guardar as credenciais dentro dele. Defina essas duas no ambiente ou no `.env` da pasta de configuração
 - **`dashboards`: ações do builder, do portal e das fontes de dados com nome de verbo** — `builder test-action|test-form|encrypt-secret|upload-og-image`, `portal-settings verify-sender` e um só `data-sources create` (com `kind: openapi|mcp|database`) no lugar de `builder action-runs|form-submissions|secrets|og-image`, `portal-settings sender-identity` e `data-sources openapi|mcp|database` (spec renovada). Os comandos antigos saem do `--help` mas continuam rodando, pelas rotas descontinuadas
 - **Operação descontinuada sai do `--help` mas continua rodando** — um endpoint com `deprecated: true` na spec não aparece mais na lista de comandos (o substituto aparece), mas a linha antiga segue funcionando e o `kobana schema` informa `deprecated`. Primeiro caso: `billing usage credits daily`, substituído por `billing usage credits publish` (spec do `billing` renovada)
 - **POST numa sub-rota vira ação do recurso** — um `POST` único num caminho abaixo de outra rota passa a ser um comando do recurso pai com o nome do segmento, como já acontecia depois de um id: `inbox inboxes recipients remove`, `billing holidays sync`, `billing plans bulk-archive`, `dunning tasks bulk-assign`, `dashboards workspaces import`, `dashboards builder publish`, `finance automatic-rules reorder`, `kadu memories consolidate`, `banking bank-billets cancel-all` e outros (53 comandos em todos os produtos). O nome antigo, com `create` no fim, continua funcionando como subcomando oculto (e em `kobana schema`), então scripts existentes não quebram
@@ -125,6 +130,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`.env` do projeto mais restrito (incompatível)** — o CLI lia o `.env` do diretório atual e de todas as pastas acima dele. Agora lê só o do diretório atual (além do da pasta de configuração), e esse `.env` não pode mais definir `KOBANA_ACCOUNT_URL` nem `KOBANA_CONFIG_DIR`: o CLI avisa no stderr e ignora. Um repositório de terceiros podia mandar o login para outro servidor ou guardar as credenciais dentro dele. Defina essas duas no ambiente ou no `.env` da pasta de configuração
 - **Specs de todos os produtos atualizadas** com o `main` de cada repositório, e traduções en/es refeitas. As APIs passaram a exigir um nível de acesso por operação — `read`, `write`, `delete`, `import`, `export` ou `all`, e um não vale por outro: `DELETE` exige `delete`, importação em volume exige `import` e exportação em volume exige `export`. Um token emitido antes precisa ser emitido de novo com esses níveis
 - **Comandos que mudaram porque a rota mudou** (incompatível):
   - `billing`: exclusão em lote de `nfes`, `plans`, `products` e `proposals` é `bulk delete` (`DELETE /v1/<recurso>/bulk`), no lugar de `bulk-delete`; desarquivar grupo de produtos é `product-groups unarchive`; cancelar item de mudança de assinatura é `subscription-item-changes cancel`; arquivar plano ganhou `plans archive`
@@ -142,6 +148,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`.env` do projeto mais restrito (incompatível)** — o CLI lia o `.env` do diretório atual e de todas as pastas acima dele. Agora lê só o do diretório atual (além do da pasta de configuração), e esse `.env` não pode mais definir `KOBANA_ACCOUNT_URL` nem `KOBANA_CONFIG_DIR`: o CLI avisa no stderr e ignora. Um repositório de terceiros podia mandar o login para outro servidor ou guardar as credenciais dentro dele. Defina essas duas no ambiente ou no `.env` da pasta de configuração
 - **Specs da Régua de Cobrança, do Faturamento Automático e do Dashboard Mágico atualizadas** com o `main` de cada app — a do dunning ganha o workspace; as outras duas, só textos revisados. Traduções en/es refeitas para todos os produtos
 
 ### Fixed
@@ -153,6 +160,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`.env` do projeto mais restrito (incompatível)** — o CLI lia o `.env` do diretório atual e de todas as pastas acima dele. Agora lê só o do diretório atual (além do da pasta de configuração), e esse `.env` não pode mais definir `KOBANA_ACCOUNT_URL` nem `KOBANA_CONFIG_DIR`: o CLI avisa no stderr e ignora. Um repositório de terceiros podia mandar o login para outro servidor ou guardar as credenciais dentro dele. Defina essas duas no ambiente ou no `.env` da pasta de configuração
 - **Specs do Gateway Bancário atualizadas** com o `kobana-api-specs` atual — mesmas operações, textos revisados
 - **Traduções do Gateway Bancário completas** — as descrições em inglês e espanhol agora vêm dos arquivos `.en.json`/`.es.json` que o `kobana-api-specs` mantém ao lado de cada spec (os mesmos de que as docs são geradas), e cobrem todos os endpoints da v1 e da v2. Antes vinham de um snapshot das docs que deixava em português os endpoints novos ou renomeados (`financial companies`, `mailbox entries`, `data people` e outros)
 
@@ -180,6 +188,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`.env` do projeto mais restrito (incompatível)** — o CLI lia o `.env` do diretório atual e de todas as pastas acima dele. Agora lê só o do diretório atual (além do da pasta de configuração), e esse `.env` não pode mais definir `KOBANA_ACCOUNT_URL` nem `KOBANA_CONFIG_DIR`: o CLI avisa no stderr e ignora. Um repositório de terceiros podia mandar o login para outro servidor ou guardar as credenciais dentro dele. Defina essas duas no ambiente ou no `.env` da pasta de configuração
 - Specs do `dunning` e do `dashboards` atualizadas: a descrição da API do dunning fala no access token da Conta Kobana, e os resumos ambíguos do dashboards foram corrigidos
 
 ## [0.5.0] - 2026-10-26
@@ -201,6 +210,7 @@ Seis produtos no mesmo binário: Gateway Bancário (`banking`), Inbox Autônomo 
 
 ### Changed
 
+- **`.env` do projeto mais restrito (incompatível)** — o CLI lia o `.env` do diretório atual e de todas as pastas acima dele. Agora lê só o do diretório atual (além do da pasta de configuração), e esse `.env` não pode mais definir `KOBANA_ACCOUNT_URL` nem `KOBANA_CONFIG_DIR`: o CLI avisa no stderr e ignora. Um repositório de terceiros podia mandar o login para outro servidor ou guardar as credenciais dentro dele. Defina essas duas no ambiente ou no `.env` da pasta de configuração
 - **Specs atualizadas para as versões atuais das APIs** — `banking` v1 (67 paths) e v2 (158; novos `admin certificates`, `admin commands`, `data people`, `financial companies`, `financial statement-categories`, sincronização e resumo de extrato), `billing` (190; `late-fee-policies`, `bank-accounts`, `pix-keys`, `holidays`, `banks`, `credit-purchases`, `usage credits`, `me`), `finance` (55; `custom-classifiers`, `fiscal-documents`, `financial-accounts balances`, `me`) e `inbox` (31; `workflow-runs`, `secrets`, `models`, `usage`, `agents versions`, `me`). Os produtos fora do `banking` agora autenticam com token RS256 emitido pela Conta Kobana (`account.kobana.com.br`)
 - **BREAKING (`finance`):** toda rota exige o cabeçalho `X-Workspace-Id` — defina `KOBANA_WORKSPACE_ID`
 - **BREAKING (`banking`):** parâmetros de path renomeados na v2 — `entry_id` → `entry_uid` em `mailbox entries`, `id` → `uid` em `financial accounts` e nos `commands` de Pix e contas. `entry_uid` ainda aceita `uid`/`id` pelo alias; nos demais, passe `uid` em vez de `id`
@@ -227,6 +237,7 @@ Seis produtos no mesmo binário: Gateway Bancário (`banking`), Inbox Autônomo 
 
 ### Changed
 
+- **`.env` do projeto mais restrito (incompatível)** — o CLI lia o `.env` do diretório atual e de todas as pastas acima dele. Agora lê só o do diretório atual (além do da pasta de configuração), e esse `.env` não pode mais definir `KOBANA_ACCOUNT_URL` nem `KOBANA_CONFIG_DIR`: o CLI avisa no stderr e ignora. Um repositório de terceiros podia mandar o login para outro servidor ou guardar as credenciais dentro dele. Defina essas duas no ambiente ou no `.env` da pasta de configuração
 - **`kobana update` output** — defaults to a single human-readable line; when an update is available and stdin is a terminal, prompts `(Y/n)` before running the upgrade command inline (`brew upgrade`, `cargo install`, or the standalone self-update)
 - **`--json` flag** added to `kobana update` to restore the machine-readable JSON output (never prompts, safe in pipes)
 
@@ -239,6 +250,7 @@ Seis produtos no mesmo binário: Gateway Bancário (`banking`), Inbox Autônomo 
 
 ### Changed
 
+- **`.env` do projeto mais restrito (incompatível)** — o CLI lia o `.env` do diretório atual e de todas as pastas acima dele. Agora lê só o do diretório atual (além do da pasta de configuração), e esse `.env` não pode mais definir `KOBANA_ACCOUNT_URL` nem `KOBANA_CONFIG_DIR`: o CLI avisa no stderr e ignora. Um repositório de terceiros podia mandar o login para outro servidor ou guardar as credenciais dentro dele. Defina essas duas no ambiente ou no `.env` da pasta de configuração
 - **BREAKING: environment flags** — removed `--sandbox`, `--production`, `--development`. Use a single `--env <production|sandbox|development>` flag. The default is now **production** (was sandbox). `KOBANA_ENVIRONMENT` continues to work and accepts the same values
 - **BREAKING: default environment** — now `production` instead of `sandbox`
 
@@ -258,6 +270,7 @@ Seis produtos no mesmo binário: Gateway Bancário (`banking`), Inbox Autônomo 
 
 ### Changed
 
+- **`.env` do projeto mais restrito (incompatível)** — o CLI lia o `.env` do diretório atual e de todas as pastas acima dele. Agora lê só o do diretório atual (além do da pasta de configuração), e esse `.env` não pode mais definir `KOBANA_ACCOUNT_URL` nem `KOBANA_CONFIG_DIR`: o CLI avisa no stderr e ignora. Um repositório de terceiros podia mandar o login para outro servidor ou guardar as credenciais dentro dele. Defina essas duas no ambiente ou no `.env` da pasta de configuração
 - **`auth login` output** — richer JSON payload matching gws-cli style (credentials_file, encryption backend, scopes list)
 
 ## [0.2.2] - 2026-04-11

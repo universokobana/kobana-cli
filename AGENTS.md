@@ -473,7 +473,13 @@ Current helpers:
 | `KOBANA_LOG` | Log level filter for stderr (e.g., `kobana=debug`). Off by default. |
 | `KOBANA_LOG_FILE` | Directory for JSON log files with daily rotation. Off by default. |
 
-All variables can also live in a `.env` file (loaded via `dotenvy`).
+All variables can also live in a `.env` file (loaded via `dotenvy`): the
+current directory's — never its parents' — and the config dir's; a variable
+already set wins. The current directory's `.env` may come from a repository
+someone else wrote, so it may not set `KOBANA_ACCOUNT_URL` or
+`KOBANA_CONFIG_DIR` (`PROJECT_DOTENV_BLOCKED` in `config.rs`; the CLI warns and
+ignores them). Saved tokens are refreshed only at the server that issued them
+(`StoredCredentials::issuer`), never at the current `KOBANA_ACCOUNT_URL`.
 
 ## Exit Codes
 

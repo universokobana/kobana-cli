@@ -660,7 +660,12 @@ OpenAPI specs embutidos. O caminho segue a mesma forma do comando:
 | `KOBANA_LOG` | Nível de log para stderr (ex: `kobana=debug`) |
 | `KOBANA_LOG_FILE` | Diretório para logs JSON com rotação diária |
 
-Variáveis também podem ser definidas em arquivo `.env`.
+Variáveis também podem ser definidas em um arquivo `.env`: o do diretório
+atual (não o das pastas acima dele) e o da pasta de configuração. Uma variável
+já definida no ambiente vence os dois. Por segurança, o `.env` do diretório
+atual não pode definir `KOBANA_ACCOUNT_URL` nem `KOBANA_CONFIG_DIR` (o CLI
+avisa e ignora): um repositório de terceiros poderia mandar o login para outro
+servidor ou guardar as credenciais dentro dele.
 
 ## Códigos de Saída
 
