@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Aviso de versão nova em todos os comandos** — o aviso "Nova versão disponível… Rode `kobana update`" (no stderr, com a versão consultada no máximo uma vez por dia) agora aparece também em `kobana <produto> auth …`, `kobana help` e `kobana schema`, e não só nas chamadas à API. Ficam de fora `kobana update`, que já informa a versão, e `kobana completions`, que os shells carregam ao iniciar
+
 ## [0.10.2] - 2026-11-02
 
 ### Fixed

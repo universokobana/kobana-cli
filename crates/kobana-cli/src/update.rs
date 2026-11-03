@@ -525,7 +525,7 @@ fn notify_if_outdated(latest: &str) {
     }
     let msg = trf!(
         pt: "⚠ Nova versão disponível: {current} → {latest}. Rode `kobana update` para instalar.",
-        en: "⚠ New version available: {current} → {latest}. Run `kobana update` for installation instructions.",
+        en: "⚠ New version available: {current} → {latest}. Run `kobana update` to install it.",
         es: "⚠ Nueva versión disponible: {current} → {latest}. Ejecuta `kobana update` para instalarla.",
     );
     if std::io::IsTerminal::is_terminal(&std::io::stderr()) {

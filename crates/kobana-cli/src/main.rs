@@ -57,6 +57,13 @@ async fn run() -> Result<(), KobanaError> {
         .try_get_matches()
         .unwrap_or_else(|e| clap_i18n::exit_with(e));
 
+    // Warn on stderr when a newer version is out, checking the network at most
+    // once a day (best effort, swallows errors). `update` reports it itself and
+    // `completions` is sourced by shells at start-up, so both skip it.
+    if !matches!(matches.subcommand_name(), Some("update" | "completions")) {
+        update::auto_check().await;
+    }
+
     if let Some(("help", help_matches)) = matches.subcommand() {
         let path: Vec<String> = help_matches
             .get_many::<String>("command")
@@ -88,10 +95,6 @@ async fn run() -> Result<(), KobanaError> {
         let mut cmd = commands::build_root_command(&products);
         return completions::generate_completions(shell, &mut cmd);
     }
-
-    // Silently check for a new version once per day (best effort, swallows errors).
-    // Skip for special commands that should be deterministic or pipe-clean.
-    update::auto_check().await;
 
     // Check for helper commands (+emitir, +cobrar, etc.)
     if let Some((sub_name, sub_matches)) = matches.subcommand() {
