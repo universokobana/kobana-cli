@@ -1,0 +1,40 @@
+README.md
+  s_a6378aaf095336::t_6d54272552ae82 575,579,583,587
+crates/kobana-cli/src/commands.rs
+  s_a6378aaf095336::t_34ca83a0f42180 499-521
+  s_a6378aaf095336::t_7dcf77511df788 106-110
+crates/kobana-cli/src/helpers/pix.rs
+  s_a6378aaf095336::t_7dcf77511df788 19-21,34
+  s_a6378aaf095336::t_41a16473950bcd 18
+crates/kobana-cli/src/helpers/boleto.rs
+  s_a6378aaf095336::t_7dcf77511df788 19-21,34,120-122,134
+  s_a6378aaf095336::t_41a16473950bcd 18,119
+crates/kobana-cli/src/helpers/mod.rs
+  s_a6378aaf095336::t_7dcf77511df788 11-12,35-42
+crates/kobana-cli/src/main.rs
+  s_a6378aaf095336::t_7dcf77511df788 99-105,109,111,113,115-116
+AGENTS.md
+  s_a6378aaf095336::t_6d54272552ae82 406,415-417
+skills/kobana-charge/SKILL.md
+  s_a6378aaf095336::t_6d54272552ae82 26
+skills/kobana-v1/SKILL.md
+  s_a6378aaf095336::t_6d54272552ae82 30-31
+CHANGELOG.md
+  s_a6378aaf095336::t_6d54272552ae82 10-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ed27465ecbb7ecfcbd30fadb32ba579883403507",
+  "prompts": {},
+  "sessions": {
+    "s_a6378aaf095336": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d745fa4e-197c-487a-8e60-15258b778aaa",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Rafael Lima <contato@rafael.adm.br>"
+    }
+  }
+}
