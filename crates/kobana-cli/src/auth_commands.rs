@@ -231,7 +231,7 @@ pub async fn handle_auth(
         Some(("login", m)) => handle_login(product, m, &env, root_matches.get_flag("verbose")).await,
         Some(("logout", _)) => handle_logout(product, &env),
         Some(("status", _)) => handle_status(product, &env),
-        Some(("export", _)) => handle_export(product, &env),
+        Some(("export", _)) => handle_export(product, &env).await,
         _ => Err(KobanaError::Validation(
             tr!(
                 pt: "subcomando de auth desconhecido",
@@ -451,35 +451,24 @@ fn handle_status(product: &Product, env: &Environment) -> Result<(), KobanaError
     Ok(())
 }
 
-fn handle_export(product: &Product, env: &Environment) -> Result<(), KobanaError> {
-    let env_name = env.as_str();
-    if let Some((token, source)) = auth::env_token(product) {
-        println!(
-            "{}",
-            serde_json::json!({
-                "access_token": token,
-                "token_type": "Bearer",
-                "product": product.slug,
-                "source": source.label(),
-            })
-        );
-        return Ok(());
+/// `auth export`: the token the API calls would use, from the same source
+/// and refreshed the same way, with where it came from
+async fn handle_export(product: &Product, env: &Environment) -> Result<(), KobanaError> {
+    let token = auth::resolve(product, env).await?;
+    let mut report = serde_json::json!({
+        "access_token": token.access_token,
+        "refresh_token": token.refresh_token,
+        "token_type": token.token_type,
+        "expires_at": token.expires_at,
+        "environment": token.environment,
+        "product": product.slug,
+        "resource": token.resource,
+        "source": token.source.label(),
+    });
+    if let TokenSource::CredentialsFile(path) = &token.source {
+        report["file"] = path.clone().into();
     }
-
-    let creds = credential_store::load_credentials(product.slug, env_name)?;
-    println!(
-        "{}",
-        serde_json::json!({
-            "access_token": creds.access_token,
-            "refresh_token": creds.refresh_token,
-            "token_type": creds.token_type,
-            "expires_at": creds.expires_at,
-            "environment": creds.environment,
-            "product": product.slug,
-            "resource": creds.resource,
-            "source": TokenSource::Saved.label(),
-        })
-    );
+    println!("{report}");
     Ok(())
 }
 

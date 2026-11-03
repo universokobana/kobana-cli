@@ -53,6 +53,18 @@ pub fn env_token(product: &Product) -> Option<(String, TokenSource)> {
     None
 }
 
+/// A product's token and what is known about it, from wherever it came
+#[derive(Debug, Clone)]
+pub struct ResolvedToken {
+    pub access_token: String,
+    pub source: TokenSource,
+    pub token_type: String,
+    pub refresh_token: Option<String>,
+    pub expires_at: Option<i64>,
+    pub environment: Option<String>,
+    pub resource: Option<String>,
+}
+
 /// Resolve the Bearer token for a product.
 ///
 /// Priority:
@@ -62,14 +74,51 @@ pub fn env_token(product: &Product) -> Option<(String, TokenSource)> {
 /// 3. Saved credentials from `kobana <product> auth login`, refreshed with
 ///    the refresh token when expired
 pub async fn resolve_token(product: &Product, env: &Environment) -> Result<String, KobanaError> {
-    if let Some((token, _)) = env_token(product) {
-        return Ok(token);
+    resolve(product, env).await.map(|t| t.access_token)
+}
+
+/// [`resolve_token`] with the token's source and details, for the commands
+/// that report them (`auth export`)
+pub async fn resolve(product: &Product, env: &Environment) -> Result<ResolvedToken, KobanaError> {
+    if let Some((token, source)) = env_token(product) {
+        return Ok(ResolvedToken {
+            access_token: token,
+            source,
+            // The CLI sends it as a Bearer token
+            token_type: "Bearer".into(),
+            refresh_token: None,
+            expires_at: None,
+            environment: None,
+            resource: None,
+        });
     }
 
     if let Some(file) = credentials_file_for(product, env)? {
-        return Ok(file.access_token);
+        return Ok(ResolvedToken {
+            access_token: file.access_token,
+            source: TokenSource::CredentialsFile(credentials_file_path().unwrap_or_default()),
+            token_type: file.token_type.unwrap_or_else(|| "Bearer".into()),
+            refresh_token: file.refresh_token,
+            expires_at: file.expires_at,
+            environment: file.environment,
+            resource: file.resource,
+        });
     }
 
+    let creds = saved_credentials(product, env).await?;
+    Ok(ResolvedToken {
+        access_token: creds.access_token,
+        source: TokenSource::Saved,
+        token_type: creds.token_type,
+        refresh_token: creds.refresh_token,
+        expires_at: creds.expires_at,
+        environment: Some(creds.environment),
+        resource: creds.resource,
+    })
+}
+
+/// The product's saved credentials for `env`, refreshed when expired
+async fn saved_credentials(product: &Product, env: &Environment) -> Result<StoredCredentials, KobanaError> {
     let slug = product.slug;
     let env_name = env.as_str();
     if !credential_store::has_credentials(slug, env_name) {
@@ -77,7 +126,7 @@ pub async fn resolve_token(product: &Product, env: &Environment) -> Result<Strin
     }
     let creds = credential_store::load_credentials(slug, env_name)?;
     if !is_expired(&creds) {
-        return Ok(creds.access_token);
+        return Ok(creds);
     }
 
     match (&creds.refresh_token, &creds.client_id) {
@@ -104,7 +153,7 @@ pub async fn resolve_token(product: &Product, env: &Environment) -> Result<Strin
                 ..creds
             };
             credential_store::save_credentials(slug, env_name, &refreshed)?;
-            Ok(refreshed.access_token)
+            Ok(refreshed)
         }
         _ => Err(KobanaError::Auth(trf!(
             pt: "as credenciais salvas de {slug} expiraram. Rode 'kobana {slug} auth login' para entrar de novo.",
@@ -125,6 +174,14 @@ pub fn is_expired(creds: &StoredCredentials) -> bool {
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct CredentialsFile {
     pub access_token: String,
+    #[serde(default)]
+    pub token_type: Option<String>,
+    #[serde(default)]
+    pub refresh_token: Option<String>,
+    #[serde(default)]
+    pub expires_at: Option<i64>,
+    #[serde(default)]
+    pub resource: Option<String>,
     /// Product the token was issued for. Absent in files from before tokens
     /// were per product, which were always banking's.
     #[serde(default)]
