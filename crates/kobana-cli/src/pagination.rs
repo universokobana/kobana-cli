@@ -40,6 +40,16 @@ fn next_cursor(body: &serde_json::Value) -> Option<String> {
         .map(str::to_string)
 }
 
+/// `per_page` from `--params`, as a number or a numeric string (`"20"`):
+/// read only as a number, a string fell back to 50, and a page of 20 items
+/// looked like the last one
+fn page_size(value: &serde_json::Value) -> Option<u64> {
+    value
+        .as_u64()
+        .or_else(|| value.as_str().and_then(|s| s.trim().parse().ok()))
+        .filter(|n| *n > 0)
+}
+
 /// Where `--page-all` writes: the `--output` file, or stdout. The file is
 /// created on the first write, so a run that fails before any page arrives
 /// leaves an existing file alone, as a single request does.
@@ -124,7 +134,7 @@ pub async fn paginate_all(
     let per_page = base_params
         .as_ref()
         .and_then(|p| p.get("per_page"))
-        .and_then(|v| v.as_u64())
+        .and_then(page_size)
         .unwrap_or(50);
 
     loop {
@@ -307,6 +317,14 @@ fn extract_page_items(response: &ApiResponse) -> Vec<serde_json::Value> {
 mod tests {
     use super::*;
     use kobana::spec::ApiSpec;
+
+    #[test]
+    fn per_page_is_read_as_a_number_or_a_numeric_string() {
+        assert_eq!(page_size(&serde_json::json!(20)), Some(20));
+        assert_eq!(page_size(&serde_json::json!("20")), Some(20));
+        assert_eq!(page_size(&serde_json::json!("x")), None);
+        assert_eq!(page_size(&serde_json::json!(0)), None);
+    }
 
     #[test]
     fn the_output_file_is_written_only_once_a_page_arrives() {
