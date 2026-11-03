@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`KOBANA_ENVIRONMENT` inválido virava produção** — `KOBANA_ENVIRONMENT=sandbx` mandava testes e logins para produção sem aviso. Valores que não são `production`, `sandbox` ou `development` agora saem com erro de validação (código 3), como o `--env` já fazia
 - **`kobana --json '{}' update` dava panic** — o `--json` do `update` divide o nome com o `--json <JSON>` global, que chegava a ele como string. Agora isso é um erro de validação (código 3) que aponta `kobana update --json`
 - **`--output-format` inválido só era recusado depois da requisição** — `--output-format xml` num `create` criava o registro e só então saía com erro. O valor agora é conferido na leitura dos argumentos, antes de qualquer requisição
+- **`KOBANA_CREDENTIALS_FILE` valia para todos os produtos** — os campos `product` e `environment` do arquivo eram ignorados: um arquivo com o token do banking fazia `billing auth status` dizer `authenticated: true` e as chamadas do billing mandavam o token do banking, qualquer que fosse o `--env`. O arquivo agora só vale para o produto que ele indica em `product` (sem o campo, `banking`, como os arquivos de antes dos tokens por produto) e para o `environment` dele (sem o campo, qualquer um); para os outros, o CLI segue para as credenciais salvas
 
 ## [0.10.3] - 2026-11-02
 

@@ -423,7 +423,7 @@ Current helpers:
 | Variable | Description |
 |----------|-------------|
 | `KOBANA_<PRODUCT>_TOKEN` | A product's Bearer token (highest priority): `KOBANA_BANKING_TOKEN`, `KOBANA_FINANCE_TOKEN`… Kadu also reads `KADU_TOKEN` (`Product::token_env_aliases`) |
-| `KOBANA_CREDENTIALS_FILE` | Path to OAuth credentials JSON file |
+| `KOBANA_CREDENTIALS_FILE` | Path to a credentials JSON file (the shape `auth export` prints). Used only for the product and environment it names in `product` (absent = `banking`) and `environment` (absent = any) |
 | `KOBANA_CLIENT_ID` | OAuth client ID (for `kobana <product> auth login`, default `kobana-cli`) |
 | `KOBANA_CLIENT_SECRET` | OAuth client secret |
 | `KOBANA_ACCOUNT_URL` | Overrides the Conta Kobana (authorization server) URL |

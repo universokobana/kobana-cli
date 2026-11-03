@@ -422,11 +422,9 @@ fn product_status(product: &Product, env: &Environment) -> serde_json::Value {
     if let Some((_, source)) = auth::env_token(product) {
         return serde_json::json!({ "authenticated": true, "method": source.label() });
     }
-    if let Ok(path) = std::env::var("KOBANA_CREDENTIALS_FILE") {
-        if !path.is_empty() {
-            let source = TokenSource::CredentialsFile(path.clone());
-            return serde_json::json!({ "authenticated": true, "method": source.label(), "file": path });
-        }
+    if let (Some(path), Ok(Some(_))) = (auth::credentials_file_path(), auth::credentials_file_for(product, env)) {
+        let source = TokenSource::CredentialsFile(path.clone());
+        return serde_json::json!({ "authenticated": true, "method": source.label(), "file": path });
     }
     match credential_store::load_credentials(product.slug, env.as_str()) {
         Ok(creds) => serde_json::json!({

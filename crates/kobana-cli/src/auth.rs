@@ -57,7 +57,8 @@ pub fn env_token(product: &Product) -> Option<(String, TokenSource)> {
 ///
 /// Priority:
 /// 1. `KOBANA_<PRODUCT>_TOKEN` (and the product's aliases, e.g. `KADU_TOKEN`)
-/// 2. `KOBANA_CREDENTIALS_FILE` — a JSON file with `access_token`
+/// 2. `KOBANA_CREDENTIALS_FILE` — a JSON file with `access_token`, when it
+///    is this product's and environment's (see [`CredentialsFile::serves`])
 /// 3. Saved credentials from `kobana <product> auth login`, refreshed with
 ///    the refresh token when expired
 pub async fn resolve_token(product: &Product, env: &Environment) -> Result<String, KobanaError> {
@@ -65,8 +66,8 @@ pub async fn resolve_token(product: &Product, env: &Environment) -> Result<Strin
         return Ok(token);
     }
 
-    if let Some(file_path) = non_empty_env("KOBANA_CREDENTIALS_FILE") {
-        return read_credentials_file(&file_path);
+    if let Some(file) = credentials_file_for(product, env)? {
+        return Ok(file.access_token);
     }
 
     let slug = product.slug;
@@ -119,7 +120,46 @@ pub fn is_expired(creds: &StoredCredentials) -> bool {
         .is_some_and(|exp| chrono::Utc::now().timestamp() > exp - EXPIRY_SKEW)
 }
 
-fn read_credentials_file(file_path: &str) -> Result<String, KobanaError> {
+/// The JSON file `KOBANA_CREDENTIALS_FILE` points to — the shape
+/// `kobana <product> auth export` prints
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct CredentialsFile {
+    pub access_token: String,
+    /// Product the token was issued for. Absent in files from before tokens
+    /// were per product, which were always banking's.
+    #[serde(default)]
+    pub product: Option<String>,
+    #[serde(default)]
+    pub environment: Option<String>,
+}
+
+impl CredentialsFile {
+    /// Whether the file holds a token for this product and environment. A
+    /// token serves one product (its `aud`), so a banking file must not be
+    /// sent to billing. A file without `environment` serves any.
+    pub fn serves(&self, product: &Product, env: &Environment) -> bool {
+        self.product.as_deref().unwrap_or("banking") == product.slug
+            && self.environment.as_deref().is_none_or(|e| e == env.as_str())
+    }
+}
+
+/// `KOBANA_CREDENTIALS_FILE`, when it is set, as its path
+pub fn credentials_file_path() -> Option<String> {
+    non_empty_env("KOBANA_CREDENTIALS_FILE")
+}
+
+/// The `KOBANA_CREDENTIALS_FILE` credentials, when they serve this product
+/// and environment. A file that cannot be read is an error, whatever it was
+/// meant for.
+pub fn credentials_file_for(product: &Product, env: &Environment) -> Result<Option<CredentialsFile>, KobanaError> {
+    let Some(path) = credentials_file_path() else {
+        return Ok(None);
+    };
+    let file = read_credentials_file(&path)?;
+    Ok(file.serves(product, env).then_some(file))
+}
+
+pub fn read_credentials_file(file_path: &str) -> Result<CredentialsFile, KobanaError> {
     let content = std::fs::read_to_string(file_path).map_err(|e| {
         KobanaError::Auth(trf!(
             pt: "não foi possível ler o arquivo de credenciais '{file_path}': {e}",
@@ -134,19 +174,23 @@ fn read_credentials_file(file_path: &str) -> Result<String, KobanaError> {
             es: "archivo de credenciales inválido: {e}",
         ))
     })?;
-    creds["access_token"]
-        .as_str()
-        .map(String::from)
-        .ok_or_else(|| {
-            KobanaError::Auth(
-                tr!(
-                    pt: "o arquivo de credenciais não tem o campo 'access_token'",
-                    en: "credentials file missing 'access_token' field",
-                    es: "al archivo de credenciales le falta el campo 'access_token'",
-                )
-                .into(),
+    if !creds["access_token"].is_string() {
+        return Err(KobanaError::Auth(
+            tr!(
+                pt: "o arquivo de credenciais não tem o campo 'access_token'",
+                en: "credentials file missing 'access_token' field",
+                es: "al archivo de credenciales le falta el campo 'access_token'",
             )
-        })
+            .into(),
+        ));
+    }
+    serde_json::from_value(creds).map_err(|e| {
+        KobanaError::Auth(trf!(
+            pt: "arquivo de credenciais inválido: {e}",
+            en: "invalid credentials file: {e}",
+            es: "archivo de credenciales inválido: {e}",
+        ))
+    })
 }
 
 /// Told when a product has no token source set up at all
@@ -158,4 +202,33 @@ pub fn not_configured_for(product: &Product) -> String {
         en: "No authentication configured for {slug}. Set {var} or run 'kobana {slug} auth login'.",
         es: "No hay autenticación configurada para {slug}. Define {var} o ejecuta 'kobana {slug} auth login'.",
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn file(json: serde_json::Value) -> CredentialsFile {
+        serde_json::from_value(json).unwrap()
+    }
+
+    #[test]
+    fn a_credentials_file_serves_only_its_product_and_environment() {
+        let banking = crate::product::by_slug("banking").unwrap();
+        let billing = crate::product::by_slug("billing").unwrap();
+        let prod = Environment::Production;
+        let sandbox = Environment::Sandbox;
+
+        let f = file(serde_json::json!({"access_token": "t", "product": "billing", "environment": "sandbox"}));
+        assert!(f.serves(billing, &sandbox));
+        assert!(!f.serves(billing, &prod));
+        assert!(!f.serves(banking, &sandbox));
+
+        // No environment: any. No product: banking, as files were before 0.10
+        let f = file(serde_json::json!({"access_token": "t", "product": "billing"}));
+        assert!(f.serves(billing, &prod) && f.serves(billing, &sandbox));
+        let f = file(serde_json::json!({"access_token": "t"}));
+        assert!(f.serves(banking, &prod));
+        assert!(!f.serves(billing, &prod));
+    }
 }
