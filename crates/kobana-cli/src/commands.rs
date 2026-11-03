@@ -290,6 +290,9 @@ pub fn build_root_command(products: &[LoadedProduct]) -> Command {
                 .long("lang")
                 .global(true)
                 .value_name(tr!(pt: "IDIOMA", en: "LANG", es: "IDIOMA"))
+                // `--lang fr` used to fall back to English without a word
+                .value_parser(clap::builder::PossibleValuesParser::new(["pt", "en", "es"]))
+                .hide_possible_values(true)
                 .help(tr!(
                     pt: "Idioma das mensagens: pt, en ou es (padrão: KOBANA_LANG ou o do sistema)",
                     en: "Language of the messages: pt, en or es (default: KOBANA_LANG or the system's)",
@@ -523,6 +526,16 @@ pub fn auth_command(path: &str) -> Command {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn lang_takes_only_the_three_languages() {
+        let products = product::load_all().unwrap();
+        let parse = |lang: &str| build_root_command(&products).try_get_matches_from(["kobana", "--lang", lang, "schema"]);
+        for ok in ["pt", "en", "es"] {
+            assert!(parse(ok).is_ok(), "{ok}");
+        }
+        assert_eq!(parse("fr").unwrap_err().kind(), clap::error::ErrorKind::InvalidValue);
+    }
 
     #[test]
     fn output_format_is_checked_before_anything_runs() {
