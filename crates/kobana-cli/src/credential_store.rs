@@ -5,12 +5,15 @@ use aes_gcm::{
 use kobana::error::KobanaError;
 use kobana::{tr, trf};
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::config;
 
 const KEYRING_SERVICE: &str = "kobana-cli";
-const KEYRING_USER: &str = "encryption-key";
+/// The keyring entry every config directory shared up to 0.10.3. Still read,
+/// for credentials written before keys were per directory, but never deleted:
+/// another directory may depend on it.
+const LEGACY_KEYRING_USER: &str = "encryption-key";
 const NONCE_SIZE: usize = 12;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -48,7 +51,7 @@ pub fn save_credentials(
             es: "no se pudo crear la carpeta de configuración: {e}",
         )))?;
 
-    let key = get_or_create_encryption_key()?;
+    let key = get_or_create_encryption_key(&config_dir)?;
     let plaintext =
         serde_json::to_vec(creds).map_err(|e| KobanaError::Internal(e.to_string()))?;
 
@@ -122,8 +125,7 @@ fn load_from(cred_path: &PathBuf) -> Result<StoredCredentials, KobanaError> {
             es: "no se pudieron leer las credenciales: {e}",
         )))?;
 
-    let key = get_encryption_key()?;
-    let plaintext = decrypt(&key, &encrypted)?;
+    let plaintext = decrypt_with_any_key(&config::config_dir(), &encrypted)?;
 
     serde_json::from_slice(&plaintext)
         .map_err(|e| KobanaError::Auth(trf!(
@@ -134,8 +136,8 @@ fn load_from(cred_path: &PathBuf) -> Result<StoredCredentials, KobanaError> {
 }
 
 /// Delete a product's saved credentials (banking also drops the legacy file),
-/// and the encryption key once no credential is left. Returns whether
-/// anything was removed.
+/// and this directory's encryption key once no credential is left in it.
+/// Returns whether anything was removed.
 pub fn delete_credentials(product: &str, env: &str) -> Result<bool, KobanaError> {
     let mut removed = wipe(&credentials_path(product, env))?;
     if product == "banking" && legacy_credentials_path().exists() {
@@ -144,9 +146,13 @@ pub fn delete_credentials(product: &str, env: &str) -> Result<bool, KobanaError>
             removed |= wipe(&legacy_credentials_path())?;
         }
     }
-    // The key goes with the last credential it encrypts
+    // The key goes with the last credential it encrypts. Only this
+    // directory's key: the keyring entry is per directory, and the legacy
+    // shared entry may still serve another one.
     if saved_credential_files().is_empty() {
-        let _ = delete_keyring_key();
+        let dir = config::config_dir();
+        let _ = delete_keyring_key(&keyring_user(&dir));
+        wipe(&key_file_path(&dir))?;
     }
     Ok(removed)
 }
@@ -193,13 +199,12 @@ fn legacy_credentials_path() -> PathBuf {
     config::config_dir().join("credentials.enc")
 }
 
-/// Returns the storage backend in use for the encryption key.
-/// Returns "keyring" if the OS keyring entry exists, otherwise "file".
+/// Returns the storage backend of the key new credentials of this directory
+/// are encrypted with: "file" when a `.key` is there, "keyring" otherwise.
 pub fn key_backend() -> &'static str {
-    if get_keyring_key().is_ok() {
-        "keyring"
-    } else {
-        "file"
+    match key_sources(&config::config_dir()).first() {
+        Some(KeySource::File(_)) | None => "file",
+        Some(KeySource::Keyring(_)) => "keyring",
     }
 }
 
@@ -257,58 +262,107 @@ fn decrypt(key: &[u8; 32], data: &[u8]) -> Result<Vec<u8>, KobanaError> {
         ).into()))
 }
 
-/// Get or create the encryption key, stored in OS keyring with file fallback
-fn get_or_create_encryption_key() -> Result<[u8; 32], KobanaError> {
-    // Try OS keyring first
-    if let Ok(key) = get_keyring_key() {
-        return Ok(key);
+/// Where an encryption key may live for a config directory
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum KeySource {
+    File(PathBuf),
+    Keyring(String),
+}
+
+/// `.key` in the config directory
+fn key_file_path(dir: &Path) -> PathBuf {
+    dir.join(".key")
+}
+
+/// The keyring entry of a config directory. The entry is global to the user,
+/// so each directory gets its own (`KOBANA_CONFIG_DIR=/tmp/x` must not
+/// share, nor delete, the key of the default directory).
+fn keyring_user(dir: &Path) -> String {
+    use sha2::{Digest, Sha256};
+    let dir = dir.canonicalize().unwrap_or_else(|_| dir.to_path_buf());
+    let digest = Sha256::digest(dir.to_string_lossy().as_bytes());
+    let hex: String = digest.iter().take(8).map(|b| format!("{b:02x}")).collect();
+    format!("{LEGACY_KEYRING_USER}-{hex}")
+}
+
+/// The keys that may have encrypted this directory's credentials, in the
+/// order they are tried. A `.key` comes first: a directory that has one
+/// encrypted with it, and must stay readable when a keyring entry appears.
+fn key_sources(dir: &Path) -> Vec<KeySource> {
+    let mut sources = Vec::new();
+    let file = key_file_path(dir);
+    if file.exists() {
+        sources.push(KeySource::File(file));
+    }
+    for user in [keyring_user(dir), LEGACY_KEYRING_USER.to_string()] {
+        if get_keyring_key(&user).is_ok() {
+            sources.push(KeySource::Keyring(user));
+        }
+    }
+    sources
+}
+
+fn load_key(source: &KeySource) -> Result<[u8; 32], KobanaError> {
+    match source {
+        KeySource::File(path) => load_key_from_file(path),
+        KeySource::Keyring(user) => get_keyring_key(user),
+    }
+}
+
+/// Decrypt with the first of the directory's keys that opens the data
+fn decrypt_with_any_key(dir: &Path, data: &[u8]) -> Result<Vec<u8>, KobanaError> {
+    let sources = key_sources(dir);
+    if sources.is_empty() {
+        return Err(KobanaError::Auth(
+            tr!(
+                pt: "chave de criptografia não encontrada (as credenciais podem ser de outra máquina)",
+                en: "encryption key not found (credentials may be from a different machine)",
+                es: "clave de cifrado no encontrada (las credenciales pueden ser de otra máquina)",
+            )
+            .into(),
+        ));
+    }
+    let mut last_err = None;
+    for source in &sources {
+        match load_key(source).and_then(|key| decrypt(&key, data)) {
+            Ok(plaintext) => return Ok(plaintext),
+            Err(e) => last_err = Some(e),
+        }
+    }
+    Err(last_err.expect("at least one key source"))
+}
+
+/// The key new credentials are encrypted with: the directory's `.key` or its
+/// own keyring entry, or a new one in that entry (a `.key` file when the
+/// keyring does not keep it). Never the legacy shared entry, so a directory
+/// moves off it the next time it saves.
+fn get_or_create_encryption_key(dir: &Path) -> Result<[u8; 32], KobanaError> {
+    let own = KeySource::Keyring(keyring_user(dir));
+    if let Some(source) = key_sources(dir)
+        .into_iter()
+        .find(|s| matches!(s, KeySource::File(_)) || *s == own)
+    {
+        return load_key(&source);
     }
 
-    // Try file fallback
-    let key_path = config::config_dir().join(".key");
-    if key_path.exists() {
-        return load_key_from_file(&key_path);
-    }
-
-    // Generate new key
     let key: [u8; 32] = rand::random();
 
     // Try to store in keyring, and verify by reading back.
     // Some keyring backends silently "succeed" without persisting.
-    let keyring_ok = save_keyring_key(&key).is_ok() && get_keyring_key().is_ok();
+    let user = keyring_user(dir);
+    let keyring_ok = save_keyring_key(&user, &key).is_ok() && get_keyring_key(&user).is_ok_and(|k| k == key);
 
     // Fall back to a file only when the keyring did not keep the key, so the
     // key is never written to disk when the keyring works.
     if !keyring_ok {
-        save_key_to_file(&key_path, &key)?;
+        save_key_to_file(&key_file_path(dir), &key)?;
     }
 
     Ok(key)
 }
 
-fn get_encryption_key() -> Result<[u8; 32], KobanaError> {
-    // Try OS keyring
-    if let Ok(key) = get_keyring_key() {
-        return Ok(key);
-    }
-
-    // Try file fallback
-    let key_path = config::config_dir().join(".key");
-    if key_path.exists() {
-        return load_key_from_file(&key_path);
-    }
-
-    Err(KobanaError::Auth(
-        tr!(
-            pt: "chave de criptografia não encontrada (as credenciais podem ser de outra máquina)",
-            en: "encryption key not found (credentials may be from a different machine)",
-            es: "clave de cifrado no encontrada (las credenciales pueden ser de otra máquina)",
-        ).into(),
-    ))
-}
-
-fn get_keyring_key() -> Result<[u8; 32], KobanaError> {
-    let entry = keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER)
+fn get_keyring_key(user: &str) -> Result<[u8; 32], KobanaError> {
+    let entry = keyring::Entry::new(KEYRING_SERVICE, user)
         .map_err(|e| KobanaError::Internal(trf!(
             pt: "erro no keyring: {e}",
             en: "keyring error: {e}",
@@ -326,8 +380,8 @@ fn get_keyring_key() -> Result<[u8; 32], KobanaError> {
     decode_key(&secret)
 }
 
-fn save_keyring_key(key: &[u8; 32]) -> Result<(), KobanaError> {
-    let entry = keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER)
+fn save_keyring_key(user: &str, key: &[u8; 32]) -> Result<(), KobanaError> {
+    let entry = keyring::Entry::new(KEYRING_SERVICE, user)
         .map_err(|e| KobanaError::Internal(trf!(
             pt: "erro no keyring: {e}",
             en: "keyring error: {e}",
@@ -344,8 +398,8 @@ fn save_keyring_key(key: &[u8; 32]) -> Result<(), KobanaError> {
         )))
 }
 
-fn delete_keyring_key() -> Result<(), KobanaError> {
-    let entry = keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER)
+fn delete_keyring_key(user: &str) -> Result<(), KobanaError> {
+    let entry = keyring::Entry::new(KEYRING_SERVICE, user)
         .map_err(|e| KobanaError::Internal(trf!(
             pt: "erro no keyring: {e}",
             en: "keyring error: {e}",
@@ -361,7 +415,7 @@ fn delete_keyring_key() -> Result<(), KobanaError> {
         )))
 }
 
-fn save_key_to_file(path: &PathBuf, key: &[u8; 32]) -> Result<(), KobanaError> {
+fn save_key_to_file(path: &Path, key: &[u8; 32]) -> Result<(), KobanaError> {
     let encoded = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, key);
     std::fs::write(path, encoded.as_bytes())
         .map_err(|e| KobanaError::Internal(trf!(
@@ -385,7 +439,7 @@ fn save_key_to_file(path: &PathBuf, key: &[u8; 32]) -> Result<(), KobanaError> {
     Ok(())
 }
 
-fn load_key_from_file(path: &PathBuf) -> Result<[u8; 32], KobanaError> {
+fn load_key_from_file(path: &Path) -> Result<[u8; 32], KobanaError> {
     let encoded = std::fs::read_to_string(path)
         .map_err(|e| KobanaError::Auth(trf!(
             pt: "não foi possível ler o arquivo da chave: {e}",
@@ -412,4 +466,38 @@ fn decode_key(encoded: &str) -> Result<[u8; 32], KobanaError> {
             en: "invalid key length",
             es: "longitud de clave inválida",
         ).into()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn temp_dir(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("kobana-cs-{name}-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn each_config_directory_has_its_own_keyring_entry() {
+        let a = keyring_user(Path::new("/tmp/kobana-a"));
+        let b = keyring_user(Path::new("/tmp/kobana-b"));
+        assert_ne!(a, b);
+        assert_ne!(a, LEGACY_KEYRING_USER);
+        assert_eq!(a, keyring_user(Path::new("/tmp/kobana-a")), "stable");
+    }
+
+    #[test]
+    fn a_key_file_wins_over_the_keyring() {
+        let dir = temp_dir("keyfile");
+        let key: [u8; 32] = rand::random();
+        save_key_to_file(&key_file_path(&dir), &key).unwrap();
+
+        assert_eq!(key_sources(&dir).first(), Some(&KeySource::File(key_file_path(&dir))));
+        assert_eq!(get_or_create_encryption_key(&dir).unwrap(), key);
+
+        let data = encrypt(&key, b"secret").unwrap();
+        assert_eq!(decrypt_with_any_key(&dir, &data).unwrap(), b"secret");
+        std::fs::remove_dir_all(dir).ok();
+    }
 }
