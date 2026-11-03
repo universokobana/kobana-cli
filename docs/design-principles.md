@@ -83,7 +83,7 @@ O schema e derivado do OpenAPI spec embutido no binario.
 
 Agentes geram inputs que humanos nunca gerariam. Validar:
 
-- **Path traversal**: rejeitar `../` em qualquer argumento de path
+- **Path traversal**: um identificador e um unico segmento de path: rejeitar `/`, `\`, `.` e `..`
 - **Caracteres de controle**: rejeitar ASCII < 0x20
 - **Injection em URL**: rejeitar `?` e `#` em UIDs/IDs
 - **Double-encoding**: rejeitar `%` em identificadores
@@ -92,10 +92,10 @@ Agentes geram inputs que humanos nunca gerariam. Validar:
 
 ## 7. Paginacao como NDJSON
 
-`--page-all` emite uma linha JSON por pagina (Newline Delimited JSON), permitindo streaming sem buffering:
+`--page-all` emite uma linha JSON por item (Newline Delimited JSON), pagina a pagina, permitindo streaming sem buffering:
 
 ```bash
-kobana banking bank-billets list --page-all | jq -r '.[] | .id'
+kobana banking bank-billets list --page-all | jq -r '.id'
 ```
 
 ---
@@ -129,11 +129,11 @@ Scripts precisam saber o tipo de falha sem parsear stderr:
 
 ## 10. Help Contextual Derivado do Spec
 
-`--help` em qualquer nivel mostra documentacao derivada do OpenAPI spec, incluindo campos obrigatorios e exemplos:
+`--help` em qualquer nivel mostra a documentacao do OpenAPI spec (resumo e descricao da operacao) e as opcoes. O corpo esperado, com os campos obrigatorios, sai de `kobana schema`:
 
 ```bash
-kobana banking charge pix create --help
-# Mostra: descricao, campos obrigatorios, exemplo de --json
+kobana banking charge pix create --help     # resumo, descricao, opcoes
+kobana schema banking.charge.pix.create     # parametros, corpo, campos obrigatorios, respostas
 ```
 
 ---
