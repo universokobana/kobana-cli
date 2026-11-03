@@ -418,13 +418,36 @@ fn handle_logout(product: &Product, env: &Environment) -> Result<(), KobanaError
     Ok(())
 }
 
+/// What `auth status` reports. "Not configured" only when nothing is: a
+/// credentials file or saved credentials that cannot be read report why,
+/// as the API calls would fail with that same error.
 fn product_status(product: &Product, env: &Environment) -> serde_json::Value {
     if let Some((_, source)) = auth::env_token(product) {
         return serde_json::json!({ "authenticated": true, "method": source.label() });
     }
-    if let (Some(path), Ok(Some(_))) = (auth::credentials_file_path(), auth::credentials_file_for(product, env)) {
+    if let Some(path) = auth::credentials_file_path() {
         let source = TokenSource::CredentialsFile(path.clone());
-        return serde_json::json!({ "authenticated": true, "method": source.label(), "file": path });
+        match auth::credentials_file_for(product, env) {
+            Ok(Some(_)) => {
+                return serde_json::json!({ "authenticated": true, "method": source.label(), "file": path });
+            }
+            // Another product's or environment's file: the saved ones count
+            Ok(None) => {}
+            Err(e) => {
+                return serde_json::json!({
+                    "authenticated": false,
+                    "method": source.label(),
+                    "file": path,
+                    "error": e.to_string(),
+                });
+            }
+        }
+    }
+    if !credential_store::has_credentials(product.slug, env.as_str()) {
+        return serde_json::json!({
+            "authenticated": false,
+            "message": auth::not_configured_for(product),
+        });
     }
     match credential_store::load_credentials(product.slug, env.as_str()) {
         Ok(creds) => serde_json::json!({
@@ -436,9 +459,11 @@ fn product_status(product: &Product, env: &Environment) -> serde_json::Value {
             "resource": creds.resource,
             "scopes": creds.scopes,
         }),
-        Err(_) => serde_json::json!({
+        Err(e) => serde_json::json!({
             "authenticated": false,
-            "message": auth::not_configured_for(product),
+            "method": TokenSource::Saved.label(),
+            "credentials_file": credential_store::credentials_path(product.slug, env.as_str()).to_string_lossy(),
+            "error": e.to_string(),
         }),
     }
 }
