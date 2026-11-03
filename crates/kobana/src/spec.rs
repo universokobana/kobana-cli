@@ -244,15 +244,7 @@ impl ApiSpec {
                 let cli_method = if last_is_action {
                     resource_segments.last().unwrap().clone()
                 } else {
-                    let inferred = infer_cli_method(*http_method, path, operation);
-                    // A top-level singleton cannot take `get` from the item
-                    // route beside it (`/data_purges` counts, `/data_purges/{id}`
-                    // reads one job): two `get`s on one node would drop one
-                    if inferred == "get" && path_params.is_empty() && self.has_item_get(path) {
-                        "list".to_string()
-                    } else {
-                        inferred
-                    }
+                    self.method_name(*http_method, path, operation)
                 };
 
                 let endpoint = ResolvedEndpoint {
@@ -295,7 +287,7 @@ impl ApiSpec {
 
         // Post-process: resolve conflicts where an endpoint's cli_method
         // matches a child node name. Move such endpoints into the child.
-        resolve_conflicts(&mut root);
+        resolve_conflicts(self, &mut root);
         dedupe_command_names(&mut root);
 
         root
@@ -303,6 +295,24 @@ impl ApiSpec {
 }
 
 impl ApiSpec {
+    /// The CLI method of an operation that is not an action.
+    ///
+    /// A path with an item route right under it is that item's collection,
+    /// whatever the path alone suggests: a top-level singleton (`/data_purges`
+    /// next to `/data_purges/{id}`), a collection under a parent
+    /// (`/pix/{pix_uid}/commands` next to `…/commands/{uid}`) or one keyed by a
+    /// parameter (`/imports/{collection_name}` next to
+    /// `…/{collection_name}/{id}`). Both would be `get` on one node, and the
+    /// dedupe would drop one.
+    fn method_name(&self, http_method: HttpMethod, path: &str, operation: &Operation) -> String {
+        let inferred = infer_cli_method(http_method, path, operation);
+        if inferred == "get" && self.has_item_get(path) {
+            "list".to_string()
+        } else {
+            inferred
+        }
+    }
+
     /// Whether `path` has a GET item route right under it (`<path>/{id}`).
     fn has_item_get(&self, path: &str) -> bool {
         let base = path.trim_end_matches('/');
@@ -327,7 +337,7 @@ fn dedupe_command_names(node: &mut CommandNode) {
 }
 
 /// Recursively resolve conflicts where endpoint cli_method matches a child node name
-fn resolve_conflicts(node: &mut CommandNode) {
+fn resolve_conflicts(spec: &ApiSpec, node: &mut CommandNode) {
     // Collect endpoints that conflict with children
     let conflicting: Vec<ResolvedEndpoint> = node
         .endpoints
@@ -343,7 +353,9 @@ fn resolve_conflicts(node: &mut CommandNode) {
     // Move them into the matching child with a new inferred method name
     for mut ep in conflicting {
         let child_name = ep.cli_method.clone();
-        let new_method = infer_cli_method(ep.http_method, &ep.path_template, &ep.operation);
+        // Named as it would be had it not been an action: a collection next
+        // to its item route lists (`pix commands list`)
+        let new_method = spec.method_name(ep.http_method, &ep.path_template, &ep.operation);
         ep.cli_method = new_method.clone();
         // Back inside its own resource it is `create` again, as it always was
         ep.legacy_create = false;
@@ -360,7 +372,7 @@ fn resolve_conflicts(node: &mut CommandNode) {
 
     // Recurse into children
     for child in node.children.values_mut() {
-        resolve_conflicts(child);
+        resolve_conflicts(spec, child);
     }
 }
 
@@ -749,6 +761,47 @@ mod tests {
         let find = |m: &str| credits.endpoints.iter().find(|e| e.cli_method == m).unwrap();
         assert!(find("daily").operation.deprecated);
         assert!(!find("publish").operation.deprecated);
+    }
+
+    #[test]
+    fn a_collection_beside_its_item_route_lists_under_a_parent_too() {
+        let spec = ApiSpec::parse(
+            r#"{"paths": {
+                "/v2/charge/pix/{pix_uid}/commands": {"get": {"responses": {}}},
+                "/v2/charge/pix/{pix_uid}/commands/{uid}": {"get": {"responses": {}}},
+                "/v2/charge/pix/{uid}/cancel": {"put": {"responses": {}}},
+                "/v1/imports/{collection_name}": {"get": {"responses": {}}},
+                "/v1/imports/{collection_name}/{id}": {"get": {"responses": {}}},
+                "/v1/companies/{id}/fiscal": {"get": {"responses": {}}, "put": {"responses": {}}}
+            }}"#,
+        )
+        .unwrap();
+        let methods = |node: &CommandNode| -> Vec<(String, String)> {
+            let mut m: Vec<_> =
+                node.endpoints.iter().map(|e| (e.cli_method.clone(), e.path_template.clone())).collect();
+            m.sort();
+            m
+        };
+
+        let v2 = spec.build_command_tree("/v2");
+        assert_eq!(
+            methods(&v2.children["charge"].children["pix"].children["commands"]),
+            [
+                ("get".to_string(), "/v2/charge/pix/{pix_uid}/commands/{uid}".to_string()),
+                ("list".to_string(), "/v2/charge/pix/{pix_uid}/commands".to_string()),
+            ]
+        );
+        let v1 = spec.build_command_tree("/v1");
+        assert_eq!(
+            methods(&v1.children["imports"]),
+            [
+                ("get".to_string(), "/v1/imports/{collection_name}/{id}".to_string()),
+                ("list".to_string(), "/v1/imports/{collection_name}".to_string()),
+            ]
+        );
+        // Without an item route under it, a GET under a parent still reads one thing
+        assert_eq!(methods(&v1.children["companies"].children["fiscal"])[0].0, "get");
+        assert_eq!(methods(&v1.children["companies"].children["fiscal"])[1].0, "update");
     }
 
     #[test]

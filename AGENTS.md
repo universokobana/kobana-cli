@@ -131,9 +131,13 @@ and the method name is inferred:
 
 - `GET` → `list`, or `get` when it reads one record: a path ending in `{id}`,
   or a top-level route without pagination whose 2xx response is
-  `{ data: <object> }` (the envelope may be a local `$ref`). A singleton next to
-  an item route (`/data_purges` and `/data_purges/{id}`) stays `list`, so the
-  `get` by id is not hidden. Singletons keep `list` as a hidden alias.
+  `{ data: <object> }` (the envelope may be a local `$ref`). A path with a GET
+  item route right under it is that item's collection and stays `list`, so the
+  `get` by id is not hidden: a top-level singleton (`/data_purges` and
+  `/data_purges/{id}`), a collection under a parent (`/pix/{pix_uid}/commands`
+  and `…/commands/{uid}`, also when it first reads as an action) or one keyed
+  by a parameter (`/imports/{collection_name}` and `…/{id}`). Singletons keep
+  `list` as a hidden alias.
 - `POST` → `create`, `PUT`/`PATCH` → `update`, `DELETE` → `delete`.
 - **Actions.** A path with a single operation whose last segment follows `{id}`
   (`/pix/{uid}/cancel`), or a POST-only path under another route

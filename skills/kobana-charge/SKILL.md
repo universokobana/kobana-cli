@@ -44,7 +44,7 @@ kobana banking charge <resource> <method> [flags]
 
 ### pix commands
 - `list` — Listar Comandos de um Pix. Params: `pix_uid`
-- `get` — Visualizar um Comando. Params: `pix_uid`, `id`
+- `get` — Visualizar um Comando. Params: `pix_uid`, `uid`
 
 ### automatic-pix accounts
 - `list` — Listar contas Pix Automático

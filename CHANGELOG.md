@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Listagens que estavam escondidas (incompatível)** — uma coleção ao lado da rota de item dela virava `get`, e o `get` de um item na mesma pasta sumia. Agora a coleção é `list` e o item é `get`: `banking charge pix commands list|get`, `banking financial accounts commands list|get`, `banking imports list|get` e `billing proposals items list|get`. Em `banking imports` e `billing proposals items`, o `get` era a listagem e agora lê um item (`id`/`item_id` em `--params`); use `list` para listar
+
 - **Helpers dentro do `banking` (incompatível)** — `+emitir`, `+cancelar-lote` e `+cobrar` usam APIs do Gateway Bancário e agora ficam no produto: `kobana banking +emitir`, `kobana banking +cancelar-lote` e `kobana banking +cobrar`. As formas `kobana +emitir`, `kobana +cancelar-lote` e `kobana +cobrar` foram removidas
 
 ### Fixed

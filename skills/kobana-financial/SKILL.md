@@ -35,7 +35,7 @@ kobana banking financial <resource> <method> [flags]
 
 ### accounts commands
 - `list` — Listar Comandos de uma Conta. Params: `financial_account_uid`
-- `get` — Visualizar um Comando. Params: `financial_account_uid`, `id`
+- `get` — Visualizar um Comando. Params: `financial_account_uid`, `uid`
 
 ### accounts statement
 - `list` — Listar Transações do Extrato. Params: `financial_account_uid`
