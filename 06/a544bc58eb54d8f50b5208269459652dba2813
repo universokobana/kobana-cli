@@ -1,0 +1,23 @@
+crates/kobana-cli/src/main.rs
+  s_a6378aaf095336::t_e5cd0cec7dfc33 60-66
+crates/kobana-cli/src/update.rs
+  s_a6378aaf095336::t_e5cd0cec7dfc33 528
+CHANGELOG.md
+  s_a6378aaf095336::t_fa2f86a473e10f 10-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "06a544bc58eb54d8f50b5208269459652dba2813",
+  "prompts": {},
+  "sessions": {
+    "s_a6378aaf095336": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d745fa4e-197c-487a-8e60-15258b778aaa",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Rafael Lima <contato@rafael.adm.br>"
+    }
+  }
+}
