@@ -140,6 +140,7 @@ fn load_from(cred_path: &PathBuf) -> Result<StoredCredentials, KobanaError> {
 /// Returns whether anything was removed.
 pub fn delete_credentials(product: &str, env: &str) -> Result<bool, KobanaError> {
     let mut removed = wipe(&credentials_path(product, env))?;
+    let _ = std::fs::remove_file(refresh_lock_path(product, env));
     if product == "banking" && legacy_credentials_path().exists() {
         let legacy_env = load_from(&legacy_credentials_path()).map(|c| c.environment);
         if legacy_env.map_or(true, |e| e == env) {
@@ -192,6 +193,38 @@ fn wipe(path: &PathBuf) -> Result<bool, KobanaError> {
 /// One file per product and environment: `credentials-billing-sandbox.enc`
 pub fn credentials_path(product: &str, env: &str) -> PathBuf {
     config::config_dir().join(format!("credentials-{product}-{env}.enc"))
+}
+
+/// Held while a process refreshes a product's token: `credentials-billing-sandbox.lock`
+fn refresh_lock_path(product: &str, env: &str) -> PathBuf {
+    config::config_dir().join(format!("credentials-{product}-{env}.lock"))
+}
+
+/// An exclusive lock on refreshing a product's credentials, released when
+/// the returned file is dropped. Blocks while another process holds it.
+pub fn lock_refresh(product: &str, env: &str) -> Result<std::fs::File, KobanaError> {
+    lock_file(&refresh_lock_path(product, env))
+}
+
+fn lock_file(path: &Path) -> Result<std::fs::File, KobanaError> {
+    let fail = |e: std::io::Error| {
+        KobanaError::Internal(trf!(
+            pt: "não foi possível travar a renovação das credenciais: {e}",
+            en: "failed to lock the credentials refresh: {e}",
+            es: "no se pudo bloquear la renovación de las credenciales: {e}",
+        ))
+    };
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir).map_err(fail)?;
+    }
+    let file = std::fs::OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .write(true)
+        .open(path)
+        .map_err(fail)?;
+    file.lock().map_err(fail)?;
+    Ok(file)
 }
 
 /// The single banking credential written by 0.9.0 and earlier
@@ -499,5 +532,17 @@ mod tests {
         let data = encrypt(&key, b"secret").unwrap();
         assert_eq!(decrypt_with_any_key(&dir, &data).unwrap(), b"secret");
         std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn the_refresh_lock_is_held_until_dropped() {
+        let path = temp_dir("lock").join("credentials-banking-sandbox.lock");
+        let other = || std::fs::OpenOptions::new().write(true).open(&path).unwrap();
+
+        let held = lock_file(&path).unwrap();
+        assert!(other().try_lock().is_err(), "a second process must wait");
+        drop(held);
+        assert!(other().try_lock().is_ok());
+        std::fs::remove_dir_all(path.parent().unwrap()).ok();
     }
 }

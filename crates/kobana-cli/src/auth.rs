@@ -129,6 +129,16 @@ async fn saved_credentials(product: &Product, env: &Environment) -> Result<Store
         return Ok(creds);
     }
 
+    // Two commands running at once with the expired token would spend the
+    // same refresh token; with rotation or reuse detection the second fails
+    // and the whole family may be revoked. One refreshes at a time, and the
+    // ones that waited read what it saved.
+    let _lock = credential_store::lock_refresh(slug, env_name)?;
+    let creds = credential_store::load_credentials(slug, env_name)?;
+    if !is_expired(&creds) {
+        return Ok(creds);
+    }
+
     match (&creds.refresh_token, &creds.client_id) {
         (Some(refresh), Some(client_id)) => {
             let response =
