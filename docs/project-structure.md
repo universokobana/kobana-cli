@@ -9,8 +9,8 @@ Referencia de arquitetura: **gws-cli**
 
 O gws-cli gera comandos **dinamicamente** a partir de Discovery Documents em runtime. O Kobana CLI gera comandos **a partir de um OpenAPI spec embutido no binario** em compile-time ou startup. Isso porque:
 
-- A Kobana nao tem Discovery Service — tem um OpenAPI spec fixo
-- O spec esta versionado no repo (`kobana-api-specs/`)
+- A Kobana nao tem Discovery Service — cada produto publica um OpenAPI spec
+- Os specs ficam versionados neste repo, em `crates/kobana-cli/specs/` (copiados do repo de cada produto; ver AGENTS.md)
 - Atualizar o CLI = atualizar o spec embutido + rebuild
 
 ---
@@ -25,20 +25,23 @@ kobana-cli/
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       ├── lib.rs
-│   │       ├── client.rs         # HTTP client com retry e rate limiting
+│   │       ├── client.rs         # HTTP client: Bearer, idempotencia, Accept-Language, multipart
 │   │       ├── error.rs          # KobanaError enum, exit codes, JSON serialization
-│   │       ├── spec.rs           # OpenAPI spec parsing, tipos derivados de serde
-│   │       ├── services.rs       # Registry de servicos v1/v2 e seus recursos
+│   │       ├── i18n.rs           # Idioma (pt/en/es), tr!/trf!, traducao do texto dos specs
+│   │       ├── spec.rs           # OpenAPI spec parsing, arvore de comandos, inferencia de metodos
 │   │       └── validate.rs       # Path safety, URL encoding, input validation
 │   │
 │   └── kobana-cli/               # [BINARY] O CLI `kobana`
 │       ├── Cargo.toml
-│       ├── specs/                # OpenAPI specs embutidos (include_str! ou embed)
-│       │   ├── v1.json
-│       │   └── v2.json
+│       ├── specs/                # OpenAPI specs embutidos (include_str!), em portugues
+│       │   ├── <produto>-<versao>.json  # banking-v1, banking-v2, finance-v1, billing-v1,
+│       │   │                            # inbox-v1, dunning-v1, dashboards-v1, kadu-v1
+│       │   └── i18n/             # <spec>.en.json, <spec>.es.json: traducoes do texto
 │       └── src/
 │           ├── main.rs           # Entrypoint, two-phase parsing, dispatch
+│           ├── product.rs        # Registro de produtos: hosts, specs, OAuth, variaveis
 │           ├── commands.rs       # Builder de clap::Command a partir do OpenAPI spec
+│           ├── clap_i18n.rs      # Ajuda, erros de parse e --lang no idioma do usuario
 │           ├── executor.rs       # Construcao de HTTP request, response handling
 │           ├── schema.rs         # `kobana schema` — introspecao de endpoints
 │           ├── auth.rs           # Token resolution (env var -> file -> OAuth)
@@ -50,15 +53,16 @@ kobana-cli/
 │           ├── validate.rs       # CLI-specific input validation
 │           ├── logging.rs        # Structured logging (tracing) para stderr
 │           ├── config.rs         # Config dir, .env loading, environment management
+│           ├── completions.rs    # `kobana completions <shell>`
+│           ├── update.rs         # `kobana update` e o aviso de versao nova
 │           └── helpers/          # Helper commands (+verb) para workflows multi-step
 │               ├── mod.rs        # Helper trait + registry
 │               ├── boleto.rs     # +emitir, +cancelar-lote (atalhos v1)
 │               └── pix.rs        # +cobrar (atalho cobranca pix)
 │
-├── kobana-api-specs/             # [GIT SUBMODULE] OpenAPI specs da Kobana
-├── gws-cli/                      # [GIT SUBMODULE] Referencia de arquitetura
 ├── docs/                         # Documentacao do projeto
-└── scripts/                      # Build, release, CI
+├── skills/                       # Skills para agentes (uma por area da API)
+└── scripts/                      # install.sh, traducao dos specs
 ```
 
 ---
@@ -77,6 +81,7 @@ kobana-cli/
 | `tokio` | 1 | Async runtime (time, fs) |
 | `tracing` | 0.1 | Observability |
 | `percent-encoding` | 2 | URL encoding |
+| `sys-locale` | 0.3 | Idioma do sistema |
 
 ### CLI (`kobana-cli`)
 
@@ -111,22 +116,28 @@ kobana-cli/
 
 Adaptado do gws-cli para funcionar com OpenAPI spec estatico:
 
-### Fase 1: Identificar Servico
+### Fase 1: Carregar os produtos
 
 ```
-argv: ["kobana", "charge", "pix", "list", "--params", '{"page":1}']
+argv: ["kobana", "banking", "charge", "pix", "list", "--params", '{"page":1}']
                     ^
-                    servico = "charge"
+                    produto = "banking"
 ```
 
-1. Ler `argv[1]` para identificar servico/versao
-2. Comandos especiais interceptados antes: `auth`, `schema`, `--help`, `--version`
+1. `product::load_all()` le os specs embutidos de cada produto do `REGISTRY` e
+   monta a arvore de comandos de cada um (os specs de um produto, v1 e v2 no
+   banking, viram uma arvore so)
+2. O `--lang` e lido dos argumentos crus antes, porque os comandos ja nascem no
+   idioma escolhido
 
-### Fase 2: Build Dinamico + Parse
+### Fase 2: Build + Parse
 
-1. Carregar OpenAPI spec (v1 ou v2, inferido do servico)
-2. Construir arvore `clap::Command` a partir dos paths do spec
-3. Re-parsear argumentos restantes com clap
+1. Construir a arvore `clap::Command`: `kobana <produto> <recurso…> <metodo>`,
+   mais `auth` e os helpers (`+verb`) dentro de cada produto, e `schema`,
+   `completions`, `update` e `help` no topo
+2. Parsear os argumentos com clap
+3. Comandos especiais (`help`, `schema`, `update`, `<produto> auth`,
+   `completions`, helpers) sao atendidos direto
 4. Resolver metodo HTTP + URL a partir do match
 5. Autenticar, construir request, executar
 
@@ -138,9 +149,10 @@ argv: ["kobana", "charge", "pix", "list", "--params", '{"page":1}']
 /v2/charge/pix/{uid}/cancel -> kobana banking charge pix cancel
 ```
 
-Regras de inferencia de metodo:
-- `GET` sem `{id}` no path -> `list`
-- `GET` com `{id}` no path -> `get`
+Regras de inferencia de metodo (detalhes no AGENTS.md):
+- `GET` sem `{id}` no fim do path -> `list` (ou `get`, num singleton como `/v2/me`)
+- `GET` com `{id}` no fim do path -> `get`
+- `GET` com uma rota de item logo abaixo dele -> `list`
 - `POST` -> `create`
 - `PUT`/`PATCH` -> `update`
 - `DELETE` -> `delete`
@@ -162,7 +174,7 @@ Regras de inferencia de metodo:
 
 **Authorization Code** (para acessar contas de terceiros):
 ```
-1. CLI pergunta o produto e le os escopos em /.well-known/oauth-protected-resource do host MCP dele
+1. `kobana <produto> auth login` le os escopos em /.well-known/oauth-protected-resource do host MCP do produto
    CLI abre browser -> https://account.kobana.com.br/oauth/authorize?client_id=kobana-cli&resource=<API do produto>&scope=...&code_challenge=...
 2. Usuario autoriza
 3. Callback em http://localhost:PORT com ?code=...
@@ -170,7 +182,7 @@ Regras de inferencia de metodo:
 5. Credenciais criptografadas e salvas
 ```
 
-**Client Credentials** (para apps OAuth):
+**Client Credentials** (para apps OAuth, so no banking: `--client-id` com `--client-secret`):
 ```
 1. POST /oauth/token com grant_type=client_credentials&client_id=...&client_secret=...
 2. Recebe access_token
@@ -180,13 +192,14 @@ Regras de inferencia de metodo:
 ### Storage
 
 ```
-~/.config/kobana/
+~/.config/kobana/                          # ou KOBANA_CONFIG_DIR
 ├── credentials-<produto>-<ambiente>.enc  # AES-256-GCM encrypted OAuth tokens
-├── config.json            # environment, defaults
-└── client_secret.json     # OAuth client config (opcional)
+├── credentials-<produto>-<ambiente>.lock # trava da renovacao do token
+├── .key                                  # chave, so sem keyring
+└── .env                                  # variaveis de ambiente (opcional)
 ```
 
-Chave de encriptacao no OS keyring (macOS Keychain, Windows Credential Manager, Linux Secret Service) com fallback para arquivo.
+Chave de encriptacao no OS keyring (macOS Keychain, Windows Credential Manager, Linux Secret Service), uma entrada por diretorio de configuracao, com fallback para o arquivo `.key`.
 
 ---
 
