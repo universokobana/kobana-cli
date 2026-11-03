@@ -324,7 +324,7 @@ kobana banking charge pix list --page-all --page-limit 5
 | `KOBANA_LOG` | Nivel de log para stderr (ex: `kobana=debug`) |
 | `KOBANA_LOG_FILE` | Diretorio para logs JSON com rotacao diaria |
 
-Variaveis tambem podem ser definidas em arquivo `.env`: o do diretorio atual (nao o das pastas acima) e o da pasta de configuracao. O `.env` do diretorio atual nao pode definir `KOBANA_ACCOUNT_URL` nem `KOBANA_CONFIG_DIR`.
+Variaveis tambem podem ser definidas em arquivo `.env`: o do diretorio atual (nao o das pastas acima) e o da pasta de configuracao. O `.env` do diretorio atual nao pode definir `KOBANA_ACCOUNT_URL`, `KOBANA_CONFIG_DIR`, tokens (`KOBANA_<PRODUTO>_TOKEN`, `KADU_TOKEN`), `KOBANA_CREDENTIALS_FILE`, `KOBANA_CLIENT_ID` nem `KOBANA_CLIENT_SECRET`.
 
 ---
 

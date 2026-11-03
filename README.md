@@ -663,9 +663,13 @@ OpenAPI specs embutidos. O caminho segue a mesma forma do comando:
 Variáveis também podem ser definidas em um arquivo `.env`: o do diretório
 atual (não o das pastas acima dele) e o da pasta de configuração. Uma variável
 já definida no ambiente vence os dois. Por segurança, o `.env` do diretório
-atual não pode definir `KOBANA_ACCOUNT_URL` nem `KOBANA_CONFIG_DIR` (o CLI
-avisa e ignora): um repositório de terceiros poderia mandar o login para outro
-servidor ou guardar as credenciais dentro dele.
+atual não pode definir onde o CLI entra e guarda credenciais nem as próprias
+credenciais: `KOBANA_ACCOUNT_URL`, `KOBANA_CONFIG_DIR`, os tokens
+(`KOBANA_<PRODUTO>_TOKEN`, `KADU_TOKEN`), `KOBANA_CREDENTIALS_FILE`,
+`KOBANA_CLIENT_ID` e `KOBANA_CLIENT_SECRET` (o CLI avisa e ignora). Um
+repositório de terceiros poderia mandar o login para outro servidor, guardar as
+credenciais dentro dele ou fazer o CLI agir com o token de outra pessoa.
+Defina essas no ambiente ou no `.env` da pasta de configuração.
 
 ## Códigos de Saída
 

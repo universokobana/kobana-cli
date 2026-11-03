@@ -476,9 +476,12 @@ Current helpers:
 All variables can also live in a `.env` file (loaded via `dotenvy`): the
 current directory's — never its parents' — and the config dir's; a variable
 already set wins. The current directory's `.env` may come from a repository
-someone else wrote, so it may not set `KOBANA_ACCOUNT_URL` or
-`KOBANA_CONFIG_DIR` (`PROJECT_DOTENV_BLOCKED` in `config.rs`; the CLI warns and
-ignores them). Saved tokens are refreshed only at the server that issued them
+someone else wrote, so it may not set where the CLI logs in and keeps
+credentials, nor the credentials themselves: `KOBANA_ACCOUNT_URL`,
+`KOBANA_CONFIG_DIR`, `KOBANA_CREDENTIALS_FILE`, `KOBANA_CLIENT_ID`,
+`KOBANA_CLIENT_SECRET` and every product token (`KOBANA_*_TOKEN` and
+`Product::token_env_aliases`) — `PROJECT_DOTENV_BLOCKED` and
+`is_credential_var` in `config.rs`; the CLI warns and ignores them. Saved tokens are refreshed only at the server that issued them
 (`StoredCredentials::issuer`), never at the current `KOBANA_ACCOUNT_URL`.
 
 ## Exit Codes

@@ -33,10 +33,27 @@ pub fn config_dir() -> PathBuf {
 }
 
 /// Variables a project's `.env` may not set: where the CLI logs in (and
-/// refreshes tokens) and where it keeps credentials. A repository someone else
-/// wrote could otherwise send the login to its own server or have credentials
-/// saved inside it.
-const PROJECT_DOTENV_BLOCKED: &[&str] = &["KOBANA_ACCOUNT_URL", "KOBANA_CONFIG_DIR"];
+/// refreshes tokens), where it keeps credentials, and the credentials
+/// themselves. A repository someone else wrote could otherwise send the login
+/// to its own server, have credentials saved inside it, or make the CLI act
+/// with its own token or OAuth client. Product tokens are matched by
+/// [`is_credential_var`].
+const PROJECT_DOTENV_BLOCKED: &[&str] = &[
+    "KOBANA_ACCOUNT_URL",
+    "KOBANA_CONFIG_DIR",
+    "KOBANA_CREDENTIALS_FILE",
+    "KOBANA_CLIENT_ID",
+    "KOBANA_CLIENT_SECRET",
+];
+
+/// A product's token variable: `KOBANA_<PRODUCT>_TOKEN` or one of the
+/// registered aliases (`KADU_TOKEN`)
+fn is_credential_var(key: &str) -> bool {
+    (key.starts_with("KOBANA_") && key.ends_with("_TOKEN"))
+        || crate::product::REGISTRY
+            .iter()
+            .any(|p| p.token_env_aliases.contains(&key))
+}
 
 /// Load .env files: the current directory's (never its parents') and the
 /// config dir's. Variables already set win over both. Returns the variables
@@ -54,7 +71,7 @@ fn apply_project_dotenv(path: &std::path::Path) -> Vec<String> {
     };
     let mut ignored = Vec::new();
     for (key, value) in entries.flatten() {
-        if PROJECT_DOTENV_BLOCKED.contains(&key.as_str()) {
+        if PROJECT_DOTENV_BLOCKED.contains(&key.as_str()) || is_credential_var(&key) {
             ignored.push(key);
         } else if std::env::var_os(&key).is_none() {
             std::env::set_var(key, value);
@@ -96,15 +113,28 @@ mod tests {
         let path = dir.join(".env");
         std::fs::write(
             &path,
-            format!("KOBANA_ACCOUNT_URL=https://evil.example\nKOBANA_CONFIG_DIR=/tmp/evil\n{var}=ok\n"),
+            format!(
+                "KOBANA_ACCOUNT_URL=https://evil.example\nKOBANA_CONFIG_DIR=/tmp/evil\n\
+                 KOBANA_BANKING_TOKEN=t\nKADU_TOKEN=t\nKOBANA_CREDENTIALS_FILE=/tmp/c.json\n\
+                 KOBANA_CLIENT_SECRET=s\n{var}=ok\n"
+            ),
         )
         .unwrap();
-        let before = (std::env::var("KOBANA_ACCOUNT_URL").ok(), std::env::var("KOBANA_CONFIG_DIR").ok());
+        let blocked = [
+            "KOBANA_ACCOUNT_URL",
+            "KOBANA_CONFIG_DIR",
+            "KOBANA_BANKING_TOKEN",
+            "KADU_TOKEN",
+            "KOBANA_CREDENTIALS_FILE",
+            "KOBANA_CLIENT_SECRET",
+        ];
+        let before: Vec<_> = blocked.iter().map(|k| std::env::var(k).ok()).collect();
 
         let ignored = apply_project_dotenv(&path);
-        assert_eq!(ignored, ["KOBANA_ACCOUNT_URL", "KOBANA_CONFIG_DIR"]);
+        assert_eq!(ignored, blocked);
         assert_eq!(std::env::var(&var).as_deref(), Ok("ok"));
-        assert_eq!((std::env::var("KOBANA_ACCOUNT_URL").ok(), std::env::var("KOBANA_CONFIG_DIR").ok()), before);
+        let after: Vec<_> = blocked.iter().map(|k| std::env::var(k).ok()).collect();
+        assert_eq!(after, before);
         std::fs::remove_dir_all(dir).ok();
     }
 
