@@ -72,7 +72,7 @@ load_messages() {
       M_FEEDBACK_LINK="Conte pra gente em %s"
       M_DONE="Pronto! O Kobana CLI está instalado (%s)."
       M_AUTH="Entre em qualquer produto com \`%s\`, ou exporte \`%s\`"
-      M_EXPLORE="Veja os seis produtos com \`%s\` e cada endpoint com \`%s\`"
+      M_EXPLORE="Veja os sete produtos com \`%s\` e cada endpoint com \`%s\`"
       M_UPDATE="Atualize depois com \`%s\`"
       ;;
     es)
@@ -102,7 +102,7 @@ load_messages() {
       M_FEEDBACK_LINK="Cuéntanos en %s"
       M_DONE="¡Listo! El Kobana CLI está instalado (%s)."
       M_AUTH="Inicia sesión en cualquier producto con \`%s\`, o exporta \`%s\`"
-      M_EXPLORE="Mira los seis productos con \`%s\` y cada endpoint con \`%s\`"
+      M_EXPLORE="Mira los siete productos con \`%s\` y cada endpoint con \`%s\`"
       M_UPDATE="Actualiza después con \`%s\`"
       ;;
     *)
@@ -132,7 +132,7 @@ load_messages() {
       M_FEEDBACK_LINK="Tell us at %s"
       M_DONE="Done! The Kobana CLI is installed (%s)."
       M_AUTH="Log in to any product with \`%s\`, or export \`%s\`"
-      M_EXPLORE="See the six products with \`%s\` and every endpoint with \`%s\`"
+      M_EXPLORE="See the seven products with \`%s\` and every endpoint with \`%s\`"
       M_UPDATE="Update later with \`%s\`"
       ;;
   esac
