@@ -24,7 +24,7 @@ pub fn command_placeholder() -> &'static str {
 }
 
 /// A `Command` whose help reads in the user's language. `usage` is the full
-/// usage line after the heading, e.g. `kobana auth login [OPÇÕES]`.
+/// usage line after the heading, e.g. `kobana billing auth login [OPÇÕES]`.
 pub fn command(name: impl Into<clap::builder::Str>, usage: String) -> Command {
     let usage_heading = tr!(pt: "Uso:", en: "Usage:", es: "Uso:");
     Command::new(name)

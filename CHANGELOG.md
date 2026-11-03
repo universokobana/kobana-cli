@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Renovação concorrente do token** — dois comandos ao mesmo tempo com o token vencido gastavam o mesmo refresh token; com rotação ou detecção de reuso, o segundo falhava e a família de tokens podia ser revogada. A renovação agora é feita sob uma trava de arquivo (`credentials-<produto>-<ambiente>.lock`), e quem esperou relê as credenciais que o outro salvou
 - **Dica de login em ambiente sem login** — `kobana kadu auth status --env sandbox` e os comandos do kadu em sandbox mandavam rodar `kobana kadu auth login`, que então falhava porque o kadu não tem sandbox. Sem credenciais, a mensagem agora segue o que o ambiente oferece: o erro do próprio ambiente quando o produto não existe nele, e só a variável do token quando ele existe mas não tem login pela Conta Kobana
 - **`--dry-run` mexia nas credenciais** — o dry-run resolvia o token por completo: podia renovar pela rede, regravar o arquivo de credenciais e escondia erros de decifração. Como ele não envia nada nem mostra o `Authorization`, agora não lê credenciais
+- **Chave em texto puro legível por um instante** — o `.key` e os arquivos de credenciais eram gravados e só depois restritos a `0600`, ficando legíveis pela umask nesse intervalo. Agora nascem com `0600` (e um arquivo existente é restrito antes de receber o conteúdo)
 
 ## [0.10.3] - 2026-11-02
 

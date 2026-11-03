@@ -58,25 +58,11 @@ pub fn save_credentials(
     let encrypted = encrypt(&key, &plaintext)?;
     let cred_path = credentials_path(product, env);
 
-    std::fs::write(&cred_path, &encrypted)
-        .map_err(|e| KobanaError::Internal(trf!(
-            pt: "não foi possível gravar as credenciais: {e}",
-            en: "failed to write credentials: {e}",
-            es: "no se pudieron guardar las credenciales: {e}",
-        )))?;
-
-    // Restrict file permissions on Unix
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        let perms = std::fs::Permissions::from_mode(0o600);
-        std::fs::set_permissions(&cred_path, perms)
-            .map_err(|e| KobanaError::Internal(trf!(
-                pt: "não foi possível ajustar as permissões: {e}",
-                en: "failed to set permissions: {e}",
-                es: "no se pudieron ajustar los permisos: {e}",
-            )))?;
-    }
+    write_private(&cred_path, &encrypted).map_err(|e| KobanaError::Internal(trf!(
+        pt: "não foi possível gravar as credenciais: {e}",
+        en: "failed to write credentials: {e}",
+        es: "no se pudieron guardar las credenciales: {e}",
+    )))?;
 
     Ok(())
 }
@@ -450,26 +436,27 @@ fn delete_keyring_key(user: &str) -> Result<(), KobanaError> {
 
 fn save_key_to_file(path: &Path, key: &[u8; 32]) -> Result<(), KobanaError> {
     let encoded = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, key);
-    std::fs::write(path, encoded.as_bytes())
-        .map_err(|e| KobanaError::Internal(trf!(
-            pt: "não foi possível gravar o arquivo da chave: {e}",
-            en: "failed to write key file: {e}",
-            es: "no se pudo guardar el archivo de la clave: {e}",
-        )))?;
+    write_private(path, encoded.as_bytes()).map_err(|e| KobanaError::Internal(trf!(
+        pt: "não foi possível gravar o arquivo da chave: {e}",
+        en: "failed to write key file: {e}",
+        es: "no se pudo guardar el archivo de la clave: {e}",
+    )))
+}
 
+/// Write a file only its owner can read. On Unix it is `0600` before any
+/// byte lands in it: writing first and restricting after left a plain-text
+/// `.key` readable through the umask for a moment.
+fn write_private(path: &Path, contents: &[u8]) -> std::io::Result<()> {
+    use std::io::Write;
+    let mut options = std::fs::OpenOptions::new();
+    options.write(true).create(true).truncate(true);
     #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        let perms = std::fs::Permissions::from_mode(0o600);
-        std::fs::set_permissions(path, perms)
-            .map_err(|e| KobanaError::Internal(trf!(
-                pt: "não foi possível ajustar as permissões da chave: {e}",
-                en: "failed to set key permissions: {e}",
-                es: "no se pudieron ajustar los permisos de la clave: {e}",
-            )))?;
-    }
-
-    Ok(())
+    std::os::unix::fs::OpenOptionsExt::mode(&mut options, 0o600);
+    let mut file = options.open(path)?;
+    // `mode` applies when the file is created; an existing one is narrowed
+    #[cfg(unix)]
+    file.set_permissions(std::os::unix::fs::PermissionsExt::from_mode(0o600))?;
+    file.write_all(contents)
 }
 
 fn load_key_from_file(path: &Path) -> Result<[u8; 32], KobanaError> {
@@ -544,5 +531,23 @@ mod tests {
         drop(held);
         assert!(other().try_lock().is_ok());
         std::fs::remove_dir_all(path.parent().unwrap()).ok();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn private_files_are_0600_new_or_existing() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = temp_dir("private");
+        let path = dir.join(".key");
+        let mode = || std::fs::metadata(&path).unwrap().permissions().mode() & 0o777;
+
+        write_private(&path, b"a").unwrap();
+        assert_eq!(mode(), 0o600);
+
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).unwrap();
+        write_private(&path, b"b").unwrap();
+        assert_eq!(mode(), 0o600);
+        assert_eq!(std::fs::read(&path).unwrap(), b"b");
+        std::fs::remove_dir_all(dir).ok();
     }
 }

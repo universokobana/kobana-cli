@@ -54,7 +54,9 @@ pub struct Product {
 }
 
 /// A product's surfaces as the Conta Kobana knows them, per environment.
-/// `None` when the authorization server has no resource for that environment.
+/// `None` when the CLI has no host for the product in that environment — the
+/// registry may still list a resource there (inbox and kadu have sandbox
+/// entries the CLI does not use).
 pub struct OauthHosts {
     pub production: OauthResource,
     pub sandbox: Option<OauthResource>,
