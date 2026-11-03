@@ -481,6 +481,6 @@ All variables can also live in a `.env` file (loaded via `dotenvy`).
 | `0` | Success |
 | `1` | API error (4xx/5xx) |
 | `2` | Authentication error |
-| `3` | Validation error |
+| `3` | Validation error, including a command line that does not parse (unknown command or flag, missing argument; the message goes to stderr) |
 | `4` | Schema error |
 | `5` | Internal error |

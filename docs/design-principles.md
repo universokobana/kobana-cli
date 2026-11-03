@@ -121,7 +121,7 @@ Scripts precisam saber o tipo de falha sem parsear stderr:
 | 0 | Sucesso |
 | 1 | Erro de API |
 | 2 | Erro de auth |
-| 3 | Erro de validacao |
+| 3 | Erro de validacao (inclui linha de comando invalida) |
 | 4 | Erro de schema |
 | 5 | Erro interno |
 

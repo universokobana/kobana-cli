@@ -88,40 +88,68 @@ pub fn help_subcommand() -> Command {
         )
 }
 
-/// Print the help of the command named by `path` under `root`
+/// Print the help of the command named by `path` under `root`. An unknown
+/// command is the parse error `kobana <path>` gives: same message, tip and
+/// exit code.
 pub fn print_help_for(mut root: Command, path: &[String]) -> Result<(), kobana::error::KobanaError> {
+    let parse_error = |root: &Command| {
+        let args = std::iter::once("kobana").chain(path.iter().map(String::as_str));
+        match root.clone().try_get_matches_from(args) {
+            Err(err) => exit_with(err),
+            // Every name exists after all (an alias): not reachable in practice
+            Ok(_) => kobana::error::KobanaError::Validation(trf!(
+                pt: "comando desconhecido '{}'",
+                en: "unrecognized command '{}'",
+                es: "comando desconocido '{}'",
+                path.join(" ")
+            )),
+        }
+    };
     root.build();
+    let unknown = {
+        let mut cmd = &root;
+        path.iter().any(|name| match cmd.find_subcommand(name) {
+            Some(sub) => {
+                cmd = sub;
+                false
+            }
+            None => true,
+        })
+    };
+    if unknown {
+        return Err(parse_error(&root));
+    }
     let mut cmd = &mut root;
     for name in path {
-        cmd = match cmd.find_subcommand_mut(name) {
-            Some(sub) => sub,
-            None => {
-                return Err(kobana::error::KobanaError::Validation(trf!(
-                    pt: "comando desconhecido '{}'",
-                    en: "unrecognized command '{}'",
-                    es: "comando desconocido '{}'",
-                    path.join(" ")
-                )))
-            }
-        };
+        cmd = cmd.find_subcommand_mut(name).expect("checked above");
     }
     cmd.print_help()?;
     Ok(())
 }
 
-/// Print a clap parse error in the user's language and exit. Help and version
-/// requests print as usual (their text is already localized).
+/// Exit code of a command line that does not parse: a validation error (3),
+/// as `--params` or `--json` that do not. clap's own 2 is the CLI's
+/// authentication error.
+const USAGE_EXIT_CODE: i32 = kobana::error::ExitCode::ValidationError as i32;
+
+/// Print a clap parse error in the user's language and exit with
+/// [`USAGE_EXIT_CODE`]. Help and version requests print as usual (their text
+/// is already localized) and exit 0.
 pub fn exit_with(err: clap::Error) -> ! {
     match err.kind() {
-        ErrorKind::DisplayHelp
-        | ErrorKind::DisplayVersion
-        | ErrorKind::DisplayHelpOnMissingArgumentOrSubcommand => err.exit(),
+        ErrorKind::DisplayHelp | ErrorKind::DisplayVersion => err.exit(),
+        // `kobana banking`: the help, but the command line was incomplete
+        ErrorKind::DisplayHelpOnMissingArgumentOrSubcommand => {
+            let _ = err.print();
+            std::process::exit(USAGE_EXIT_CODE)
+        }
         _ => {}
     }
 
     let Some(message) = describe(&err) else {
         // A kind the CLI never produces in practice: keep clap's own text
-        err.exit()
+        let _ = err.print();
+        std::process::exit(USAGE_EXIT_CODE)
     };
 
     let styled = std::io::IsTerminal::is_terminal(&std::io::stderr());
@@ -159,7 +187,7 @@ pub fn exit_with(err: clap::Error) -> ! {
     ));
 
     eprint!("{out}");
-    std::process::exit(2)
+    std::process::exit(USAGE_EXIT_CODE)
 }
 
 fn text(err: &clap::Error, kind: ContextKind) -> Option<String> {

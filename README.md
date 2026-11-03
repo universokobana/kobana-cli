@@ -648,7 +648,7 @@ Variáveis também podem ser definidas em arquivo `.env`.
 | `0` | Sucesso |
 | `1` | Erro de API (4xx/5xx) |
 | `2` | Erro de autenticação |
-| `3` | Erro de validação |
+| `3` | Erro de validação, inclusive linha de comando inválida (comando ou opção desconhecida, argumento faltando; a mensagem vai para o stderr) |
 | `4` | Erro de schema |
 | `5` | Erro interno |
 
