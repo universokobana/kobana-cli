@@ -47,7 +47,9 @@ impl Output {
             println!("{formatted}");
             return Ok(());
         };
-        std::fs::write(path, &formatted).map_err(|e| {
+        validate::open_output(path)
+            .and_then(|mut file| std::io::Write::write_all(&mut file, formatted.as_bytes()))
+            .map_err(|e| {
             KobanaError::Internal(trf!(
                 pt: "não foi possível gravar em {path}: {e}",
                 en: "failed to write to {path}: {e}",

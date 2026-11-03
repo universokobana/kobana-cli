@@ -92,6 +92,34 @@ pub fn validate_output_path(path: &str) -> Result<(), KobanaError> {
     Ok(())
 }
 
+/// Open the `--output` file for writing, safe against what may change after
+/// [`validate_output_path`] ran: on Unix a symlink put in its place is not
+/// followed (`O_NOFOLLOW`), a FIFO does not block (`O_NONBLOCK`), and anything
+/// that is not a regular file once open is refused before it is truncated.
+pub fn open_output(path: &str) -> std::io::Result<std::fs::File> {
+    let mut options = std::fs::OpenOptions::new();
+    options.write(true).create(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o644).custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK);
+    }
+    let file = options.open(path)?;
+    if !file.metadata()?.is_file() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            tr!(
+                pt: "não é um arquivo comum",
+                en: "not a regular file",
+                es: "no es un archivo común",
+            ),
+        ));
+    }
+    // Truncated only now that it is known to be a regular file
+    file.set_len(0)?;
+    Ok(file)
+}
+
 /// Validate a parameter value for common injection patterns
 fn validate_param_value(value: &str, param_name: &str) -> Result<(), KobanaError> {
     // Control characters
@@ -131,6 +159,28 @@ mod tests {
             std::os::unix::fs::symlink(&file, &link).unwrap();
             assert!(validate_output_path(&link.display().to_string()).is_err(), "symlink");
         }
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn opening_the_output_does_not_follow_a_link_swapped_in() {
+        let dir = std::env::temp_dir().join(format!("kobana-open-output-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let target = dir.join("victim");
+        std::fs::write(&target, "keep").unwrap();
+        let link = dir.join("out.json");
+        std::os::unix::fs::symlink(&target, &link).unwrap();
+
+        assert!(open_output(&link.display().to_string()).is_err());
+        assert_eq!(std::fs::read_to_string(&target).unwrap(), "keep");
+
+        // A regular file is truncated and written
+        let file = dir.join("ok.json");
+        std::fs::write(&file, "old content").unwrap();
+        use std::io::Write;
+        open_output(&file.display().to_string()).unwrap().write_all(b"new").unwrap();
+        assert_eq!(std::fs::read_to_string(&file).unwrap(), "new");
         std::fs::remove_dir_all(dir).ok();
     }
 }

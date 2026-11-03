@@ -66,7 +66,7 @@ impl Sink {
     fn writer(&mut self) -> std::io::Result<&mut Box<dyn Write>> {
         if self.inner.is_none() {
             let writer: Box<dyn Write> = match &self.path {
-                Some(path) => Box::new(std::io::BufWriter::new(std::fs::File::create(path)?)),
+                Some(path) => Box::new(std::io::BufWriter::new(crate::validate::open_output(path)?)),
                 None => Box::new(std::io::stdout().lock()),
             };
             self.inner = Some(writer);
