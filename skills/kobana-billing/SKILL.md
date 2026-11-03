@@ -55,7 +55,8 @@ and bulk exports `export` (or `all`); every other method needs `write` or
   `retry`, `change-card`, `change-due-date`, `send-email`, `sync`
 - `payment-methods` — CRUD plus `set-default`
 - `late-fee-policies` — CRUD plus `default`, `simulate`
-- `bank-accounts`, `pix-keys` — CRUD; `banks list`
+- `bank-accounts`, `pix-keys` — CRUD
+- `banks list` — the banks the bank accounts may use
 - `holidays` — CRUD plus `sync`
 
 ### Accounts & customers
@@ -72,7 +73,7 @@ and bulk exports `export` (or `all`); every other method needs `write` or
 ### Proposals, credits and taxes
 - `proposals` — CRUD plus `send`, `accept`, `undo-accept`, `publish`,
   `unpublish`, `cancel`, `duplicate`, `generate-pdf`, `items`, `pricing`, `stats`
-- `proposal-templates` — CRUD plus `activate`, `deactivate`, `duplicate`, `set-default`
+- `proposal-templates` — CRUD plus `activate`, `deactivate`, `duplicate`
 - `coupons` — CRUD plus `deactivate`, `redemptions`
 - `credits`, `withholdings` (`convert-to-credits`), `tax-rules`, `tax-periods`
 - `certificates` (`create` uploads with `--file file=…` / `cert_file=…` / `key_file=…`), `usage` (`summary`, `snapshots`, `credits`), `credit-purchases create`

@@ -39,9 +39,10 @@ credentials with the banking product:
 
 ### Data
 - `data-sources` — `list`, `get`, `update`, `delete`, plus `authorize`,
-  `schedule`, `spec`, `sync`, `catalog`, `database`, `mcp`,
-  `openapi create`, `openapi analyze`, `operations update`, `logs get`,
-  `test`
+  `schedule`, `spec`, `sync`, `catalog list|create`, `openapi analyze`,
+  `operations update`, `logs list|get`, `test`. Every kind of source (database,
+  MCP, OpenAPI) is created with `data-sources create`; the old
+  `database`/`mcp`/`openapi create` lines are deprecated and out of the help
 - `entities` — CRUD plus `aggregate`, `usage`, `records get|create|delete`,
   `records import`, `join`, `preview`, `sync`, `tenant-syncs`, `logs get`
 - `imports`, `exports` (`download`), `data-purges` (`list`, `get`, `delete`), `backups` (`cancel`,
@@ -49,16 +50,18 @@ credentials with the banking product:
 
 ### Portal
 - `portal-users` — CRUD plus `resend`, `email-preview`, `invite`,
-  `activity get`, `activity timeline get`
-- `portal-settings` — `get`, `update`, `domain`, `logo`, `sender-identity`
+  `activity get`, `activity timeline list`
+- `portal-settings` — `get`, `update`, `domain update`, `domain check-slug get`,
+  `logo create|delete`, `verify-sender`
 - `portal-custom-domains` — `list`, `create`, `delete`, `dns-status`, `verify`
 - `portal-oauth-providers` — `list`, `create`, `update`, `delete`, `test`
-- `portal-user-mappings` — `list`, `update`, `delete`
+- `portal-user-mappings` — `get`, `update`, `delete`
 
 ### Builder
 - `builder` — `get`, `draft update`, `theme update`, `publish`,
-  `versions get|restore|rollback`, and the page-editing `tools` (`list-pages`,
-  `get-page`, `insert-block`, `update-block`, `move-block`, …)
+  `versions get|restore|rollback`, and the page-editing `tools` (`tools list-pages get`,
+  `tools get-page get`, `tools insert-block create`, `tools update-block create`,
+  `tools move-block create`, …)
 - `assets` (`download`, `presign`), `asset-types`, `checklists` (`progress`)
 
 ### Organization
@@ -68,10 +71,10 @@ credentials with the banking product:
 - `settings`, `dashboard-users`, `team-roles`, `permissions`,
   `api-keys` (`revoke`, `rotate`)
 - `email-templates` (`duplicate`, `preview`), `email-layouts`, `notifications`
-  (`send`, `stats list`), `comments`
-- `webhooks` — CRUD plus `rotate-secret`, `test`, `deliveries get|retry`;
+  (`send`, `stats get`), `comments`
+- `webhooks` — CRUD plus `rotate-secret`, `test`, `deliveries list|retry`;
   `webhook-deliveries list|get`
-- `audit-logs` (`summary list`), `events`, `usage`, `ai-usage`, `rate-limits`, `me`
+- `audit-logs` (`summary get`), `events`, `usage`, `ai-usage`, `rate-limits`, `me`
 
 ## Examples
 

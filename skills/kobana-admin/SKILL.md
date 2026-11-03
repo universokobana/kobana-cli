@@ -24,14 +24,22 @@ kobana banking admin <resource> <method> [flags]
 ### certificates
 - `list` — Listar Certificados
 - `create` — Incluir um Certificado
+- `delete` — Excluir um Certificado. Params: `uid`
+
+### commands
+- `list` — Listar Comandos
+- `get` — Visualizar Comando. Params: `uid`
 
 ### connections
 - `list` — Listar Conexões
 - `create` — Incluir uma Conexão
-- `get` — Informações da Conexão. Params: `uid`
+- `get` — Informações da conexão. Params: `uid`
 - `update` — Atualizar Conexão. Params: `uid`
 - `delete` — Excluir uma Conexão. Params: `uid`
-- `associations` — Conectar/Desconectar Conta de Serviço. Params: `uid`
+
+### connections associations
+- `create` — Conectar Conta de Serviço. Params: `uid`
+- `delete` — Desconectar Conta de Serviço. Params: `uid`
 
 ### subaccounts
 - `list` — Listar Subcontas
@@ -42,8 +50,12 @@ kobana banking admin <resource> <method> [flags]
 ### users
 - `list` — Listar Usuários
 - `create` — Incluir um Usuário
-- `update` — Alterar Dados de um Usuário. Params: `uid`
+- `update` — Alterar Dados De Um Usuário. Params: `uid`
 - `delete` — Excluir um Usuário. Params: `uid`
+
+## Conta do token: `kobana banking me <method>`
+
+- `get` — Obter informações do usuário autenticado
 
 ## Discovering Commands
 

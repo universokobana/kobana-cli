@@ -25,8 +25,8 @@ kobana banking security <resource> <method> [flags]
 - `create` — Criar um Token de Acesso
 - `update` — Atualizar Token de Acesso. Params: `uid`
 - `delete` — Excluir Token de Acesso. Params: `uid`
-- `enable` — Habilitar Token de Acesso. Params: `uid`
 - `disable` — Desabilitar Token de Acesso. Params: `uid`
+- `enable` — Habilitar Token de Acesso. Params: `uid`
 - `renew` — Renovar Token de Acesso. Params: `uid`
 - `revoke` — Revogar Token de Acesso. Params: `uid`
 

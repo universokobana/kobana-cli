@@ -25,7 +25,8 @@ de um produto não vale para os outros. Cada um lê o seu em
 kadu também aceita `KADU_TOKEN`), ou entra com `kobana <produto> auth login`
 pela Conta Kobana. O `finance` exige o espaço de trabalho em
 `X-Workspace-Id` — exporte `KOBANA_WORKSPACE_ID` ou passe
-`{"X-Workspace-Id": "..."}` em `--params`; no `dashboards` ele é opcional.
+`{"X-Workspace-Id": "..."}` em `--params`; no `dashboards` e no `dunning` ele é
+opcional enquanto a organização tem um só espaço de trabalho.
 
 Use `--help` para obter ajuda sobre os comandos disponíveis.
 

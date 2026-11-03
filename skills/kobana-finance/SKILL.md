@@ -40,7 +40,7 @@ credentials with the banking product. Every request needs **two** things:
 
 ### Accounts and transactions
 - `financial-accounts` — `list`, `create`, `get`, `update`, `delete`, `adjust-balance`,
-  `balances get|create|delete`, `balances latest get`
+  `balances list|create|delete`, `balances latest get`
 - `financial-transactions` — CRUD plus `aggregates`, `ids`
 - `banks list`, `cash-flow get`
 

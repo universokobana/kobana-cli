@@ -32,37 +32,28 @@ the command — they sit directly under `banking`, next to the v2 domains
 
 ## API Resources
 
-### bank-billets
-- `list` — Listar Boletos
-- `create` — Criar um Boleto
-- `get` — Visualizar o Boleto. Params: `id`
-- `update` — Atualizar o Boleto. Params: `id`
-- `cancel` — Cancelar o Boleto. Params: `id`
-- `cancel-all` — Cancelar Boletos em Lote
-- `duplicate` — Duplicar Boleto. Params: `id`
-- `pay` — Marcar Boleto Como Pago. Params: `id`
-- `protest` — Protestar Boleto. Params: `id`, `type`
-- `send-email` — Enviar Boleto por E-mail. Params: `id`
-- `send-sms` — Enviar Boleto por SMS. Params: `id`
-
 ### bank-billet-accounts
-- `list` — Listar Carteiras de Cobrança
+- `list` — Listar Carteiras
 - `create` — Criar Carteira de Cobrança
 - `get` — Informações da Carteira. Params: `id`
 - `update` — Atualizar a Carteira. Params: `id`
-- `ask` — Solicitar Homologação. Params: `id`
-- `set-default` — Alterar Carteira Padrão. Params: `id`
-- `validate` — Validar Carteira. Params: `id`
+- `delete` — Excluir a Carteira de Cobrança. Params: `id`
+- `ask` — Solicitar Homologação da Carteira de Cobrança. Params: `id`
+- `set-default` — Alterar Carteira de Cobrança padrão. Params: `id`
+- `validate` — Validar Carteira de Cobrança. Params: `id`
+
+### bank-billet-batch-exports
+- `get` — Arquivo de Exportação do Lote. Params: `id`
 
 ### bank-billet-batches
 - `list` — Listar Lotes
 - `create` — Criar Lote
 - `get` — Informações do Lote. Params: `id`
-- `delete` — Excluir Lote. Params: `id`
+- `delete` — Excluir o lote. Params: `id`
 - `add-bank-billets` — Incluir Boletos no Lote. Params: `id`
+- `pdf` — Exportar Lote no Formato .pdf. Params: `id`
 - `remove-bank-billet` — Excluir Boleto do Lote. Params: `id`
-- `pdf` — Exportar Lote em PDF. Params: `id`
-- `zip` — Exportar Lote em ZIP. Params: `id`
+- `zip` — Exportar Lote no Formato .zip. Params: `id`
 
 ### bank-billet-discharges
 - `list` — Listar Registros de Retorno
@@ -71,23 +62,38 @@ the command — they sit directly under `banking`, next to the v2 domains
 ### bank-billet-payments
 - `list` — Listar Pagamentos de Boleto
 - `create` — Efetuar Pagamento de Boleto
-- `get` — Informações do Pagamento. Params: `id`
-- `delete` — Excluir Pagamento. Params: `id`
+- `get` — Informações do Pagamento de Boleto. Params: `id`
+- `delete` — Excluir Pagamento de Boleto. Params: `id`
 
 ### bank-billet-registrations
 - `list` — Listar Registros de Boleto
-- `get` — Informações do Registro. Params: `id`
+- `get` — Informações do Registro de Boleto. Params: `id`
 
 ### bank-billet-remittances
 - `list` — Listar Registros de Remessa
-- `get` — Informações do Registro. Params: `id`
+- `get` — Informações do Registro de Remessa. Params: `id`
 - `delete` — Excluir Pendências. Params: `id`
 
-### customers
-- `list` — Listar Clientes
-- `create` — Criar um Cliente
-- `get` — Visualizar o Cliente. Params: `id`
-- `update` — Atualizar Cliente. Params: `id`
+### bank-billet-remittances occurrence
+- `create` — Criar Pendências. Params: `id`, `our_code`
+
+### bank-billet-remittances pending
+- `list` — Listar Registros de Remessa Pendentes
+
+### bank-billets
+- `list` — Listar Boletos
+- `create` — Criar um Boleto
+- `cancel-all` — Cancelar Boletos em Lote
+- `get` — Visualizar o Boleto. Params: `id`
+- `update` — Atualizar o Boleto. Params: `id`
+- `cancel` — Cancelar o Boleto. Params: `id`
+- `duplicate` — Duplicar Boleto. Params: `id`
+- `pay` — Marcar Boleto Como Pago. Params: `id`
+- `send-email` — Enviar Boleto por E-mail. Params: `id`
+- `send-sms` — Enviar Boleto por SMS. Params: `id`
+
+### bank-billets protest
+- `update` — Protestar Boleto. Params: `id`, `type`
 
 ### customer-subscriptions
 - `list` — Listar Assinaturas
@@ -97,11 +103,20 @@ the command — they sit directly under `banking`, next to the v2 domains
 - `delete` — Excluir a Assinatura. Params: `id`
 - `next-charge` — Gerar Próxima Cobrança. Params: `id`
 
-### installments
-- `list` — Listar Carnês
-- `create` — Criar um Carnê
-- `get` — Informações do Carnê. Params: `id`
-- `delete` — Excluir o Carnê. Params: `id`
+### customers
+- `list` — Listar Clientes
+- `create` — Criar um Cliente
+- `get` — Visualizar o Cliente. Params: `id`
+- `update` — Atualizar Cliente. Params: `id`
+
+### customers cnpj-cpf
+- `list` — Busca Cliente por CNPJ/CPF
+
+### customers email
+- `list` — Busca Cliente por E-mail
+
+### customers people-sync
+- `update` — Habilitar ou desabilitar o espelho Cliente <-> Pessoa
 
 ### discharges
 - `list` — Listar CNABs
@@ -111,16 +126,51 @@ the command — they sit directly under `banking`, next to the v2 domains
 - `pay-off` — Quitar Boletos. Params: `id`
 - `reprocess` — Reprocessar CNAB. Params: `id`
 
-### remittances
-- `list` — Listar CNABs de Remessa
-- `create` — Criar CNAB
-- `get` — Informações do CNAB. Params: `id`
-- `delete` — Apagar CNAB. Params: `id`
-- `raw` — Raw (text/plain) do CNAB. Params: `id`
+### email-deliveries
+- `list` — Listar E-mails Enviados
+- `get` — Informações do E-mail Enviado. Params: `id`
+- `resend` — Reenviar E-mail Enviado. Params: `id`
 
 ### events
 - `list` — Listar Eventos
 - `get` — Informações do Evento. Params: `id`
+
+### imports
+- `list` — Listar Importações. Params: `collection_name`
+- `create` — Importar. Params: `collection_name`
+- `get` — Visualizar Importação. Params: `collection_name`, `id`
+
+### installments
+- `list` — Listar Carnês
+- `create` — Criar um Carnê
+- `get` — Informações do Carnê. Params: `id`
+- `delete` — Excluir o Carnê. Params: `id`
+
+### remittances
+- `list` — Listar CNABs
+- `create` — Criar CNAB
+- `bulk` — Criar CNABs em Lote
+- `get` — Informações do CNAB. Params: `id`
+- `delete` — Apagar CNAB. Params: `id`
+- `raw` — Raw(text/plain) do CNAB. Params: `id`
+
+### reports bank-billets
+- `list` — Contagem de Boletos
+
+### sms-deliveries
+- `list` — Listar SMS Enviados
+- `get` — Informações do SMS Enviado. Params: `id`
+- `resend` — Reenviar SMS Enviado. Params: `id`
+
+### userinfo
+- `list` — Informações do Usuário (descontinuado)
+
+### webhook-deliveries
+- `list` — Listar Webhooks Enviados
+- `get` — Informações do Webhook Enviado. Params: `id`
+
+### webhook-deliveries resend
+- `update` — Reenviar Webhooks Enviados
 
 ### webhooks
 - `list` — Listar Webhooks
@@ -128,32 +178,6 @@ the command — they sit directly under `banking`, next to the v2 domains
 - `get` — Informações do Webhook. Params: `id`
 - `update` — Atualizar Webhook. Params: `id`
 - `delete` — Excluir Webhook. Params: `id`
-
-### webhook-deliveries
-- `list` — Listar Webhooks Enviados
-- `get` — Informações do Webhook Enviado. Params: `id`
-- `resend` — Reenviar Webhooks Enviados
-
-### email-deliveries
-- `list` — Listar E-mails Enviados
-- `get` — Informações do E-mail. Params: `id`
-- `resend` — Reenviar E-mail. Params: `id`
-
-### sms-deliveries
-- `list` — Listar SMS Enviados
-- `get` — Informações do SMS. Params: `id`
-- `resend` — Reenviar SMS. Params: `id`
-
-### imports
-- `list` — Listar Importações. Params: `collection_name`
-- `create` — Importar. Params: `collection_name`
-- `get` — Visualizar Importação. Params: `collection_name`, `id`
-
-### reports
-- `bank-billets` — Contagem de Boletos
-
-### userinfo
-- `get` — Informações do Usuário (descontinuado)
 
 ## Discovering Commands
 

@@ -28,6 +28,10 @@ access level says what it may do there — `GET` needs `read`, `write` or `all`;
 and bulk exports `export` (or `all`); every other method needs `write` or
 `all`. One level never stands in for another.
 
+Data lives in workspaces. `KOBANA_WORKSPACE_ID` (or `X-Workspace-Id` in
+`--params`, which wins) picks the workspace a call acts on; it may be left out
+while the organization has a single workspace, and is needed with two or more.
+
 ## API Resources
 
 ### Debtors and charges
@@ -40,7 +44,7 @@ and bulk exports `export` (or `all`); every other method needs `write` or
 ### Collection rules and notifications
 - `collection-rules` — CRUD plus `steps` (`get`, `create`, `update`, `delete`)
 - `templates` — CRUD plus `duplicate`
-- `email-layouts` — `list`, `create`
+- `email-layouts` — `get`, `create`
 - `notifications` — CRUD plus `resend`
 - `notification-channels` — CRUD
 - `notification-preferences` — `list`, `update`
@@ -61,7 +65,7 @@ and bulk exports `export` (or `all`); every other method needs `write` or
 - `organization get|update` — the token's own organization (no id, no listing, no
   `X-Workspace-Id`); `update` changes `trade_name`, `website`, `timezone`,
   `custom_metadata`
-- `webhook-endpoints` — CRUD plus `rotate-secret`, `test`, `deliveries get|retry`
+- `webhook-endpoints` — CRUD plus `rotate-secret`, `test`, `deliveries list|retry`
 
 ## Examples
 

@@ -25,6 +25,12 @@ kobana banking data <resource> <method> [flags]
 - `list` — Listar Consultas de Boletos
 - `create` — Criar uma Consulta de Boleto
 
+### people
+- `list` — Buscar Pessoas
+- `create` — Criar uma Pessoa
+- `get` — Visualizar uma Pessoa. Params: `uid`
+- `delete` — Excluir uma Pessoa. Params: `uid`
+
 ### pix-qrcode-queries
 - `list` — Listar Consultas de Pix QR Code
 - `create` — Criar uma Consulta de Pix QR Code

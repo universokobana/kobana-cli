@@ -82,6 +82,9 @@ The Inbox API is **not** the banking API and does not share its credentials:
 ### system-events
 - `list`, `get`
 
+### operation-approvals
+- `list`, `get` — approvals of operations that wait for a person
+
 ## Examples
 
 ```bash

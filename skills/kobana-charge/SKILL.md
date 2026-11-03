@@ -27,62 +27,64 @@ kobana banking charge <resource> <method> [flags]
 
 ## API Resources
 
-### pix
-- `list` — Listar Pix
-- `create` — Criar um Pix
-- `get` — Visualizar um Pix. Params: `uid`
-- `update` — Atualizar um Pix. Params: `pix_uid`
-- `cancel` — Cancelar um Pix. Params: `pix_uid`
-- `delete` — Excluir um Pix. Params: `uid`
-
-### pix-accounts
-- `list` — Listar Contas Pix
-- `create` — Criar Conta Pix
-- `get` — Visualizar uma Conta Pix. Params: `uid`
-- `update` — Atualizar Conta Pix. Params: `uid`
-- `delete` — Deletar Conta Pix. Params: `uid`
-
-### pix commands
-- `list` — Listar Comandos de um Pix. Params: `pix_uid`
-- `get` — Visualizar um Comando. Params: `pix_uid`, `uid`
-
 ### automatic-pix accounts
-- `list` — Listar contas Pix Automático
-- `create` — Criar conta Pix Automático
-- `get` — Visualizar conta. Params: `uid`
-- `update` — Atualizar conta. Params: `uid`
-- `delete` — Excluir conta. Params: `uid`
+- `list` — Lista todas as contas PIX automáticas
+- `create` — Criar nova conta PIX automática
+- `get` — Visualizar conta PIX automática. Params: `uid`
+- `update` — Atualizar conta PIX automática. Params: `uid`
+- `delete` — Excluir conta PIX automática. Params: `uid`
 
 ### automatic-pix locations
-- `list` — Listar Locations do Pix Automático
-- `create` — Criar Location
-- `get` — Consultar Location. Params: `uid`
+- `list` — Lista todas as Locations do Pix Automático
+- `create` — Criar nova Location do PIX Automático
+- `get` — Consulta uma Location do PIX Automático específica. Params: `uid`
 
 ### automatic-pix pix
-- `list` — Listar cobranças Pix Automático
-- `get` — Visualizar cobrança. Params: `uid`
-- `update` — Atualizar cobrança. Params: `uid`
-- `cancel` — Cancelar cobrança. Params: `uid`
-- `retry` — Retentar cobrança. Params: `uid`
+- `list` — Lista todas as cobranças PIX automáticas
+- `get` — Informações da cobrança PIX automática. Params: `uid`
+- `update` — Atualizar cobrança PIX automática. Params: `uid`
+- `cancel` — Cancelar cobrança PIX automática. Params: `uid`
+- `retry` — Retentar cobrança PIX automática. Params: `uid`
 
 ### automatic-pix recurrences
-- `list` — Listar recorrências Pix Automático
-- `create` — Criar recorrência
-- `get` — Visualizar recorrência. Params: `uid`
-- `update` — Atualizar recorrência. Params: `uid`
-- `cancel` — Cancelar recorrência. Params: `uid`
+- `list` — Lista todas as recorrências PIX automáticas
+- `create` — Criar nova recorrência PIX automática
+- `pix` — Criar nova cobrança PIX automática. Params: `recurrence_uid`
+- `requests` — Criar nova solicitação PIX automática. Params: `recurrence_uid`
+- `get` — Informações da recorrência PIX automática. Params: `uid`
+- `update` — Atualizar recorrência PIX automática. Params: `uid`
+- `cancel` — Cancelar recorrência PIX automática. Params: `uid`
 
 ### automatic-pix requests
-- `list` — Listar solicitações Pix Automático
-- `get` — Visualizar solicitação. Params: `uid`
-- `update` — Atualizar solicitação. Params: `uid`
-- `cancel` — Cancelar solicitação. Params: `uid`
+- `list` — Lista todas as solicitações PIX automáticas
+- `get` — Informações da solicitação PIX automática. Params: `uid`
+- `update` — Atualizar solicitação PIX automática. Params: `uid`
+- `cancel` — Cancelar solicitação PIX automática. Params: `uid`
 
 ### payments
 - `list` — Listar Recebimentos
 - `create` — Informar Recebimento
 - `get` — Informações do Recebimento. Params: `uid`
 - `delete` — Excluir Recebimento. Params: `uid`
+
+### pix
+- `list` — Listar Pix
+- `create` — Criar um Pix
+- `cancel` — Cancelar um Pix. Params: `pix_uid`
+- `update` — Atualizar um Pix. Params: `pix_uid`
+- `get` — Visualizar um Pix. Params: `uid`
+- `delete` — Excluir um Pix. Params: `uid`
+
+### pix commands
+- `get` — Visualizar um Comando. Params: `pix_uid`, `uid`
+- `list` — Listar Comandos de um Pix. Params: `pix_uid`
+
+### pix-accounts
+- `list` — Listar Contas Pix
+- `create` — Criar Pix Account
+- `get` — Visualizar uma conta Pix. Params: `uid`
+- `update` — Atualizar Pix Account. Params: `uid`
+- `delete` — Deletar Pix Account. Params: `uid`
 
 ## Discovering Commands
 

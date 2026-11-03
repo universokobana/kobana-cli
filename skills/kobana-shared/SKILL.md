@@ -100,8 +100,10 @@ kobana banking charge pix list --params '{"per_page": 5}'
 | `KOBANA_CREDENTIALS_FILE` | Path to a credentials JSON file (the shape `auth export` prints), used only for the `product` (absent = `banking`) and `environment` it names |
 | `KOBANA_CLIENT_ID` | OAuth client ID |
 | `KOBANA_CLIENT_SECRET` | OAuth client secret. Like `--client-secret`, it selects the Client Credentials flow (banking only, with a client ID) |
-| `KOBANA_WORKSPACE_ID` | Workspace sent as `X-Workspace-Id` by `finance` (required) and `dashboards` |
-| `KOBANA_ENVIRONMENT` | `production` (default), `sandbox` or `development` |
+| `KOBANA_ACCOUNT_URL` | Overrides the Conta Kobana (authorization server) URL |
+| `KOBANA_WORKSPACE_ID` | Workspace sent as `X-Workspace-Id` by `finance` (required), `dashboards` and `dunning` (optional while the organization has a single workspace). A value in `--params` wins |
+| `KOBANA_ENVIRONMENT` | `production` (default), `sandbox` or `development`; any other value is an error |
+| `KOBANA_LANG` | `pt`, `en` or `es` (default: `LC_ALL`/`LC_MESSAGES`/`LANG`, then the system language). `--lang` wins |
 | `KOBANA_CONFIG_DIR` | Override config directory (default: `~/.config/kobana`) |
 
 ## Community & Feedback

@@ -24,30 +24,47 @@ kobana banking financial <resource> <method> [flags]
 ### accounts
 - `list` — Listar Contas
 - `create` — Criar uma Conta
-- `get` — Visualizar uma Conta. Params: `id`
-- `update` — Atualizar Conta. Params: `id`
+- `get` — Visualizar uma Conta. Params: `uid`
+- `update` — Atualizar Conta. Params: `uid`
 - `delete` — Excluir uma Conta. Params: `uid`
 
 ### accounts balances
-- `list` — Listar Saldos. Params: `financial_account_uid`
-- `create` — Criar um Saldo. Params: `financial_account_uid`
+- `list` — Listar saldos. Params: `financial_account_uid`
+- `create` — Criar um saldo. Params: `financial_account_uid`
 - `get` — Visualizar um Saldo. Params: `financial_account_uid`, `balance_uid`
 
 ### accounts commands
-- `list` — Listar Comandos de uma Conta. Params: `financial_account_uid`
 - `get` — Visualizar um Comando. Params: `financial_account_uid`, `uid`
+- `list` — Listar Comandos de uma Conta. Params: `financial_account_uid`
 
-### accounts statement
-- `list` — Listar Transações do Extrato. Params: `financial_account_uid`
+### accounts statement-transactions
 - `sync` — Sincronizar Extrato. Params: `financial_account_uid`
+- `list` — Listar Transações. Params: `financial_account_uid`
 
-### accounts statement imports
-- `list` — Listar Importações de Extrato. Params: `financial_account_uid`
+### accounts statement-transactions imports
+- `list` — Listar Importações de extrato. Params: `financial_account_uid`
 - `create` — Importar Extrato. Params: `financial_account_uid`
-- `get` — Visualizar Importação. Params: `financial_account_uid`, `uid`
+- `get` — Visualizar Importação de Extrato. Params: `financial_account_uid`, `uid`
+
+### accounts statement-transactions summary
+- `get` — Resumir Extrato. Params: `financial_account_uid`
+
+### accounts statement-transactions syncs
+- `list` — Listar Sincronizações de Extrato. Params: `financial_account_uid`
+- `get` — Consultar Sincronização de Extrato. Params: `financial_account_uid`, `uid`
+
+### companies
+- `list` — Listar Empresas
+- `create` — Criar uma Empresa
+- `get` — Consultar uma Empresa. Params: `uid`
+- `update` — Atualizar uma Empresa. Params: `uid`
+- `delete` — Excluir uma Empresa. Params: `uid`
 
 ### providers
-- `list` — Listar Provedores Financeiros
+- `list` — Listar Provedores
+
+### statement-categories
+- `list` — Listar Categorias de Extrato
 
 ## Discovering Commands
 
