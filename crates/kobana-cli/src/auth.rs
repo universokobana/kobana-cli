@@ -192,10 +192,9 @@ pub struct CredentialsFile {
     pub expires_at: Option<i64>,
     #[serde(default)]
     pub resource: Option<String>,
-    /// Product the token was issued for. Absent in files from before tokens
-    /// were per product, which were always banking's.
-    #[serde(default)]
-    pub product: Option<String>,
+    /// Product the token was issued for. Required: a token serves one
+    /// product, and a file that does not say which is refused.
+    pub product: String,
     #[serde(default)]
     pub environment: Option<String>,
 }
@@ -205,7 +204,7 @@ impl CredentialsFile {
     /// token serves one product (its `aud`), so a banking file must not be
     /// sent to billing. A file without `environment` serves any.
     pub fn serves(&self, product: &Product, env: &Environment) -> bool {
-        self.product.as_deref().unwrap_or("banking") == product.slug
+        self.product == product.slug
             && self.environment.as_deref().is_none_or(|e| e == env.as_str())
     }
 }
@@ -250,6 +249,13 @@ pub fn read_credentials_file(file_path: &str) -> Result<CredentialsFile, KobanaE
             )
             .into(),
         ));
+    }
+    if !creds["product"].is_string() {
+        return Err(KobanaError::Auth(trf!(
+            pt: "o arquivo de credenciais '{file_path}' não tem o campo 'product' (o produto do token, ex.: \"banking\"); gere-o com `kobana <produto> auth export`",
+            en: "credentials file '{file_path}' missing 'product' field (the token's product, e.g. \"banking\"); create it with `kobana <product> auth export`",
+            es: "al archivo de credenciales '{file_path}' le falta el campo 'product' (el producto del token, ej.: \"banking\"); créalo con `kobana <producto> auth export`",
+        )));
     }
     serde_json::from_value(creds).map_err(|e| {
         KobanaError::Auth(trf!(
@@ -330,11 +336,20 @@ mod tests {
         assert!(!f.serves(billing, &prod));
         assert!(!f.serves(banking, &sandbox));
 
-        // No environment: any. No product: banking, as files were before 0.10
+        // No environment: any
         let f = file(serde_json::json!({"access_token": "t", "product": "billing"}));
         assert!(f.serves(billing, &prod) && f.serves(billing, &sandbox));
-        let f = file(serde_json::json!({"access_token": "t"}));
-        assert!(f.serves(banking, &prod));
-        assert!(!f.serves(billing, &prod));
+    }
+
+    #[test]
+    fn a_credentials_file_without_product_is_refused() {
+        let path = std::env::temp_dir().join(format!("kobana-creds-{}.json", std::process::id()));
+        std::fs::write(&path, r#"{"access_token": "t"}"#).unwrap();
+        let err = read_credentials_file(&path.display().to_string()).unwrap_err();
+        assert!(matches!(err, KobanaError::Auth(ref m) if m.contains("product")), "{err}");
+
+        std::fs::write(&path, r#"{"access_token": "t", "product": "banking"}"#).unwrap();
+        assert_eq!(read_credentials_file(&path.display().to_string()).unwrap().product, "banking");
+        std::fs::remove_file(path).ok();
     }
 }

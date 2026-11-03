@@ -313,7 +313,7 @@ kobana banking charge pix list --page-all --page-limit 5
 | Variavel | Descricao |
 |----------|-----------|
 | `KOBANA_<PRODUTO>_TOKEN` | Token Bearer de um produto (maior prioridade) |
-| `KOBANA_CREDENTIALS_FILE` | Caminho para arquivo JSON de credenciais OAuth (vale só para o `product` e o `environment` que ele indica) |
+| `KOBANA_CREDENTIALS_FILE` | Caminho para arquivo JSON de credenciais OAuth (exige o campo `product`; vale só para esse produto e para o `environment` dele) |
 | `KOBANA_CLIENT_ID` | OAuth client ID |
 | `KOBANA_CLIENT_SECRET` | OAuth client secret: escolhe o fluxo Client Credentials (só no `banking`, com client ID) |
 | `KOBANA_ACCOUNT_URL` | Substitui a URL da Conta Kobana (servidor de autorizacao) |
