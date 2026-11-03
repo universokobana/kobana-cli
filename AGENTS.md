@@ -380,10 +380,10 @@ Sleep 3s
 
 ### Identifier Validation (`crates/kobana/src/validate.rs`)
 
-All user-supplied values embedded in URL path segments are validated with `validate_identifier()`:
+All user-supplied values embedded in URL path segments are validated with `validate_identifier()`. A value must be exactly one path segment:
 
 ```rust
-// Rejects: ../, control chars, ?, #, %
+// Rejects: empty, `.`, `..`, / and \, control chars, ?, #, %
 kobana::validate::validate_identifier(&value, "uid")?;
 ```
 

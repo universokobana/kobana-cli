@@ -11,17 +11,25 @@ pub fn validate_identifier(value: &str, name: &str) -> Result<(), KobanaError> {
         )));
     }
 
-    // Reject path traversal
-    if value.contains("../") || value.contains("..\\") {
+    // An identifier is one path segment: a separator would reach another
+    // route (`1/cancel`), and `.`/`..` are resolved away by the URL parser
+    if value == "." || value == ".." || value.contains("../") || value.contains("..\\") {
         return Err(KobanaError::Validation(trf!(
             pt: "{name} contém uma sequência de travessia de caminho",
             en: "{name} contains path traversal sequence",
             es: "{name} contiene una secuencia de recorrido de ruta",
         )));
     }
+    if value.contains('/') || value.contains('\\') {
+        return Err(KobanaError::Validation(trf!(
+            pt: "{name} não pode conter / nem \\",
+            en: "{name} cannot contain / or \\",
+            es: "{name} no puede contener / ni \\",
+        )));
+    }
 
     // Reject control characters (ASCII < 0x20)
-    if value.bytes().any(|b| b < 0x20) {
+    if value.bytes().any(|b| b < 0x20 || b == 0x7f) {
         return Err(KobanaError::Validation(trf!(
             pt: "{name} contém caracteres de controle",
             en: "{name} contains control characters",
@@ -66,6 +74,16 @@ mod tests {
     }
 
     #[test]
+    fn rejects_anything_that_is_not_one_path_segment() {
+        for bad in ["1/cancel", "..", ".", "a\\b", "/", "../../v2/charge/pix/x"] {
+            assert!(validate_identifier(bad, "id").is_err(), "{bad}");
+        }
+        // Dots inside an identifier are fine
+        assert!(validate_identifier("v1.2", "id").is_ok());
+        assert!(validate_identifier("a..b", "id").is_ok());
+    }
+
+    #[test]
     fn test_url_injection() {
         assert!(validate_identifier("123?admin=true", "id").is_err());
         assert!(validate_identifier("123#fragment", "id").is_err());
@@ -74,6 +92,7 @@ mod tests {
     #[test]
     fn test_control_chars() {
         assert!(validate_identifier("123\x00", "id").is_err());
+        assert!(validate_identifier("123\x7f", "id").is_err());
     }
 
     #[test]
