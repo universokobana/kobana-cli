@@ -107,11 +107,7 @@ async fn run() -> Result<(), KobanaError> {
                     matches.get_one::<String>("env").map(|s| s.as_str()),
                 )?;
                 let helper_dry_run = helper_matches.get_flag("dry-run");
-                let token = if helper_dry_run {
-                    auth::resolve_token(loaded.product, &env).await.unwrap_or_default()
-                } else {
-                    auth::resolve_token(loaded.product, &env).await?
-                };
+                let token = token_unless_dry_run(loaded.product, &env, helper_dry_run).await?;
                 let client = product::client_for(loaded.product, &env, &token, helper_dry_run)?;
                 return helper.execute(&client, helper_matches).await;
             }
@@ -136,17 +132,26 @@ async fn run() -> Result<(), KobanaError> {
         matches.get_one::<String>("env").map(|s| s.as_str()),
     )?;
 
-    // For dry-run, we don't need auth
     let dry_run = matches.get_flag("dry-run");
-    let token = if dry_run {
-        auth::resolve_token(loaded_product.product, &env).await.unwrap_or_default()
-    } else {
-        auth::resolve_token(loaded_product.product, &env).await?
-    };
+    let token = token_unless_dry_run(loaded_product.product, &env, dry_run).await?;
 
     // Create client — each product has its own API host and TLS requirements
     let client = product::client_for(loaded_product.product, &env, &token, dry_run)?;
 
     // Execute
     executor::execute(&client, endpoint, &method_matches, &matches).await
+}
+
+/// The product's token, or none for a dry run. A dry run sends nothing and
+/// shows no `Authorization`, so it must not touch the credentials either:
+/// resolving would refresh over the network and rewrite the credentials file.
+async fn token_unless_dry_run(
+    product: &product::Product,
+    env: &config::Environment,
+    dry_run: bool,
+) -> Result<String, KobanaError> {
+    if dry_run {
+        return Ok(String::new());
+    }
+    auth::resolve_token(product, env).await
 }
