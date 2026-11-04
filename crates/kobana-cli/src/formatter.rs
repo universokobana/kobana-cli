@@ -3,9 +3,10 @@ use kobana::{tr, trf};
 
 use crate::{jq, ui};
 
-/// JSON as the CLI prints it, ending in a line break: through `--jq` when one
-/// was given (one result per line, indented only on a terminal), otherwise
-/// `value` itself, indented when `pretty`. `to_terminal` says where it goes.
+/// JSON as the CLI prints it: through `--jq` when one was given (one result
+/// per line, indented only on a terminal; nothing when it yields nothing),
+/// otherwise `value` itself, indented when `pretty`, on one line of its own.
+/// `to_terminal` says where it goes.
 ///
 /// `committed` says the command already changed something (a write went
 /// through, credentials were saved). A `--jq` that fails then gives a warning

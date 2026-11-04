@@ -76,8 +76,9 @@ async fn run() -> Result<(), KobanaError> {
         .unwrap_or_else(|e| clap_i18n::exit_with(e));
     ui::set_no_color_flag(matches.get_flag("no-color"));
 
-    // `--jq` is checked before anything runs: a typo never costs a request
-    if let Some(expr) = matches.get_one::<String>("jq") {
+    // `--jq` is checked before anything runs: a typo never costs a request.
+    // An empty one is no filter, as in gh.
+    if let Some(expr) = matches.get_one::<String>("jq").filter(|e| !e.trim().is_empty()) {
         jq::set(expr)?;
     }
 
