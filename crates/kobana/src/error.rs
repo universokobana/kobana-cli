@@ -100,10 +100,42 @@ impl KobanaError {
         }
     }
 
-    /// Print error as JSON to stdout and exit with the appropriate code
+    /// Print error as JSON to stdout and exit with the appropriate code.
+    /// Never filtered by `--jq`: a script must see the error whatever its filter.
     pub fn exit(&self) -> ! {
         let json = self.to_json();
-        println!("{}", serde_json::to_string_pretty(&json).unwrap_or_default());
+        println!("{}", escape_c1(&serde_json::to_string_pretty(&json).unwrap_or_default()));
         process::exit(self.exit_code() as i32)
+    }
+}
+
+/// JSON text with the C1 control characters (U+0080–U+009F) written as
+/// `\u00XX`. serde_json escapes only the C0 ones, so a C1 character in API
+/// text (U+009B is CSI, the start of an escape sequence) would reach the
+/// terminal raw, and some terminals act on it. In serialized JSON these
+/// characters only occur inside strings, so the result is the same JSON.
+pub fn escape_c1(json: &str) -> String {
+    let mut out = String::with_capacity(json.len());
+    for c in json.chars() {
+        if ('\u{80}'..='\u{9f}').contains(&c) {
+            out.push_str(&format!("\\u{:04x}", c as u32));
+        } else {
+            out.push(c);
+        }
+    }
+    out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn c1_controls_are_escaped_and_the_json_is_unchanged() {
+        let value = serde_json::json!({"name": "a\u{9b}2Jb\u{85}", "ok": "ação"});
+        let text = escape_c1(&serde_json::to_string(&value).unwrap());
+        assert!(!text.chars().any(|c| ('\u{80}'..='\u{9f}').contains(&c)), "{text:?}");
+        assert!(text.contains("\\u009b2J"), "{text}");
+        assert_eq!(serde_json::from_str::<serde_json::Value>(&text).unwrap(), value);
     }
 }

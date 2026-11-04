@@ -21,10 +21,10 @@ Colors only reinforce what the text already says: every colored message has a wo
 | How | Effect |
 |---|---|
 | `--no-color`, `NO_COLOR=1` (any value) or `CLICOLOR=0` | No colors or styles |
-| `CLICOLOR_FORCE=1` | Colors even when the output is not a terminal (for example, `\| less -R`) |
+| `CLICOLOR_FORCE=1` (any value) | Colors even when the output is not a terminal (for example, `\| less -R`) |
 | `KOBANA_ACCESSIBLE_COLORS=1` | High contrast: bold and underline in your theme's text color, no hues — the contrast is the one your theme guarantees, light or dark |
 
-Outside a terminal (pipe, file, CI) there are no colors, unless `CLICOLOR_FORCE` asks for them. The order is the same as `gh`'s: `--no-color`, `NO_COLOR`, `CLICOLOR_FORCE`, `CLICOLOR`.
+Outside a terminal (pipe, file) there are no colors, unless `CLICOLOR_FORCE` asks for them; on a terminal, neither with `TERM=dumb` or no `TERM`. The order is `--no-color`, `NO_COLOR`, `CLICOLOR_FORCE`, `CLICOLOR` — the same rules as the help, so everything agrees.
 
 ## Screen reader
 

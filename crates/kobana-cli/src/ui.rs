@@ -26,9 +26,18 @@ use kobana::{tr, trf};
 /// printed before any match exists) and confirmed from the matches after.
 static NO_COLOR_FLAG: AtomicBool = AtomicBool::new(false);
 
+/// A Windows console that cannot take ANSI escapes (no virtual terminal
+/// processing): the CLI's own colors stay off there
+static NO_ANSI_CONSOLE: AtomicBool = AtomicBool::new(false);
+
 /// Read `--no-color` from the raw arguments. Call before anything is printed.
 pub fn init(args: &[String]) {
     set_no_color_flag(no_color_in_args(args));
+    // clap's output goes through anstream, which turns on virtual terminal
+    // processing itself; the CLI's own messages need it too (no-op elsewhere)
+    if anstyle_query::windows::enable_ansi_colors() == Some(false) {
+        NO_ANSI_CONSOLE.store(true, Ordering::Relaxed);
+    }
     if !color(Stream::Stderr) || accessible_colors() {
         // inquire honours NO_COLOR alone, and its default colors include a
         // dark grey that is hard to read on a dark background
@@ -111,24 +120,42 @@ impl Stream {
 
 /// Whether text written to `stream` gets ANSI styles
 pub fn color(stream: Stream) -> bool {
-    color_with(NO_COLOR_FLAG.load(Ordering::Relaxed), env, stream.is_terminal())
+    !NO_ANSI_CONSOLE.load(Ordering::Relaxed)
+        && color_with(NO_COLOR_FLAG.load(Ordering::Relaxed), env, stream.is_terminal(), cfg!(windows))
 }
 
-/// The same precedence clap (anstream) follows, so the help and the CLI's own
-/// messages agree: `--no-color`, then `NO_COLOR` (any non-empty value), then
-/// `CLICOLOR_FORCE` (not `0`), then `CLICOLOR=0`, then whether the stream is
-/// a terminal that is not `TERM=dumb`.
-fn color_with(flag: bool, env: impl Fn(&str) -> Option<String>, terminal: bool) -> bool {
-    if flag || env("NO_COLOR").is_some_and(|v| !v.is_empty()) {
+/// `--no-color`, then exactly what clap's anstream decides, so the help and
+/// the CLI's own messages always agree: `NO_COLOR` (any non-empty value) is
+/// off; `CLICOLOR_FORCE` (any non-empty value) is on, even piped;
+/// `CLICOLOR=0` is off; otherwise a terminal whose `TERM` takes color (set
+/// and not `dumb`; any on Windows), or one with `CLICOLOR` on or in `CI`.
+fn color_with(flag: bool, env: impl Fn(&str) -> Option<String>, terminal: bool, windows: bool) -> bool {
+    let non_empty = |name: &str| env(name).is_some_and(|v| !v.is_empty());
+    if flag || non_empty("NO_COLOR") {
         return false;
     }
-    if env("CLICOLOR_FORCE").is_some_and(|v| !v.is_empty() && v != "0") {
+    if non_empty("CLICOLOR_FORCE") {
         return true;
     }
-    if env("CLICOLOR").as_deref() == Some("0") {
+    let clicolor = env("CLICOLOR").map(|v| v != "0");
+    if clicolor == Some(false) {
         return false;
     }
-    terminal && env("TERM").as_deref() != Some("dumb")
+    let term_takes_color = windows || env("TERM").is_some_and(|t| t != "dumb");
+    terminal && (term_takes_color || clicolor == Some(true) || env("CI").is_some())
+}
+
+/// `text` safe to write to a terminal: control characters (C0 but line
+/// breaks and tabs, DEL, C1) become U+FFFD. API text is not trusted, and an
+/// escape sequence in it could move the cursor, clear the screen or plant a
+/// link.
+pub fn terminal_safe(text: &str) -> String {
+    text.chars()
+        .map(|c| {
+            let control = c.is_control() || ('\u{80}'..='\u{9f}').contains(&c);
+            if control && c != '\n' && c != '\t' { '\u{FFFD}' } else { c }
+        })
+        .collect()
 }
 
 /// What a piece of styled text means. The palette has only the 16 ANSI
@@ -191,10 +218,12 @@ pub fn clap_color_choice() -> clap::ColorChoice {
     }
 }
 
-/// A warning on stderr, labelled by a word and not by its color alone
+/// A warning on stderr, labelled by a word and not by its color alone. The
+/// message may quote API text (a `--jq` error does), so it goes through
+/// [`terminal_safe`].
 pub fn warn(message: &str) {
     let label = paint(Role::Warning, tr!(pt: "Aviso:", en: "Warning:", es: "Aviso:"), Stream::Stderr);
-    eprintln!("{label} {message}");
+    eprintln!("{label} {}", terminal_safe(message));
 }
 
 /// A symbol that only decorates a line whose words already say it all
@@ -526,21 +555,39 @@ mod tests {
 
     #[test]
     fn color_precedence_matches_clap() {
-        let term = vars(&[("TERM", "xterm-256color")]);
-        assert!(color_with(false, &term, true));
-        assert!(!color_with(false, &term, false), "not a terminal");
-        assert!(!color_with(true, &term, true), "--no-color");
-        assert!(!color_with(false, vars(&[("NO_COLOR", "1"), ("TERM", "xterm")]), true));
+        let unix = |flag: bool, env: &'static [(&'static str, &'static str)], terminal: bool| {
+            color_with(flag, vars(env), terminal, false)
+        };
+        let term = &[("TERM", "xterm-256color")];
+        assert!(unix(false, term, true));
+        assert!(!unix(false, term, false), "not a terminal");
+        assert!(!unix(true, term, true), "--no-color");
+        assert!(!unix(false, &[("NO_COLOR", "1"), ("TERM", "xterm")], true));
         // NO_COLOR is any non-empty value, `0` included
-        assert!(!color_with(false, vars(&[("NO_COLOR", "0"), ("TERM", "xterm")]), true));
-        assert!(color_with(false, vars(&[("NO_COLOR", ""), ("TERM", "xterm")]), true));
-        assert!(!color_with(false, vars(&[("CLICOLOR", "0"), ("TERM", "xterm")]), true));
-        assert!(!color_with(false, vars(&[("TERM", "dumb")]), true));
-        // Forced: even piped, but never over NO_COLOR or --no-color
-        assert!(color_with(false, vars(&[("CLICOLOR_FORCE", "1")]), false));
-        assert!(!color_with(false, vars(&[("CLICOLOR_FORCE", "0")]), false));
-        assert!(!color_with(false, vars(&[("CLICOLOR_FORCE", "1"), ("NO_COLOR", "1")]), true));
-        assert!(!color_with(true, vars(&[("CLICOLOR_FORCE", "1")]), true));
+        assert!(!unix(false, &[("NO_COLOR", "0"), ("TERM", "xterm")], true));
+        assert!(unix(false, &[("NO_COLOR", ""), ("TERM", "xterm")], true));
+        assert!(!unix(false, &[("CLICOLOR", "0"), ("TERM", "xterm")], true));
+        assert!(!unix(false, &[("TERM", "dumb")], true));
+        assert!(!unix(false, &[], true), "no TERM");
+        // CLICOLOR on or CI make up for TERM, on a terminal only
+        assert!(unix(false, &[("CLICOLOR", "1")], true));
+        assert!(unix(false, &[("CI", "true"), ("TERM", "dumb")], true));
+        assert!(!unix(false, &[("CI", "true")], false));
+        // Forced (any non-empty value, as anstream reads it): even piped, but
+        // never over NO_COLOR or --no-color
+        assert!(unix(false, &[("CLICOLOR_FORCE", "1")], false));
+        assert!(unix(false, &[("CLICOLOR_FORCE", "0")], false));
+        assert!(!unix(false, &[("CLICOLOR_FORCE", "")], false));
+        assert!(!unix(false, &[("CLICOLOR_FORCE", "1"), ("NO_COLOR", "1")], true));
+        assert!(!unix(true, &[("CLICOLOR_FORCE", "1")], true));
+        // Windows consoles take color without TERM
+        assert!(color_with(false, vars(&[]), true, true));
+    }
+
+    #[test]
+    fn terminal_safe_keeps_text_and_line_breaks_only() {
+        let text = "a\u{1b}[31mb\u{9b}2J\u{7f}\r\tc\nd ação";
+        assert_eq!(terminal_safe(text), "a\u{FFFD}[31mb\u{FFFD}2J\u{FFFD}\u{FFFD}\tc\nd ação");
     }
 
     #[test]

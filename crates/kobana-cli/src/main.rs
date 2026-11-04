@@ -23,11 +23,17 @@ use kobana::trf;
 
 #[tokio::main]
 async fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    // The child process a `--jq` on a write runs in (`jq::render_isolated`):
+    // nothing else of the CLI starts
+    if args.get(1).map(String::as_str) == Some(jq::CHILD) {
+        std::process::exit(jq::child_main(&args[2..]));
+    }
+
     // Load .env files
     let project_dotenv = config::load_dotenv();
 
     // The language must be fixed before any command or message is built
-    let args: Vec<String> = std::env::args().collect();
     if let Some(lang) = clap_i18n::lang_from_args(&args) {
         kobana::i18n::set_lang(lang);
     }
@@ -76,10 +82,26 @@ async fn run() -> Result<(), KobanaError> {
         .unwrap_or_else(|e| clap_i18n::exit_with(e));
     ui::set_no_color_flag(matches.get_flag("no-color"));
 
-    // `--jq` is checked before anything runs: a typo never costs a request.
-    // An empty one is no filter, as in gh.
+    // `--jq` is checked before anything runs (no request, no token refresh):
+    // a typo never costs a request. An empty one is no filter, as in gh.
     if let Some(expr) = matches.get_one::<String>("jq").filter(|e| !e.trim().is_empty()) {
         jq::set(expr)?;
+        let format = matches.get_one::<String>("output-format").map_or("json", String::as_str);
+        if format != "json" {
+            return Err(KobanaError::Validation(trf!(
+                pt: "--jq filtra JSON e não combina com --output-format {format}",
+                en: "--jq filters JSON and does not go with --output-format {format}",
+                es: "--jq filtra JSON y no combina con --output-format {format}",
+            )));
+        }
+        // Commands that print no JSON: refused, not silently ignored
+        if let Some(name @ ("accessibility" | "completions" | "help")) = matches.subcommand_name() {
+            return Err(KobanaError::Validation(trf!(
+                pt: "`kobana {name}` não imprime JSON; --jq não se aplica",
+                en: "`kobana {name}` prints no JSON; --jq does not apply",
+                es: "`kobana {name}` no imprime JSON; --jq no se aplica",
+            )));
+        }
     }
 
     // Warn on stderr when a newer version is out, checking the network at most

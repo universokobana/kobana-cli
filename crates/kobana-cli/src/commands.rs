@@ -370,9 +370,9 @@ pub fn build_root_command(products: &[LoadedProduct]) -> Command {
                 .global(true)
                 .value_name(tr!(pt: "EXPRESSÃO", en: "EXPRESSION", es: "EXPRESIÓN"))
                 .help(tr!(
-                    pt: "Filtra a saída JSON com uma expressão jq, ex.: '.data[].id' (não precisa do jq instalado)",
-                    en: "Filter the JSON output with a jq expression, e.g. '.data[].id' (no jq install needed)",
-                    es: "Filtra la salida JSON con una expresión jq, ej.: '.data[].id' (no necesita jq instalado)",
+                    pt: "Filtra a saída JSON com uma expressão jq, ex.: '.data[].id' ou, com --page-all (um item por vez), '.id'; não precisa do jq instalado",
+                    en: "Filter the JSON output with a jq expression, e.g. '.data[].id' or, with --page-all (one item at a time), '.id'; no jq install needed",
+                    es: "Filtra la salida JSON con una expresión jq, ej.: '.data[].id' o, con --page-all (un elemento a la vez), '.id'; no necesita jq instalado",
                 )),
         )
         .arg(

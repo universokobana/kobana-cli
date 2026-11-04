@@ -35,7 +35,7 @@ Veja [Acessibilidade](/usage/accessibility). As `KOBANA_*` valem com qualquer va
 |---|---|
 | `NO_COLOR` | Qualquer valor não vazio desliga as cores (como `--no-color`) |
 | `CLICOLOR` | `0` desliga as cores |
-| `CLICOLOR_FORCE` | Diferente de `0`: cores mesmo fora de um terminal (perde para `NO_COLOR` e `--no-color`) |
+| `CLICOLOR_FORCE` | Qualquer valor não vazio: cores mesmo fora de um terminal (perde para `NO_COLOR` e `--no-color`) |
 | `KOBANA_ACCESSIBLE_COLORS` | Alto contraste: negrito e sublinhado na cor do texto do tema, sem matizes |
 | `KOBANA_SCREEN_READER` | Modo leitor de tela: sem símbolos decorativos, tabelas sem bordas, perguntas simples |
 | `KOBANA_ACCESSIBLE_PROMPTER` | Só as perguntas simples (lista numerada, resposta numa linha) |

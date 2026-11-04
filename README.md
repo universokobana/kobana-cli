@@ -697,7 +697,7 @@ no terminal atual. Detalhes em [cli.kobana.com.br › Acessibilidade](https://cl
 
 - **Cores.** Só reforçam o que o texto já diz (`erro:`, `Aviso:`, `dica:`) e
   usam as 16 cores ANSI do terminal. `--no-color`, `NO_COLOR` ou `CLICOLOR=0`
-  desligam; `CLICOLOR_FORCE=1` liga fora de um terminal;
+  desligam; `CLICOLOR_FORCE` (qualquer valor) liga fora de um terminal;
   `KOBANA_ACCESSIBLE_COLORS=1` troca a paleta por alto contraste (negrito e
   sublinhado na cor do texto do tema, sem matizes).
 - **Leitor de tela.** `KOBANA_SCREEN_READER=1` deixa só texto estático: sem
@@ -712,9 +712,10 @@ no terminal atual. Detalhes em [cli.kobana.com.br › Acessibilidade](https://cl
   `--jq` filtra com uma expressão jq, sem precisar do `jq` instalado — em toda
   saída JSON, inclusive cada item do `--page-all`, `--dry-run`, `schema` e
   `auth status`. A expressão é conferida antes de qualquer requisição; `env` e
-  `$ENV` ficam de fora, para não expor os tokens do ambiente. Se ela falhar na
-  resposta de uma escrita, a resposta sai sem o filtro e o código é `0` (a
-  operação foi feita).
+  `$ENV` ficam de fora, para não expor os tokens do ambiente. Na resposta de
+  uma escrita, o filtro roda num processo à parte com limite de 30 s: se
+  falhar, estourar ou travar, a resposta sai sem o filtro e o código é `0` (a
+  operação foi feita). Erros nunca passam pelo `--jq`.
 
 As variáveis `KOBANA_*` valem com qualquer valor, menos vazio, `0`, `false`,
 `no` e `off`; para manter a escolha, ponha-as no `.env` da pasta de configuração.
@@ -775,7 +776,7 @@ OpenAPI specs embutidos. O caminho segue a mesma forma do comando:
 | `KOBANA_LANG` | `pt`, `en` ou `es` (default: `LC_ALL`/`LC_MESSAGES`/`LANG`, depois o idioma do sistema). `--lang` vence |
 | `KOBANA_LOG` | Nível de log para stderr (ex: `kobana=debug`) |
 | `KOBANA_LOG_FILE` | Diretório para logs JSON com rotação diária |
-| `NO_COLOR` / `CLICOLOR` / `CLICOLOR_FORCE` | Sem cores (qualquer valor) / `0` desliga as cores / cores mesmo fora de um terminal |
+| `NO_COLOR` / `CLICOLOR` / `CLICOLOR_FORCE` | Sem cores (qualquer valor) / `0` desliga as cores / cores mesmo fora de um terminal (qualquer valor) |
 | `KOBANA_ACCESSIBLE_COLORS` | Paleta de alto contraste: negrito e sublinhado, sem matizes |
 | `KOBANA_SCREEN_READER` | Modo leitor de tela: sem símbolos decorativos, tabelas sem bordas, perguntas simples |
 | `KOBANA_ACCESSIBLE_PROMPTER` | Só as perguntas simples (lista numerada respondida numa linha) |

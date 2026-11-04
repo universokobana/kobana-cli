@@ -37,9 +37,11 @@ kobana banking auth status --jq .authenticated
 ```
 
 - Vale para toda salida JSON: respuestas de la API (incluso cada elemento de `--page-all`), `--dry-run`, `kobana schema`, `auth status` y `kobana update` (que, con `--jq`, solo informa).
-- Se aplica después de `--fields`, y no combina con `--output-format table` o `csv`.
+- Se aplica después de `--fields`, y se rechaza con `--output-format table` o `csv` y en los comandos que no imprimen JSON (`completions`, `help`, `accessibility`).
 - La expresión se comprueba antes de cualquier solicitud: un error de sintaxis sale con el código `3` sin enviar nada.
-- Si la expresión falla en la respuesta de una escritura (`create`, `update`, `delete`, helpers), el CLI avisa en el stderr e imprime la respuesta sin el filtro, con código `0`: la operación se realizó, y repetirla no sería seguro.
+- En la respuesta de una escritura (`create`, `update`, `delete`, helpers), la expresión corre en un proceso aparte, con límite de 30 segundos. Si falla, agota la memoria o se cuelga, el CLI avisa en el stderr e imprime la respuesta sin el filtro, con código `0`: la operación se realizó, y repetirla no sería seguro.
+- Los errores (`{"error": …}`) nunca pasan por el filtro.
+- El resultado es siempre JSON válido, como en jq: `nan` se vuelve `null`; los bytes y las claves que no son texto dan error. `debug` y `stderr` escriben en el stderr.
 - En el terminal, los caracteres de control de un texto se vuelven `�`, para que un texto de la API no mande secuencias de escape a la pantalla.
 - `env` y `$ENV` no existen en `--jq`, para que una expresión — escrita por un agente, por ejemplo — no lea los tokens del entorno; tampoco los módulos (`import`, `include`) ni `input`.
 

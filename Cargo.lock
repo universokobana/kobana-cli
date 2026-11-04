@@ -1167,6 +1167,7 @@ name = "kobana-cli"
 version = "0.13.0"
 dependencies = [
  "aes-gcm",
+ "anstyle-query",
  "anyhow",
  "base64",
  "chrono",

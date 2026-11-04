@@ -36,6 +36,8 @@ inquire = "0.7"
 jaq-core = "3"
 jaq-std = "3"
 jaq-json = "2"
+# The color rules clap uses (anstream), and Windows console ANSI support
+anstyle-query = "1"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

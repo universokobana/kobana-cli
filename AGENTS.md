@@ -523,7 +523,7 @@ The `KOBANA_*` switches take gh's truthy values: anything but empty, `0`,
 | Variable | Description |
 |----------|-------------|
 | `NO_COLOR` | Any non-empty value turns color off (like `--no-color`) |
-| `CLICOLOR` / `CLICOLOR_FORCE` | `0` turns color off / not `0` keeps color when piped |
+| `CLICOLOR` / `CLICOLOR_FORCE` | `0` turns color off / any non-empty value keeps color when piped (anstream's reading, so help and messages agree) |
 | `KOBANA_ACCESSIBLE_COLORS` | High-contrast palette: bold/underline, no hues |
 | `KOBANA_SCREEN_READER` | Static text: no decorative symbols, borderless one-line-per-record tables, simple prompts |
 | `KOBANA_ACCESSIBLE_PROMPTER` | Simple prompts only |
@@ -577,9 +577,14 @@ The CLI follows the GitHub CLI's accessibility model (`gh accessibility`,
   (or `ui::warn`) next to a word that says the same (`erro:`, `Aviso:`,
   `dica:`); never write `\x1b[…` by hand. The palette is the 16 ANSI colors
   only (no greys, no 256/24-bit), and `KOBANA_ACCESSIBLE_COLORS` swaps it for
-  bold/underline without hues. `ui::color(stream)` decides: `--no-color`, then
-  `NO_COLOR`, `CLICOLOR_FORCE`, `CLICOLOR=0`, then TTY and `TERM=dumb` — the
-  order clap's anstream uses, so help and messages agree.
+  bold/underline without hues (also in the log layer). `ui::color(stream)`
+  decides: `--no-color`, then exactly anstream's rules (`NO_COLOR`,
+  `CLICOLOR_FORCE` non-empty, `CLICOLOR=0`, then a TTY whose `TERM` is set and
+  not `dumb`, or `CLICOLOR` on, or `CI`) — clap prints the help through
+  anstream, so both must agree; `color_precedence_matches_clap` pins it. A
+  Windows console without virtual terminal processing gets no color.
+  `ui::warn` and raw `--jq` strings go through `ui::terminal_safe`; JSON goes
+  through `kobana::error::escape_c1` (serde escapes only C0 controls).
 - **No spinners or animations.** Progress is a new line on stderr, never a
   redrawn one. A decorative symbol (`✓`, `└─`) goes through
   `ui::decoration`, which drops it under `KOBANA_SCREEN_READER`.
@@ -589,15 +594,26 @@ The CLI follows the GitHub CLI's accessibility model (`gh accessibility`,
   `KOBANA_PROMPT_DISABLED`. Otherwise the command takes what a flag gives
   (`auth login`: every published resource + `read`; `update`: print the command).
 - **JSON reaches stdout through `formatter::print_json`/`json_text`**, so
-  `--jq` applies to it. Pass `committed = true` when the command already
-  changed something: a `--jq` failing on that output then warns and prints the
-  JSON unfiltered with exit 0, because a failure exit would invite a retry
-  that repeats the write. `--jq` is compiled in `main` before anything runs
-  and refused with `table`/`csv` in `Output::from_matches`.
+  `--jq` applies to it — except errors (`KobanaError::exit`), never filtered.
+  Pass `committed = true` when the command already changed something: `--jq`
+  then runs in a child process of the same binary (`kobana __jq-child`,
+  `jq::render_isolated`, 30 s limit), and if it fails, overflows the stack or
+  hangs, the CLI warns and prints the JSON unfiltered with exit 0, because a
+  failure exit would invite a retry that repeats the write. For the same
+  reason `--output` checks its folder before the request, and a write to it
+  that still fails on a committed response falls back to stdout. `--jq` is
+  compiled in `main` before anything runs (no request, no token refresh) and
+  refused there with `table`/`csv` and on commands that print no JSON.
 - **`--jq` is sandboxed.** The expression may come from an agent: `env` is
   filtered out of jaq's native functions and `$ENV` is never defined, so it
   cannot print the tokens in the environment; the loader reads no modules and
-  `input`/`inputs` are not loaded. Keep it that way when bumping jaq.
+  `input`/`inputs` are not loaded. `fromjson` is replaced by a serde_json one
+  (nesting limit 128: a hostile API string cannot overflow the stack), and
+  `stderr`/`debug` write to stderr through `terminal_safe` instead of jaq's
+  logger. `@csv`/`@tsv` are defined in `jq::TABULAR` (jaq keeps them in
+  `jaq-fmts`, which reads files). Results that JSON cannot hold (NaN → `null`,
+  infinities → largest float, bytes and non-string keys → error) are mapped
+  as jq does. Keep all of it when bumping jaq.
 - The update notice (`update::should_auto_check`) runs only with stdout and
   stderr on a TTY, outside `CI`, and without `KOBANA_NO_UPDATE_NOTIFIER`.
 

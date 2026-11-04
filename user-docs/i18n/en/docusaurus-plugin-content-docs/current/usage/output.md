@@ -37,9 +37,11 @@ kobana banking auth status --jq .authenticated
 ```
 
 - It applies to every JSON output: API responses (including each `--page-all` item), `--dry-run`, `kobana schema`, `auth status` and `kobana update` (which, with `--jq`, only reports).
-- It runs after `--fields`, and does not go with `--output-format table` or `csv`.
+- It runs after `--fields`, and is refused with `--output-format table` or `csv` and on commands that print no JSON (`completions`, `help`, `accessibility`).
 - The expression is checked before any request: a syntax error exits with code `3` without sending anything.
-- If the expression fails on the response of a write (`create`, `update`, `delete`, helpers), the CLI warns on stderr and prints the response unfiltered, with code `0`: the operation went through, and repeating it would not be safe.
+- On the response of a write (`create`, `update`, `delete`, helpers), the expression runs in a separate process, with a 30-second limit. If it fails, runs out of memory or hangs, the CLI warns on stderr and prints the response unfiltered, with code `0`: the operation went through, and repeating it would not be safe.
+- Errors (`{"error": …}`) never go through the filter.
+- The result is always valid JSON, as in jq: `nan` becomes `null`; bytes and non-string keys are an error. `debug` and `stderr` write to stderr.
 - On a terminal, a string's control characters become `�`, so that text from the API cannot send escape sequences to the screen.
 - `env` and `$ENV` do not exist in `--jq`, so that an expression — written by an agent, for example — cannot read the tokens in the environment; neither do modules (`import`, `include`) and `input`.
 

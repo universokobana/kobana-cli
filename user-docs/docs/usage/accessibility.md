@@ -21,10 +21,10 @@ As cores só reforçam o que o texto já diz: toda mensagem colorida tem uma pal
 | Como | Efeito |
 |---|---|
 | `--no-color`, `NO_COLOR=1` (qualquer valor) ou `CLICOLOR=0` | Sem cores nem estilos |
-| `CLICOLOR_FORCE=1` | Cores mesmo quando a saída não é um terminal (por exemplo, `\| less -R`) |
+| `CLICOLOR_FORCE=1` (qualquer valor) | Cores mesmo quando a saída não é um terminal (por exemplo, `\| less -R`) |
 | `KOBANA_ACCESSIBLE_COLORS=1` | Alto contraste: negrito e sublinhado na cor do texto do seu tema, sem matizes — o contraste é o que o seu tema garante, claro ou escuro |
 
-Fora de um terminal (pipe, arquivo, CI) não há cores, a menos que `CLICOLOR_FORCE` peça. A ordem é a mesma do `gh`: `--no-color`, `NO_COLOR`, `CLICOLOR_FORCE`, `CLICOLOR`.
+Fora de um terminal (pipe, arquivo) não há cores, a menos que `CLICOLOR_FORCE` peça; num terminal, também não há com `TERM=dumb` ou sem `TERM`. A ordem é `--no-color`, `NO_COLOR`, `CLICOLOR_FORCE`, `CLICOLOR` — as mesmas regras da ajuda, para que tudo concorde.
 
 ## Leitor de tela
 

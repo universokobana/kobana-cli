@@ -89,6 +89,18 @@ pub fn validate_output_path(path: &str) -> Result<(), KobanaError> {
             )));
         }
     }
+    // Checked before the request: a missing folder found only when the
+    // response is written lost the response of a write that went through
+    if let Some(parent) = candidate.parent().filter(|p| !p.as_os_str().is_empty()) {
+        if !parent.is_dir() {
+            let parent = parent.display();
+            return Err(KobanaError::Validation(trf!(
+                pt: "a pasta de --output não existe: {parent}",
+                en: "the --output folder does not exist: {parent}",
+                es: "la carpeta de --output no existe: {parent}",
+            )));
+        }
+    }
     Ok(())
 }
 
@@ -153,6 +165,7 @@ mod tests {
             assert!(matches!(validate_output_path(bad), Err(KobanaError::Validation(_))), "{bad:?}");
         }
         assert!(validate_output_path(&dir.display().to_string()).is_err(), "directory");
+        assert!(validate_output_path(&dir.join("nodir/out.json").display().to_string()).is_err(), "missing folder");
         #[cfg(unix)]
         {
             let link = dir.join("link.json");

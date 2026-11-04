@@ -24,7 +24,7 @@ They apply to every command, before or after the resource name.
 | `--page-all` | Auto-paginate and output NDJSON |
 | `--page-limit <N>` | Maximum pages to fetch (default: 10) |
 | `--page-delay <MS>` | Delay between pages in ms (default: 100) |
-| `--jq <EXPRESSION>` | Filter the JSON output with a jq expression, e.g. '.data[].id' (no jq install needed) |
+| `--jq <EXPRESSION>` | Filter the JSON output with a jq expression, e.g. '.data[].id' or, with --page-all (one item at a time), '.id'; no jq install needed |
 | `--no-color` | Turn colors off (also: NO_COLOR or CLICOLOR=0); see `kobana accessibility` |
 | `--lang <LANG>` | Language of the messages: pt, en or es (default: KOBANA_LANG or the system's) |
 | `-h, --help` | Print help |

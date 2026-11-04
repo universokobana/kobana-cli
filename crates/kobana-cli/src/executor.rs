@@ -23,7 +23,7 @@ pub struct Output {
 
 impl Output {
     /// Read from any matches the global options reach (root or a subcommand).
-    /// `--output` and `--jq` are validated here, before anything is sent.
+    /// `--output` is validated here, before anything is sent (`--jq` in `main`).
     pub fn from_matches(matches: &clap::ArgMatches) -> Result<Self, KobanaError> {
         if let Some(path) = matches.get_one::<String>("output") {
             validate::validate_output_path(path)?;
@@ -32,13 +32,6 @@ impl Output {
             .get_one::<String>("output-format")
             .cloned()
             .unwrap_or_else(|| "json".into());
-        if crate::jq::expr().is_some() && format != "json" {
-            return Err(KobanaError::Validation(trf!(
-                pt: "--jq filtra JSON e não combina com --output-format {format}",
-                en: "--jq filters JSON and does not go with --output-format {format}",
-                es: "--jq filtra JSON y no combina con --output-format {format}",
-            )));
-        }
         Ok(Self {
             fields: matches.get_one::<String>("fields").cloned(),
             format,
@@ -77,15 +70,28 @@ impl Output {
             }
             return Ok(());
         };
-        validate::open_output(path)
-            .and_then(|mut file| std::io::Write::write_all(&mut file, formatted.as_bytes()))
-            .map_err(|e| {
-            KobanaError::Internal(trf!(
+        let written = validate::open_output(path)
+            .and_then(|mut file| std::io::Write::write_all(&mut file, formatted.as_bytes()));
+        if let Err(e) = written {
+            let message = trf!(
                 pt: "não foi possível gravar em {path}: {e}",
                 en: "failed to write to {path}: {e}",
                 es: "no se pudo guardar en {path}: {e}",
-            ))
-        })?;
+            );
+            if !self.committed {
+                return Err(KobanaError::Internal(message));
+            }
+            // The write went through: the response is not lost, and the
+            // exit stays 0 so nothing retries it
+            crate::ui::warn(&trf!(
+                pt: "{message}; a operação foi feita e a resposta vai para a saída padrão",
+                en: "{message}; the operation went through and the response goes to standard output",
+                es: "{message}; la operación se realizó y la respuesta va a la salida estándar",
+            ));
+            let to_terminal = std::io::IsTerminal::is_terminal(&std::io::stdout());
+            print!("{}", if to_terminal { crate::ui::terminal_safe(&formatted) } else { formatted });
+            return Ok(());
+        }
         eprintln!(
             "{}",
             trf!(

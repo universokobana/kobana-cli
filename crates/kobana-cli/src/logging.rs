@@ -15,7 +15,9 @@ pub fn init_logging() -> Result<(), KobanaError> {
     let stderr_layer = fmt::layer()
         .with_writer(std::io::stderr)
         .with_target(false)
-        .with_ansi(crate::ui::color(crate::ui::Stream::Stderr))
+        // Log levels come in red/yellow and timestamps dimmed: neither fits
+        // the high-contrast palette, which drops them
+        .with_ansi(crate::ui::color(crate::ui::Stream::Stderr) && !crate::ui::accessible_colors())
         .compact()
         .with_filter(
             EnvFilter::try_new(&env_filter)

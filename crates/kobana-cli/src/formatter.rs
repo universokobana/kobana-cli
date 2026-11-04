@@ -6,12 +6,14 @@ use crate::{jq, ui};
 /// JSON as the CLI prints it: through `--jq` when one was given (one result
 /// per line, indented only on a terminal; nothing when it yields nothing),
 /// otherwise `value` itself, indented when `pretty`, on one line of its own.
-/// `to_terminal` says where it goes.
+/// `to_terminal` says where it goes. C1 control characters are escaped
+/// (`kobana::error::escape_c1`): serde escapes only the C0 ones.
 ///
 /// `committed` says the command already changed something (a write went
-/// through, credentials were saved). A `--jq` that fails then gives a warning
-/// and the unfiltered JSON, and the command still succeeds: a failure exit
-/// would invite a retry that repeats the change.
+/// through, credentials were saved). `--jq` then runs in a child process with
+/// a time limit, and if it fails, crashes or hangs, the command warns and
+/// prints the unfiltered JSON, and still succeeds: a failure exit would
+/// invite a retry that repeats the change.
 pub fn json_text(
     value: &serde_json::Value,
     pretty: bool,
@@ -20,14 +22,18 @@ pub fn json_text(
 ) -> Result<String, KobanaError> {
     let plain = || -> Result<String, KobanaError> {
         let text = if pretty { serde_json::to_string_pretty(value)? } else { serde_json::to_string(value)? };
-        Ok(text + "\n")
+        Ok(kobana::error::escape_c1(&text) + "\n")
     };
     let Some(expr) = jq::expr() else {
         return plain();
     };
-    match jq::render(expr, value, pretty && to_terminal, to_terminal) {
+    let indent = pretty && to_terminal;
+    if !committed {
+        return jq::render(expr, value, indent, to_terminal);
+    }
+    match jq::render_isolated(expr, value, indent, to_terminal) {
         Ok(text) => Ok(text),
-        Err(e) if committed => {
+        Err(e) => {
             ui::warn(&trf!(
                 pt: "{e}; a operação foi feita e a resposta vai sem o filtro",
                 en: "{e}; the operation went through and the response follows unfiltered",
@@ -35,7 +41,6 @@ pub fn json_text(
             ));
             plain()
         }
-        Err(e) => Err(e),
     }
 }
 
@@ -166,8 +171,8 @@ fn format_table(value: &serde_json::Value, plain: bool) -> Result<String, Kobana
 /// characters (an escape sequence that would move the cursor, recolour the
 /// screen or plant an OSC hyperlink) become U+FFFD; in a CSV, a cell that a
 /// spreadsheet would read as a formula (`=`, `+`, `-`, `@`) gets a leading
-/// `'`, so it stays text. JSON output needs none of this: serde escapes
-/// controls and nothing evaluates it.
+/// `'`, so it stays text. JSON output escapes them instead: serde the C0
+/// ones and [`json_text`] the C1 ones; nothing evaluates it.
 fn cell_text(value: &serde_json::Value, csv: bool) -> String {
     let text = match value {
         serde_json::Value::String(s) => s
@@ -289,7 +294,7 @@ mod tests {
         assert!(csv.contains("'=cmd") && !csv.contains('\u{1b}'), "{csv:?}");
         let table = format_output(&value, "table").unwrap();
         assert!(table.contains("=cmd") && !table.contains("'=cmd") && !table.contains('\u{1b}'), "{table:?}");
-        // JSON is untouched: serde escapes the control and nothing evaluates it
+        // JSON escapes the control instead (serde) and nothing evaluates it
         let json = format_output(&value, "json").unwrap();
         assert!(json.contains("\\u001b") && json.contains("\"=cmd\""));
     }

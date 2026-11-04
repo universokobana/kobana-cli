@@ -24,7 +24,7 @@ Valem para todos os comandos, antes ou depois do nome do recurso.
 | `--page-all` | Percorre todas as páginas e imprime NDJSON |
 | `--page-limit <N>` | Máximo de páginas a buscar (padrão: 10) |
 | `--page-delay <MS>` | Intervalo entre páginas em ms (padrão: 100) |
-| `--jq <EXPRESSÃO>` | Filtra a saída JSON com uma expressão jq, ex.: '.data[].id' (não precisa do jq instalado) |
+| `--jq <EXPRESSÃO>` | Filtra a saída JSON com uma expressão jq, ex.: '.data[].id' ou, com --page-all (um item por vez), '.id'; não precisa do jq instalado |
 | `--no-color` | Desliga as cores (também: NO_COLOR ou CLICOLOR=0); veja `kobana accessibility` |
 | `--lang <IDIOMA>` | Idioma das mensagens: pt, en ou es (padrão: KOBANA_LANG ou o do sistema) |
 | `-h, --help` | Mostra a ajuda |

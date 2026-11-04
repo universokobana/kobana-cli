@@ -158,19 +158,39 @@ truthy() {
 SCREEN_READER=""
 if truthy "${KOBANA_SCREEN_READER:-}"; then SCREEN_READER=1; fi
 
-if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
+# Whether file descriptor $1 gets color: the CLI's rules (ui::color, which
+# are clap's): NO_COLOR, then CLICOLOR_FORCE, then CLICOLOR=0, then a
+# terminal whose TERM takes color (or CLICOLOR on, or CI)
+use_color() {
+  [ -z "${NO_COLOR:-}" ] || return 1
+  [ -z "${CLICOLOR_FORCE:-}" ] || return 0
+  [ "${CLICOLOR:-}" != "0" ] || return 1
+  [ -t "$1" ] || return 1
+  case "${TERM:-}" in
+    "" | dumb) [ -n "${CLICOLOR:-}" ] || [ -n "${CI+set}" ] ;;
+    *) return 0 ;;
+  esac
+}
+
+if use_color 1; then
   BOLD=$'\033[1m'
   RESET=$'\033[0m'
   if truthy "${KOBANA_ACCESSIBLE_COLORS:-}"; then
     # High contrast: the theme's own text color, set apart by bold/underline
-    LIME="$BOLD" LINK=$'\033[4m' RED="$BOLD"
+    LIME="$BOLD" LINK=$'\033[4m'
   else
     LIME=$'\033[38;2;211;253;84m'
     LINK=$'\033[4;34m'
-    RED=$'\033[31m'
   fi
 else
-  LIME="" BOLD="" LINK="" RED="" RESET=""
+  LIME="" BOLD="" LINK="" RESET=""
+fi
+# fail() writes to stderr, which may be a terminal when stdout is not
+if use_color 2; then
+  if truthy "${KOBANA_ACCESSIBLE_COLORS:-}"; then ERR_ON=$'\033[1m'; else ERR_ON=$'\033[31m'; fi
+  ERR_OFF=$'\033[0m'
+else
+  ERR_ON="" ERR_OFF=""
 fi
 
 say() {
@@ -186,7 +206,7 @@ blank() { printf '\n'; }
 fail() {
   local mark="❌ "
   [ -z "$SCREEN_READER" ] || mark=""
-  printf '%s%s%s%s\n' "$RED" "$mark" "$1" "$RESET" >&2
+  printf '%s%s%s%s\n' "$ERR_ON" "$mark" "$1" "$ERR_OFF" >&2
   exit 1
 }
 
