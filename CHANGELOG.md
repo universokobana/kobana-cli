@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Instalação pelo WinGet (`winget install Kobana.CLI`)** — `kobana update` reconhece a instalação pelo WinGet (`install_method: "winget"`) e roda `winget upgrade Kobana.CLI`; o job de release abre o PR da versão nova no `microsoft/winget-pkgs` quando o secret `WINGET_TOKEN` existe
+
 ### Security
 
 - **Os binários das releases passam a ter atestado de proveniência (GitHub Artifact Attestations)** — o job de release assina cada binário via Sigstore, sem chave guardada, provando que saiu deste repositório e deste workflow. Confira com `gh attestation verify <binário> --repo universokobana/kobana-cli`

@@ -193,6 +193,14 @@ Para atualizar:
 brew update && brew upgrade kobana
 ```
 
+### WinGet (Windows)
+
+```powershell
+winget install Kobana.CLI
+```
+
+Para atualizar: `winget upgrade Kobana.CLI`.
+
 ### Binários pré-compilados
 
 Baixe o binário para sua plataforma na [página de Releases](https://github.com/universokobana/kobana-cli/releases/latest) e coloque no seu `PATH`.
@@ -238,7 +246,7 @@ kobana update --check --json
 ```
 
 Na instalação pelo script, `kobana update` baixa o binário da release, confere o
-SHA-256 que o GitHub publica e substitui o executável. No Homebrew, no Cargo e
+SHA-256 que o GitHub publica e substitui o executável. No Homebrew, no WinGet, no Cargo e
 nos outros casos ele mostra o comando de atualização de cada um. `--json`
 imprime `current`, `latest`, `update_available`, `release_url`,
 `install_method` e `install_command`.

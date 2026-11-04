@@ -74,6 +74,7 @@ async fn fetch_release(tag: &str) -> Result<GitHubRelease, KobanaError> {
 #[derive(Debug, PartialEq)]
 pub enum InstallMethod {
     Homebrew,
+    Winget,
     Cargo,
     Standalone,
     Unknown,
@@ -83,6 +84,7 @@ impl InstallMethod {
     fn as_str(&self) -> &'static str {
         match self {
             Self::Homebrew => "homebrew",
+            Self::Winget => "winget",
             Self::Cargo => "cargo",
             Self::Standalone => "standalone",
             Self::Unknown => "unknown",
@@ -96,13 +98,18 @@ pub fn detect_install_method() -> InstallMethod {
         Ok(p) => p,
         Err(_) => return InstallMethod::Unknown,
     };
-    let path = exe.to_string_lossy().to_lowercase();
+    classify_install_path(&exe.to_string_lossy().to_lowercase())
+}
 
+/// `path` must be lowercase.
+fn classify_install_path(path: &str) -> InstallMethod {
     if path.contains("cellar/kobana")
         || path.contains("/opt/homebrew/")
         || path.contains("linuxbrew")
     {
         InstallMethod::Homebrew
+    } else if path.contains("\\microsoft\\winget\\") || path.contains("/microsoft/winget/") {
+        InstallMethod::Winget
     } else if path.contains(".cargo/bin")
         || path.contains("/target/debug/")
         || path.contains("/target/release/")
@@ -116,6 +123,7 @@ pub fn detect_install_method() -> InstallMethod {
 fn install_command(method: &InstallMethod) -> &'static str {
     match method {
         InstallMethod::Homebrew => "brew upgrade kobana",
+        InstallMethod::Winget => "winget upgrade Kobana.CLI",
         InstallMethod::Cargo => {
             "cargo install --git https://github.com/universokobana/kobana-cli kobana-cli --force"
         }
@@ -245,7 +253,7 @@ pub async fn handle_update(check_only: bool, as_json: bool) -> Result<(), Kobana
 
     // Ask for confirmation before running anything destructive.
     let prompt = match method {
-        InstallMethod::Homebrew | InstallMethod::Cargo => trf!(
+        InstallMethod::Homebrew | InstallMethod::Winget | InstallMethod::Cargo => trf!(
             pt: "Rodar `{command}` agora?",
             en: "Run `{command}` now?",
             es: "¿Ejecutar `{command}` ahora?",
@@ -293,6 +301,7 @@ pub async fn handle_update(check_only: bool, as_json: bool) -> Result<(), Kobana
 
     match method {
         InstallMethod::Homebrew => run_shell_command("brew", &["upgrade", "kobana"]),
+        InstallMethod::Winget => run_shell_command("winget", &["upgrade", "Kobana.CLI"]),
         InstallMethod::Cargo => run_shell_command(
             "cargo",
             &[
@@ -626,6 +635,22 @@ mod tests {
         assert_eq!(asset_sha256(&release, "kobana-x86_64-unknown-linux-gnu").as_deref(), Some("abc123"));
         assert_eq!(asset_sha256(&release, "kobana-aarch64-apple-darwin"), None, "no digest");
         assert_eq!(asset_sha256(&release, "kobana-other"), None, "no asset");
+    }
+
+    #[test]
+    fn install_method_is_read_from_the_path() {
+        let cases = [
+            ("/opt/homebrew/cellar/kobana/1.0/bin/kobana", InstallMethod::Homebrew),
+            (
+                "c:\\users\\a\\appdata\\local\\microsoft\\winget\\packages\\kobana.cli_x\\kobana.exe",
+                InstallMethod::Winget,
+            ),
+            ("/home/a/.cargo/bin/kobana", InstallMethod::Cargo),
+            ("/home/a/.kobana/bin/kobana", InstallMethod::Standalone),
+        ];
+        for (path, expected) in cases {
+            assert_eq!(classify_install_path(path), expected, "{path}");
+        }
     }
 
     #[test]

@@ -110,6 +110,8 @@ jobs:
       contents: write
       id-token: write
       attestations: write
+    env:
+      WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
     steps:
       - uses: actions/checkout@v5
 
@@ -196,3 +198,16 @@ jobs:
           git add Formula/kobana.rb
           git commit -m "update kobana to ${VERSION}" || echo "No changes"
           git push
+
+      # Opens the PR on microsoft/winget-pkgs. Only updates a package that is
+      # already there: submit the first version by hand (wingetcreate new).
+      - name: Update WinGet package
+        if: env.WINGET_TOKEN != ''
+        continue-on-error: true
+        uses: vedantmgoyal9/winget-releaser@v2
+        with:
+          identifier: Kobana.CLI
+          release-tag: ${{ steps.version.outputs.version }}
+          installers-regex: 'windows-amd64\.exe$'
+          fork-user: universokobana
+          token: ${{ env.WINGET_TOKEN }}
