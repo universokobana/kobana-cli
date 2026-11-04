@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-03
+
+### Changed
+
+- **Comandos pelo nome, sem o método que repete a rota** — um recurso que só lê (`banking me`, `billing organization`, `dashboards settings`, `banking userinfo`, `finance cash-flow`) roda pelo próprio nome, e uma ação cujo nome já é um verbo roda sem o verbo HTTP (`banking mailbox entries email activate`, `banking webhook-deliveries resend`, `dashboards builder tools create-page`). A forma antiga (`me get`, `activate update`, `create-page create`) continua valendo, fora da ajuda. Um `delete` nunca fica implícito e um nome que é substantivo (`builder draft`) mantém o método
+- **`banking edi edi-boxes` virou `banking edi boxes`** — um segmento que repete o prefixo do pai perde o prefixo; o nome antigo continua respondendo
+- **`kobana schema banking.me`** — o schema também aceita o caminho sem o método, para os comandos acima
+
+### Added
+
+- **Identificadores do caminho como argumentos** — `kobana banking bank-billets get 123`, `kobana banking bank-billets cancel 123`, `kobana banking charge pix commands get PIX_UID UID` (na ordem da rota). `--params '{"id": "123"}'` continua valendo; quando os dois aparecem, o argumento vence
+- **Nomes em português no banking** — `boletos` (`bank-billets`), `clientes` (`customers`), `pagamentos` (`payments`) e `transferencias` (`transfers`) respondem como apelidos
+
 ## [0.11.0] - 2026-11-03
 
 ### Changed
