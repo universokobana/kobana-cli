@@ -108,6 +108,8 @@ jobs:
     if: github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'release:')
     permissions:
       contents: write
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v5
 
@@ -120,6 +122,11 @@ jobs:
       - uses: actions/download-artifact@v5
         with:
           path: artifacts
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: artifacts/*/kobana-*
 
       - name: Create release
         uses: softprops/action-gh-release@v2

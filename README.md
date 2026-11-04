@@ -197,6 +197,18 @@ brew update && brew upgrade kobana
 
 Baixe o binário para sua plataforma na [página de Releases](https://github.com/universokobana/kobana-cli/releases/latest) e coloque no seu `PATH`.
 
+Cada binário tem um atestado de proveniência (GitHub Artifact Attestations,
+assinado via Sigstore). Para conferir que ele foi gerado por este repositório,
+com o [GitHub CLI](https://cli.github.com/) instalado:
+
+```bash
+gh attestation verify kobana-linux-amd64 --repo universokobana/kobana-cli
+```
+
+O SHA-256 que o `install.sh` e o `kobana update` conferem vem do mesmo lugar do
+binário, então só detecta corrupção no download; o atestado é a verificação
+independente.
+
 ### Nix
 
 ```bash

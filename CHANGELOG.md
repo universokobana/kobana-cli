@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- **Os binários das releases passam a ter atestado de proveniência (GitHub Artifact Attestations)** — o job de release assina cada binário via Sigstore, sem chave guardada, provando que saiu deste repositório e deste workflow. Confira com `gh attestation verify <binário> --repo universokobana/kobana-cli`
+
 ## [0.13.0] - 2026-11-04
 
 ### Security
