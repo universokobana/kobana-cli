@@ -36,6 +36,15 @@ const BASE_URL = (() => {
 })();
 const FAVICON_BASE = `${BASE_URL}favicon/`;
 
+// Social preview (Open Graph / Twitter): the first fold of the landing, 1200x630, one
+// per language (static/img/og-*.png). Docusaurus emits og:image and twitter:image
+// from `themeConfig.image`, resolved against the locale's baseUrl.
+const OG_IMAGE: Record<string, string> = {
+  'pt-BR': 'img/og-pt.png',
+  en: 'img/og-en.png',
+  es: 'img/og-es.png',
+};
+
 const config: Config = {
   title: LOCALIZED_TITLE[CURRENT_LOCALE] ?? LOCALIZED_TITLE['pt-BR'],
   tagline: LOCALIZED_TAGLINE[CURRENT_LOCALE] ?? LOCALIZED_TAGLINE['pt-BR'],
@@ -126,6 +135,8 @@ const config: Config = {
         color: '#D3FD54',
       },
     },
+    {tagName: 'meta', attributes: {property: 'og:image:width', content: '1200'}},
+    {tagName: 'meta', attributes: {property: 'og:image:height', content: '630'}},
     {
       tagName: 'meta',
       attributes: { name: 'msapplication-TileColor', content: '#D3FD54' },
@@ -193,6 +204,7 @@ const config: Config = {
   ],
 
   themeConfig: {
+    image: OG_IMAGE[CURRENT_LOCALE] ?? OG_IMAGE['pt-BR'],
     docs: {
       // Collapse button on the left sidebar (swizzled as icon buttons in
       // theme/DocSidebar/Desktop/CollapseButton and DocRoot/.../ExpandButton).
