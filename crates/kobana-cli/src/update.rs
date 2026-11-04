@@ -75,6 +75,7 @@ async fn fetch_release(tag: &str) -> Result<GitHubRelease, KobanaError> {
 pub enum InstallMethod {
     Homebrew,
     Winget,
+    Package,
     Cargo,
     Standalone,
     Unknown,
@@ -85,6 +86,7 @@ impl InstallMethod {
         match self {
             Self::Homebrew => "homebrew",
             Self::Winget => "winget",
+            Self::Package => "package",
             Self::Cargo => "cargo",
             Self::Standalone => "standalone",
             Self::Unknown => "unknown",
@@ -110,6 +112,9 @@ fn classify_install_path(path: &str) -> InstallMethod {
         InstallMethod::Homebrew
     } else if path.contains("\\microsoft\\winget\\") || path.contains("/microsoft/winget/") {
         InstallMethod::Winget
+    } else if path == "/usr/bin/kobana" {
+        // The .deb / .rpm installs here; the package manager owns the file.
+        InstallMethod::Package
     } else if path.contains(".cargo/bin")
         || path.contains("/target/debug/")
         || path.contains("/target/release/")
@@ -124,6 +129,9 @@ fn install_command(method: &InstallMethod) -> &'static str {
     match method {
         InstallMethod::Homebrew => "brew upgrade kobana",
         InstallMethod::Winget => "winget upgrade Kobana.CLI",
+        InstallMethod::Package => {
+            "sudo apt update && sudo apt install --only-upgrade kobana  # or: sudo dnf upgrade kobana"
+        }
         InstallMethod::Cargo => {
             "cargo install --git https://github.com/universokobana/kobana-cli kobana-cli --force"
         }
@@ -260,6 +268,11 @@ pub async fn handle_update(check_only: bool, as_json: bool) -> Result<(), Kobana
             es: "¿Descargar e instalar el nuevo binario ahora?",
         )
         .to_string(),
+        InstallMethod::Package => {
+            // Needs root and the distro's own tool: only say what to run.
+            println!("{}", run_message(command));
+            return Ok(());
+        }
         InstallMethod::Unknown => {
             println!(
                 "{}",
@@ -315,7 +328,7 @@ pub async fn handle_update(check_only: bool, as_json: bool) -> Result<(), Kobana
             ],
         ),
         InstallMethod::Standalone => perform_self_update(&latest).await,
-        InstallMethod::Unknown => Ok(()),
+        InstallMethod::Package | InstallMethod::Unknown => Ok(()),
     }
 }
 
@@ -620,6 +633,7 @@ mod tests {
                 "c:\\users\\a\\appdata\\local\\microsoft\\winget\\packages\\kobana.cli_x\\kobana.exe",
                 InstallMethod::Winget,
             ),
+            ("/usr/bin/kobana", InstallMethod::Package),
             ("/home/a/.cargo/bin/kobana", InstallMethod::Cargo),
             ("/home/a/.kobana/bin/kobana", InstallMethod::Standalone),
         ];
