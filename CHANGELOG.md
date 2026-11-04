@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Pacotes `.deb` e `.rpm` e repositórios apt, dnf e zypper assinados** — cada release traz os pacotes (amd64 e arm64) e publica os repositórios em `https://universokobana.github.io/kobana-cli`. O `.rpm` leva assinatura GPG e os metadados dos repositórios também. `kobana update` reconhece a instalação por pacote e mostra o comando do gerenciador da distribuição
+
+### Security
+
+- **Binários do macOS assinados e notarizados, e do Windows com assinatura Authenticode** — a release assina com o certificado Developer ID da Apple (com notarização) e com o certificado EV no Azure Key Vault, o mesmo do Kia
+
 ## [0.14.0] - 2026-11-04
 
 ### Added

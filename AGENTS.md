@@ -21,7 +21,9 @@ CI runs on every push and PR to `main` via GitHub Actions (`.github/workflows/ci
 
 1. **Tests** — `cargo test --all` + `cargo clippy -- -D warnings` on Ubuntu
 2. **Build** — cross-platform matrix: Linux (amd64/arm64), macOS (amd64/arm64), Windows (amd64)
-3. **Release** — triggered when a commit on `main` starts with `release:`. Creates a GitHub Release with binaries for all 5 targets.
+3. **Release** — triggered when a commit on `main` starts with `release:`. Creates a GitHub Release with binaries for all 5 targets plus `.deb`/`.rpm` (amd64/arm64), and deploys the signed apt/dnf/zypper repositories to GitHub Pages.
+
+Release commits also sign the artifacts: macOS (Developer ID + notarization), Windows (Authenticode via Azure Key Vault, `scripts/azure-sign.ps1`) and Linux (GPG, `scripts/publish-linux-repo.sh`), all modeled on kia-desktop. Each step is skipped with a warning when its secrets are missing. Secrets: `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`, `APPLE_ID`, `APPLE_PASSWORD`, `APPLE_TEAM_ID`, `AZURE_KV_URL`, `AZURE_KV_CERT_NAME`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_TENANT_ID`, optional `AZURE_SIGN_TS_URL`, `GPG_PRIVATE_KEY`, `GPG_PASSPHRASE`.
 
 ### How to create a release
 

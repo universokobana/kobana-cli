@@ -180,6 +180,34 @@ espanhol conforme o idioma do sistema (`LC_ALL`, `LC_MESSAGES`, `LANG`);
 `KOBANA_LANG=pt|en|es` força um deles. Depois, `kobana update` atualiza o
 próprio binário.
 
+### Linux: apt, dnf e zypper
+
+Repositórios assinados com GPG, publicados em
+`https://universokobana.github.io/kobana-cli`. A página dessa URL mostra o
+fingerprint da chave para conferir.
+
+```bash
+# Debian / Ubuntu
+sudo install -d -m 0755 /etc/apt/keyrings
+curl -fsSL https://universokobana.github.io/kobana-cli/kobana.gpg | sudo tee /etc/apt/keyrings/kobana.gpg >/dev/null
+echo "deb [signed-by=/etc/apt/keyrings/kobana.gpg] https://universokobana.github.io/kobana-cli/apt stable main" \
+  | sudo tee /etc/apt/sources.list.d/kobana.list
+sudo apt update && sudo apt install kobana
+
+# Fedora / RHEL / CentOS
+sudo rpm --import https://universokobana.github.io/kobana-cli/kobana.asc
+sudo curl -fsSL -o /etc/yum.repos.d/kobana.repo https://universokobana.github.io/kobana-cli/rpm/kobana.repo
+sudo dnf install kobana
+
+# openSUSE / SUSE
+sudo rpm --import https://universokobana.github.io/kobana-cli/kobana.asc
+sudo zypper addrepo https://universokobana.github.io/kobana-cli/rpm/kobana.repo
+sudo zypper install kobana
+```
+
+Para atualizar, use o gerenciador da distribuição (`sudo apt upgrade kobana`,
+`sudo dnf upgrade kobana`). Os `.deb` e `.rpm` também estão em cada release.
+
 ### Homebrew (macOS e Linux)
 
 ```bash
@@ -205,7 +233,8 @@ Para atualizar: `winget upgrade Kobana.CLI`.
 
 Baixe o binário para sua plataforma na [página de Releases](https://github.com/universokobana/kobana-cli/releases/latest) e coloque no seu `PATH`.
 
-Cada binário tem um atestado de proveniência (GitHub Artifact Attestations,
+Os binários do macOS são assinados e notarizados pela Apple, e o do Windows tem
+assinatura Authenticode. Cada binário também tem um atestado de proveniência (GitHub Artifact Attestations,
 assinado via Sigstore). Para conferir que ele foi gerado por este repositório,
 com o [GitHub CLI](https://cli.github.com/) instalado:
 

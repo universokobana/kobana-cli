@@ -27,6 +27,8 @@ gh attestation verify kobana-linux-amd64 --repo universokobana/kobana-cli
 
 The SHA-256 checked by `install.sh` and `kobana update` comes from the same place as the binary, so it only detects corrupted downloads.
 
+macOS binaries are signed with a Developer ID certificate and notarized by Apple; the Windows binary is Authenticode-signed. The apt/dnf/zypper repositories at `https://universokobana.github.io/kobana-cli` are GPG-signed, and the key fingerprint is published on that page. The key has no fixed expiry date; a rotation would be announced in the repository before it happens.
+
 ---
 
 # Política de Segurança
@@ -57,3 +59,5 @@ gh attestation verify kobana-linux-amd64 --repo universokobana/kobana-cli
 ```
 
 O SHA-256 conferido pelo `install.sh` e pelo `kobana update` vem do mesmo lugar do binário, então só detecta downloads corrompidos.
+
+macOS: os binários são assinados com certificado Developer ID e notarizados pela Apple; o do Windows tem assinatura Authenticode. Os repositórios apt/dnf/zypper em `https://universokobana.github.io/kobana-cli` são assinados com GPG, e o fingerprint da chave fica publicado nessa página. A chave não tem data de expiração fixa; uma troca seria anunciada no repositório antes de acontecer.
