@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.1] - 2026-11-04
+
+### Security
+
+- **`.env` do projeto podia desviar o token para um proxy** — o `.env` do diretório atual ainda podia definir `KOBANA_ENVIRONMENT` e as variáveis de proxy (`http_proxy`, `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, `NO_PROXY`). Com `KOBANA_ENVIRONMENT=development`, banking, inbox e kadu passam a hosts `http://localhost`, e com `http_proxy` o reqwest manda a requisição inteira, com o `Authorization: Bearer`, ao proxy em texto claro. Um `KOBANA_BANKING_TOKEN` de produção exportado no shell vazaria assim ao rodar qualquer comando dentro de um repositório de terceiros, sem aviso. Agora essas variáveis também são ignoradas (com aviso) quando vêm do `.env` do diretório atual, e o CLI nomeia no stderr as variáveis que esse arquivo definiu
+- **Token sem ambiente não vai em texto claro sem `--env`** — `KOBANA_<PRODUTO>_TOKEN` e um `KOBANA_CREDENTIALS_FILE` sem `environment` valem para qualquer ambiente, então um token de produção seguia o CLI até um host `http://`. Agora só vão para um host sem HTTPS quando `--env development` é passado na linha de comando (erro de autenticação, código 2, caso contrário); credenciais salvas pelo `auth login` e arquivos com `environment` não mudam, porque já são de um ambiente
+
+### Changed
+
+- **`.env` da pasta de configuração carrega antes do `.env` do projeto (incompatível)** — a ordem era a inversa, e um `.env` de um repositório vencia o seu. Agora o seu vence; uma variável já definida no ambiente continua vencendo os dois
+- **`KOBANA_CREDENTIALS_FILE` sem `environment` vale só para produção (incompatível)** — antes valia para qualquer ambiente. Um arquivo gerado por `auth export` traz o campo e não muda
+
+### Added
+
+- **Site `cli.kobana.com.br`** (`user-docs/`, Docusaurus em pt-BR, en e es) — guia de uso e **manual de todos os comandos, gerado do binário** (`npm run gen-manual`; o CI falha se estiver desatualizado)
+
 ## [0.12.0] - 2026-11-03
 
 ### Changed
