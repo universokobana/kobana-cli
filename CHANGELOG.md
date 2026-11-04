@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-11-04
+
 ### Security
 
 - **`.env` do projeto podia mover o cofre de credenciais para dentro do repositório (Linux)** — `KOBANA_CONFIG_DIR` já era ignorado, mas `XDG_CONFIG_HOME` não, e é por ele que o CLI acha `~/.config/kobana` no Linux. Um repositório com `XDG_CONFIG_HOME=/workspaces/<repo>/...` fazia um login feito ali dentro gravar `.key` e `credentials-*.enc` no checkout, prontos para um `git add -A`. A pasta de configuração agora é fixada antes de ler o `.env` do projeto, e `HOME`, `XDG_*`, `USERPROFILE`, `APPDATA` e `LOCALAPPDATA` também são ignorados vindos dele
@@ -19,6 +21,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **No Windows, o `.env` do projeto driblava a lista de bloqueio pela caixa das letras** — `kobana_account_url=`, `kobana_credentials_file=`, `kobana_banking_token=`, `kadu_token=` ou `kobana_environment=` em minúsculas não batiam com a lista, eram aplicados e, como o Windows lê variáveis de ambiente sem distinguir caixa, valiam como as maiúsculas: um repositório podia mandar o login (e o client secret) para outro servidor ou fazer o CLI agir com o token dele. A comparação agora ignora a caixa. Linux e macOS não eram afetados
 
+### Changed
+
+- **Sandbox do banking em `api.sandbox.kobana.com.br`** — o host `api-sandbox.kobana.com.br` deixou de ser usado por `--env sandbox`
+- **Skills do Gateway Bancário com o prefixo do produto** — `kobana-admin`, `-charge`, `-data`, `-edi`, `-financial`, `-mailbox`, `-payment`, `-security`, `-transfer` e `-v1` viraram `kobana-banking-*`, como `kobana-billing` e `kobana-finance` já seguiam o nome do produto. Quem copiou as skills antigas para a pasta do agente precisa trocá-las. A nova skill `kobana-banking` é um mapa curto que aponta, pela tarefa, para a skill de domínio certa
+
+### Added
+
+- **`kobana --help` termina com "Saiba mais"** ("Learn more", "Más información"), como o `gh`: como pedir ajuda de qualquer comando e o link do manual no site, no idioma do CLI
+- **Site `cli.kobana.com.br`** (`user-docs/`, Docusaurus em pt-BR, en e es) — guia de uso e **manual de todos os comandos, gerado do binário** (`npm run gen-manual`; o CI falha se estiver desatualizado)
+
 ## [0.12.1] - 2026-11-04
 
 ### Security
@@ -28,18 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Sandbox do banking em `api.sandbox.kobana.com.br`** — o host `api-sandbox.kobana.com.br` deixou de ser usado por `--env sandbox`
 - **`.env` da pasta de configuração carrega antes do `.env` do projeto (incompatível)** — a ordem era a inversa, e um `.env` de um repositório vencia o seu. Agora o seu vence; uma variável já definida no ambiente continua vencendo os dois
 - **`KOBANA_CREDENTIALS_FILE` sem `environment` vale só para produção (incompatível)** — antes valia para qualquer ambiente. Um arquivo gerado por `auth export` traz o campo e não muda
-
-### Changed
-
-- **Skills do Gateway Bancário com o prefixo do produto** — `kobana-admin`, `-charge`, `-data`, `-edi`, `-financial`, `-mailbox`, `-payment`, `-security`, `-transfer` e `-v1` viraram `kobana-banking-*`, como `kobana-billing` e `kobana-finance` já seguiam o nome do produto. Quem copiou as skills antigas para a pasta do agente precisa trocá-las. A nova skill `kobana-banking` é um mapa curto que aponta, pela tarefa, para a skill de domínio certa
-
-### Added
-
-- **`kobana --help` termina com "Saiba mais"** ("Learn more", "Más información"), como o `gh`: como pedir ajuda de qualquer comando e o link do manual no site, no idioma do CLI
-- **Site `cli.kobana.com.br`** (`user-docs/`, Docusaurus em pt-BR, en e es) — guia de uso e **manual de todos os comandos, gerado do binário** (`npm run gen-manual`; o CI falha se estiver desatualizado)
 
 ## [0.12.0] - 2026-11-03
 
