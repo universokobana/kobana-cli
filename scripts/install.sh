@@ -12,7 +12,7 @@
 #   KOBANA_INSTALL_DIR  onde o binário fica (padrão: ~/.kobana)
 #   KOBANA_BIN_DIR      onde fica o link no PATH (padrão: ~/.local/bin)
 #   KOBANA_LANG         idioma das mensagens: pt, en ou es (padrão: o do sistema)
-#   NO_COLOR            desliga as cores
+#   NO_COLOR            desliga as cores (também CLICOLOR=0; CLICOLOR_FORCE força)
 #   KOBANA_ACCESSIBLE_COLORS  alto contraste: negrito e sublinhado, sem matizes
 #   KOBANA_SCREEN_READER      só texto: sem banner, emojis nem barra de progresso
 

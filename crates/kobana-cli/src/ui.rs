@@ -5,7 +5,7 @@
 //! | Setting | Effect |
 //! |---|---|
 //! | `--no-color`, `NO_COLOR` (any value), `CLICOLOR=0` | no ANSI color or style |
-//! | `CLICOLOR_FORCE` (not `0`) | color even when the output is not a terminal |
+//! | `CLICOLOR_FORCE` (any non-empty value, as clap reads it) | color even when the output is not a terminal |
 //! | `KOBANA_ACCESSIBLE_COLORS` | high contrast: bold and underline in the terminal's own text color, no hues |
 //! | `KOBANA_SCREEN_READER` | static text only: no decorative symbols, tables without borders, simple prompts |
 //! | `KOBANA_ACCESSIBLE_PROMPTER` | the simple prompts alone |
@@ -26,8 +26,9 @@ use kobana::{tr, trf};
 /// printed before any match exists) and confirmed from the matches after.
 static NO_COLOR_FLAG: AtomicBool = AtomicBool::new(false);
 
-/// A Windows console that cannot take ANSI escapes (no virtual terminal
-/// processing): the CLI's own colors stay off there
+/// Windows only: virtual terminal processing could not be turned on, so a
+/// console may print escapes raw. The CLI's own colors stay off on
+/// terminals then; a forced color into a pipe is not the console's business.
 static NO_ANSI_CONSOLE: AtomicBool = AtomicBool::new(false);
 
 /// Read `--no-color` from the raw arguments. Call before anything is printed.
@@ -120,8 +121,11 @@ impl Stream {
 
 /// Whether text written to `stream` gets ANSI styles
 pub fn color(stream: Stream) -> bool {
-    !NO_ANSI_CONSOLE.load(Ordering::Relaxed)
-        && color_with(NO_COLOR_FLAG.load(Ordering::Relaxed), env, stream.is_terminal(), cfg!(windows))
+    let terminal = stream.is_terminal();
+    if terminal && NO_ANSI_CONSOLE.load(Ordering::Relaxed) {
+        return false;
+    }
+    color_with(NO_COLOR_FLAG.load(Ordering::Relaxed), env, terminal, cfg!(windows))
 }
 
 /// `--no-color`, then exactly what clap's anstream decides, so the help and
@@ -323,14 +327,17 @@ pub struct Choice {
 
 impl std::fmt::Display for Choice {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.description.is_empty() {
-            return write!(f, "{}", self.name);
+        let (name, description) = (terminal_safe(&self.name), terminal_safe(&self.description));
+        if description.is_empty() {
+            return write!(f, "{name}");
         }
-        write!(f, "{:<width$}  {}", self.name, self.description, width = self.width)
+        write!(f, "{name:<width$}  {description}", width = self.width)
     }
 }
 
-/// Options laid out in two columns
+/// Options laid out in two columns. What is shown goes through
+/// [`terminal_safe`]: the OAuth scopes come from a server's discovery
+/// document. The returned names stay as they came.
 pub fn choices(items: Vec<(String, String)>) -> Vec<Choice> {
     let width = items.iter().map(|(name, _)| name.chars().count()).max().unwrap_or(0);
     items
@@ -379,10 +386,11 @@ fn ask_many(
     let io = |e: std::io::Error| e.to_string();
     writeln!(out, "{message}").map_err(io)?;
     for (i, option) in options.iter().enumerate() {
-        if option.description.is_empty() {
-            writeln!(out, "  {}. {}", i + 1, option.name).map_err(io)?;
+        let (name, description) = (terminal_safe(&option.name), terminal_safe(&option.description));
+        if description.is_empty() {
+            writeln!(out, "  {}. {name}", i + 1).map_err(io)?;
         } else {
-            writeln!(out, "  {}. {}: {}", i + 1, option.name, option.description).map_err(io)?;
+            writeln!(out, "  {}. {name}: {description}", i + 1).map_err(io)?;
         }
     }
     let kept = if defaults.is_empty() {
@@ -403,7 +411,7 @@ fn ask_many(
         };
         match parse_selection(&answer, options.len(), defaults) {
             Ok(picked) => {
-                let names: Vec<&str> = picked.iter().map(|&i| options[i].name.as_str()).collect();
+                let names: Vec<String> = picked.iter().map(|&i| terminal_safe(&options[i].name)).collect();
                 let names = if names.is_empty() { tr!(pt: "nenhum", en: "none", es: "ninguno").to_string() } else { names.join(", ") };
                 writeln!(out, "{} {names}", tr!(pt: "Escolhidos:", en: "Chosen:", es: "Elegidos:")).map_err(io)?;
                 return Ok(picked);
@@ -641,6 +649,18 @@ mod tests {
         // End of input is not an answer
         let mut input = std::io::Cursor::new("");
         assert!(ask_many(&mut input, &mut Vec::new(), "x", &options, &[0]).is_err());
+    }
+
+    #[test]
+    fn option_text_cannot_drive_the_terminal() {
+        let options = choices(vec![("a\u{1b}[2Jb".into(), "c\u{9b}d".into())]);
+        let mut out = Vec::new();
+        ask_many(&mut std::io::Cursor::new("\n"), &mut out, "x", &options, &[0]).unwrap();
+        let text = String::from_utf8(out).unwrap();
+        assert!(!text.contains('\u{1b}') && !text.contains('\u{9b}'), "{text:?}");
+        assert!(!options[0].to_string().contains('\u{1b}'));
+        // The picked name itself is untouched
+        assert_eq!(options[0].name, "a\u{1b}[2Jb");
     }
 
     #[test]
