@@ -26,7 +26,7 @@ kobana banking bank-billets list --output-format csv     # CSV
 kobana banking bank-billets list --fields "id,amount,status,due_at"
 ```
 
-## Filtrar con `--jq` {#jq}
+## Filtrar con `--jq`
 
 `--jq` aplica una expresión [jq](https://jqlang.github.io/jq/manual/) a la salida JSON, como el `--jq` de `gh` — sin tener `jq` instalado. Cada resultado sale en una línea: un texto sale tal cual (como `jq -r`), el resto en JSON, con sangría solo en el terminal.
 

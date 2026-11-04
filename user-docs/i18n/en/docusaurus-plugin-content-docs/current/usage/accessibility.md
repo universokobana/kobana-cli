@@ -65,7 +65,7 @@ Without a person at the terminal — `stdin`, `stdout` and `stderr` are not all 
 - `update` only shows the command that would install;
 - the new-version notice does not show (nor query the network); `KOBANA_NO_UPDATE_NOTIFIER=1` turns it off in the terminal too.
 
-Output is JSON (the default). `--fields` picks the fields and `--jq` filters with a [jq](https://jqlang.github.io/jq/manual/) expression, with no `jq` installed — see [Output](/usage/output#jq).
+Output is JSON (the default). `--fields` picks the fields and `--jq` filters with a [jq](https://jqlang.github.io/jq/manual/) expression, with no `jq` installed — see [Output](/usage/output#filter-with---jq).
 
 ## Summary
 
