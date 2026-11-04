@@ -378,7 +378,7 @@ pub fn build_root_command(products: &[LoadedProduct]) -> Command {
                     es: "Idioma de los mensajes: pt, en o es (predeterminado: KOBANA_LANG o el del sistema)",
                 )),
         );
-    let mut root = clap_i18n::root(root);
+    let mut root = clap_i18n::root(root.after_help(clap_i18n::learn_more()));
 
     // Add the product level: kobana <produto> <servico> <recurso> <metodo>
     for loaded in products {

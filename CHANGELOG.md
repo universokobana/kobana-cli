@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`kobana --help` termina com "Saiba mais"** ("Learn more", "Más información"), como o `gh`: como pedir ajuda de qualquer comando e o link do manual no site, no idioma do CLI
 - **Site `cli.kobana.com.br`** (`user-docs/`, Docusaurus em pt-BR, en e es) — guia de uso e **manual de todos os comandos, gerado do binário** (`npm run gen-manual`; o CI falha se estiver desatualizado)
 
 ## [0.12.0] - 2026-11-03

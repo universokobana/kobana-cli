@@ -37,6 +37,24 @@ pub fn command(name: impl Into<clap::builder::Str>, usage: String) -> Command {
         .next_help_heading(tr!(pt: "Opções", en: "Options", es: "Opciones"))
 }
 
+/// The closing block of `kobana --help`, like `gh`'s "LEARN MORE": how to
+/// reach the help of any command and where the manual lives, in the user's
+/// language.
+pub fn learn_more() -> String {
+    let heading = tr!(pt: "Saiba mais:", en: "Learn more:", es: "Más información:");
+    let help = tr!(
+        pt: "Use `kobana <produto> <recurso> --help` para mais informações sobre um comando.",
+        en: "Use `kobana <product> <resource> --help` for more information about a command.",
+        es: "Usa `kobana <producto> <recurso> --help` para más información sobre un comando.",
+    );
+    let manual = tr!(
+        pt: "Leia o manual em https://cli.kobana.com.br/pt/manual",
+        en: "Read the manual at https://cli.kobana.com.br/en/manual",
+        es: "Lee el manual en https://cli.kobana.com.br/es/manual",
+    );
+    format!("{HEADING}{heading}{HEADING:#}\n  {help}\n  {manual}\n")
+}
+
 /// Heading for positional arguments
 pub fn arguments_heading() -> &'static str {
     tr!(pt: "Argumentos", en: "Arguments", es: "Argumentos")
@@ -343,6 +361,22 @@ pub fn lang_from_args(args: &[String]) -> Option<kobana::i18n::Lang> {
 mod tests {
     use super::*;
     use kobana::i18n::Lang;
+
+    #[test]
+    fn root_help_ends_with_learn_more_pointing_to_the_manual() {
+        // The language is fixed once per process, so this checks whichever it is
+        let text = learn_more();
+        assert!(text.contains("--help"), "{text}");
+        let lang = match kobana::i18n::lang() {
+            Lang::Pt => "pt",
+            Lang::En => "en",
+            Lang::Es => "es",
+        };
+        assert!(
+            text.contains(&format!("https://cli.kobana.com.br/{lang}/manual")),
+            "{text}"
+        );
+    }
 
     fn args(list: &[&str]) -> Vec<String> {
         list.iter().map(|s| s.to_string()).collect()
