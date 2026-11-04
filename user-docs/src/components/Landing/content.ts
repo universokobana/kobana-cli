@@ -96,6 +96,8 @@ interface Copy {
   copy: string;
   copied: string;
   terminalTitle: string;
+  pause: string;
+  play: string;
   installTitle: string;
   installLead: string;
   installOther: string;
@@ -127,6 +129,8 @@ export const COPY: Record<Locale, Copy> = {
     copy: 'Copiar',
     copied: 'Copiado',
     terminalTitle: 'terminal',
+    pause: 'Pausar animação',
+    play: 'Reproduzir animação',
     installTitle: 'Instale em um minuto',
     installLead: 'Um binário só, sem dependências. Depois, entre no produto que vai usar.',
     installOther: 'Homebrew, Nix, binários prontos e código-fonte',
@@ -166,6 +170,8 @@ export const COPY: Record<Locale, Copy> = {
     copy: 'Copy',
     copied: 'Copied',
     terminalTitle: 'terminal',
+    pause: 'Pause animation',
+    play: 'Play animation',
     installTitle: 'Install in a minute',
     installLead: 'A single binary, no dependencies. Then log in to the product you will use.',
     installOther: 'Homebrew, Nix, ready-made binaries and source',
@@ -205,6 +211,8 @@ export const COPY: Record<Locale, Copy> = {
     copy: 'Copiar',
     copied: 'Copiado',
     terminalTitle: 'terminal',
+    pause: 'Pausar animación',
+    play: 'Reproducir animación',
     installTitle: 'Instala en un minuto',
     installLead: 'Un solo binario, sin dependencias. Luego, entra al producto que vas a usar.',
     installOther: 'Homebrew, Nix, binarios listos y código fuente',

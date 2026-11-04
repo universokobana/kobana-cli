@@ -89,52 +89,9 @@
   text-decoration: none;
 }
 
-.terminal {
-  max-width: 46rem;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 0.875rem;
-  overflow: hidden;
-}
-
-.terminalBar {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.6rem 0.9rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.terminalBar span {
-  width: 0.65rem;
-  height: 0.65rem;
-  border-radius: 50%;
-  background: #333;
-}
-
-.terminalBar em {
-  margin-left: auto;
-  font-size: 0.75rem;
-  color: var(--muted);
-  font-style: normal;
-}
-
-.terminal pre {
-  margin: 0;
-  padding: 1.1rem 1.25rem;
-  background: transparent;
-  color: var(--fg);
-  font-size: 0.9rem;
-  overflow-x: auto;
-}
-
 .prompt {
   color: var(--lime);
   user-select: none;
-}
-
-.dim {
-  color: var(--muted);
 }
 
 .section {
@@ -330,11 +287,6 @@
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
-  .terminal pre {
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-    font-size: 0.8rem;
-  }
   .map {
     display: block;
     overflow-x: auto;
@@ -506,8 +458,4 @@
 /* The terminal sits under the buttons, beside the prompt card. */
 .heroGrid .actions {
   margin-bottom: 2rem;
-}
-
-.heroGrid .terminal {
-  max-width: none;
 }

@@ -5,6 +5,7 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import {Check, Copy, ExternalLink} from 'lucide-react';
 import {COPY, INSTALL_SCRIPT, PRODUCTS, TERMINAL_AGENTS, WEB_CHATS, cursorLink, type Locale} from '../components/Landing/content';
 import {ChatGptIcon, ClaudeIcon, CursorIcon, GeminiIcon} from '../components/Landing/icons';
+import AnimatedTerminal from '../components/Landing/AnimatedTerminal';
 import styles from './index.module.css';
 
 function CopyLine({command, copy, copied}: {command: string; copy: string; copied: string}): ReactNode {
@@ -152,23 +153,7 @@ export default function Home(): ReactNode {
                   </Link>
                 </div>
 
-                <div className={styles.terminal} role="img" aria-label="kobana billing invoices list">
-                  <div className={styles.terminalBar}>
-                    <span /> <span /> <span />
-                    <em>{c.terminalTitle}</em>
-                  </div>
-                  <pre>
-                    <span className={styles.prompt}>$</span> kobana billing invoices list --fields id,status,total
-                    {'\n'}
-                    <span className={styles.dim}>{'{ "data": ['}</span>
-                    {'\n'}
-                    <span className={styles.dim}>{'  { "id": "inv_01", "status": "paid", "total": 1490.00 },'}</span>
-                    {'\n'}
-                    <span className={styles.dim}>{'  { "id": "inv_02", "status": "open", "total": 320.50 }'}</span>
-                    {'\n'}
-                    <span className={styles.dim}>{'] }'}</span>
-                  </pre>
-                </div>
+                <AnimatedTerminal title={c.terminalTitle} pause={c.pause} play={c.play} />
               </div>
               <PromptCard copy={c.prompt} />
             </div>

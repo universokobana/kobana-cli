@@ -1,0 +1,112 @@
+/* Animated hero terminal. Colors come from the landing page tokens (.page in
+   pages/index.module.css), which cascade in. */
+.terminal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.875rem;
+  overflow: hidden;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.bar span {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background: #333;
+}
+
+.bar em {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-style: normal;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.5rem;
+  padding: 0.2rem;
+  background: transparent;
+  border: 0;
+  border-radius: 0.25rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.toggle:hover,
+.toggle:focus-visible {
+  color: var(--lime);
+}
+
+.terminal pre {
+  margin: 0;
+  /* Fixed height: the box must not jump as lines appear. */
+  min-height: 9.5rem;
+  padding: 1.1rem 1.25rem;
+  background: transparent;
+  color: var(--fg);
+  font-size: 0.9rem;
+  overflow-x: auto;
+}
+
+.prompt {
+  color: var(--lime);
+  user-select: none;
+}
+
+.line {
+  color: var(--muted);
+  animation: appear 0.25s ease-out;
+}
+
+.caret,
+.caretSolid {
+  display: inline-block;
+  width: 0.55em;
+  height: 1.05em;
+  margin-left: 1px;
+  vertical-align: text-bottom;
+  background: var(--lime);
+}
+
+.caret {
+  animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line,
+  .caret {
+    animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .terminal pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 0.8rem;
+    min-height: 11rem;
+  }
+}
