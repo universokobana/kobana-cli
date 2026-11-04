@@ -65,7 +65,7 @@ pub struct ResolvedToken {
     pub resource: Option<String>,
 }
 
-/// Resolve the Bearer token for a product.
+/// Resolve a product's token and what is known about it.
 ///
 /// Priority:
 /// 1. `KOBANA_<PRODUCT>_TOKEN` (and the product's aliases, e.g. `KADU_TOKEN`)
@@ -73,12 +73,6 @@ pub struct ResolvedToken {
 ///    is this product's and environment's (see [`CredentialsFile::serves`])
 /// 3. Saved credentials from `kobana <product> auth login`, refreshed with
 ///    the refresh token when expired
-pub async fn resolve_token(product: &Product, env: &Environment) -> Result<String, KobanaError> {
-    resolve(product, env).await.map(|t| t.access_token)
-}
-
-/// [`resolve_token`] with the token's source and details, for the commands
-/// that report them (`auth export`)
 pub async fn resolve(product: &Product, env: &Environment) -> Result<ResolvedToken, KobanaError> {
     if let Some((token, source)) = env_token(product) {
         return Ok(ResolvedToken {
@@ -115,6 +109,32 @@ pub async fn resolve(product: &Product, env: &Environment) -> Result<ResolvedTok
         environment: Some(creds.environment),
         resource: creds.resource,
     })
+}
+
+/// Refuse to send a token that is not bound to an environment over plain
+/// HTTP unless `--env` was typed. `KOBANA_<PRODUCT>_TOKEN` is the same
+/// variable whatever the environment, so a production token would otherwise
+/// go in the clear — and through any proxy the environment names — as soon
+/// as something switched the CLI to a development host.
+pub fn refuse_unbound_token_in_the_clear(
+    token: &ResolvedToken,
+    base_url: &str,
+    explicit_env: bool,
+) -> Result<(), KobanaError> {
+    let in_the_clear = base_url.starts_with("http://");
+    if !in_the_clear || explicit_env || token.environment.is_some() {
+        return Ok(());
+    }
+    let source = match &token.source {
+        TokenSource::ProductEnv(var) => var.clone(),
+        TokenSource::CredentialsFile(path) => format!("KOBANA_CREDENTIALS_FILE ({path})"),
+        TokenSource::Saved => return Ok(()),
+    };
+    Err(KobanaError::Auth(trf!(
+        pt: "o token de {source} não é de um ambiente e {base_url} não usa HTTPS; para mandá-lo mesmo assim, passe --env development na linha de comando",
+        en: "the token from {source} is not bound to an environment and {base_url} is not HTTPS; to send it anyway, pass --env development on the command line",
+        es: "el token de {source} no es de un entorno y {base_url} no usa HTTPS; para enviarlo de todos modos, pasa --env development en la línea de comandos",
+    )))
 }
 
 /// The product's saved credentials for `env`, refreshed when expired
@@ -213,10 +233,11 @@ pub struct CredentialsFile {
 impl CredentialsFile {
     /// Whether the file holds a token for this product and environment. A
     /// token serves one product (its `aud`), so a banking file must not be
-    /// sent to billing. A file without `environment` serves any.
+    /// sent to billing. A file without `environment` is taken as production,
+    /// the default: it must not follow the CLI to a development host.
     pub fn serves(&self, product: &Product, env: &Environment) -> bool {
-        self.product == product.slug
-            && self.environment.as_deref().is_none_or(|e| e == env.as_str())
+        let file_env = self.environment.as_deref().unwrap_or("production");
+        self.product == product.slug && file_env == env.as_str()
     }
 }
 
@@ -368,9 +389,38 @@ mod tests {
         assert!(!f.serves(billing, &prod));
         assert!(!f.serves(banking, &sandbox));
 
-        // No environment: any
+        // No environment: production only, never a development host
         let f = file(serde_json::json!({"access_token": "t", "product": "billing"}));
-        assert!(f.serves(billing, &prod) && f.serves(billing, &sandbox));
+        assert!(f.serves(billing, &prod));
+        assert!(!f.serves(billing, &sandbox));
+        assert!(!f.serves(billing, &Environment::Development));
+    }
+
+    #[test]
+    fn an_unbound_token_goes_in_the_clear_only_with_an_explicit_env() {
+        let token = |source, environment| ResolvedToken {
+            access_token: "t".into(),
+            source,
+            token_type: "Bearer".into(),
+            refresh_token: None,
+            expires_at: None,
+            environment,
+            resource: None,
+        };
+        let env_token = token(TokenSource::ProductEnv("KOBANA_BANKING_TOKEN".into()), None);
+        assert!(refuse_unbound_token_in_the_clear(&env_token, "https://api.kobana.com.br", false).is_ok());
+        assert!(matches!(
+            refuse_unbound_token_in_the_clear(&env_token, "http://localhost:5005/api", false),
+            Err(KobanaError::Auth(_))
+        ));
+        assert!(refuse_unbound_token_in_the_clear(&env_token, "http://localhost:5005/api", true).is_ok());
+        let file_token = token(TokenSource::CredentialsFile("/tmp/c.json".into()), None);
+        assert!(refuse_unbound_token_in_the_clear(&file_token, "http://localhost:5005/api", false).is_err());
+        // Bound to an environment or saved by a login: the environment was chosen on purpose
+        let bound = token(TokenSource::CredentialsFile("/tmp/c.json".into()), Some("development".into()));
+        assert!(refuse_unbound_token_in_the_clear(&bound, "http://localhost:5005/api", false).is_ok());
+        let saved = token(TokenSource::Saved, Some("development".into()));
+        assert!(refuse_unbound_token_in_the_clear(&saved, "http://localhost:5005/api", false).is_ok());
     }
 
     #[test]

@@ -320,7 +320,7 @@ kobana banking charge pix list --page-all --page-limit 5
 | Variavel | Descricao |
 |----------|-----------|
 | `KOBANA_<PRODUTO>_TOKEN` | Token Bearer de um produto (maior prioridade) |
-| `KOBANA_CREDENTIALS_FILE` | Caminho para arquivo JSON de credenciais OAuth (exige o campo `product`; vale só para esse produto e para o `environment` dele) |
+| `KOBANA_CREDENTIALS_FILE` | Caminho para arquivo JSON de credenciais OAuth (exige o campo `product`; vale só para esse produto e para o `environment` dele — sem `environment`, só produção) |
 | `KOBANA_CLIENT_ID` | OAuth client ID |
 | `KOBANA_CLIENT_SECRET` | OAuth client secret: escolhe o fluxo Client Credentials (só no `banking`, com client ID) |
 | `KOBANA_ACCOUNT_URL` | Substitui a URL da Conta Kobana (servidor de autorizacao) |
@@ -331,7 +331,7 @@ kobana banking charge pix list --page-all --page-limit 5
 | `KOBANA_LOG` | Nivel de log para stderr (ex: `kobana=debug`) |
 | `KOBANA_LOG_FILE` | Diretorio para logs JSON com rotacao diaria |
 
-Variaveis tambem podem ser definidas em arquivo `.env`: o do diretorio atual (nao o das pastas acima) e o da pasta de configuracao. O `.env` do diretorio atual nao pode definir `KOBANA_ACCOUNT_URL`, `KOBANA_CONFIG_DIR`, tokens (`KOBANA_<PRODUTO>_TOKEN`, `KADU_TOKEN`), `KOBANA_CREDENTIALS_FILE`, `KOBANA_CLIENT_ID` nem `KOBANA_CLIENT_SECRET`.
+Variaveis tambem podem ser definidas em arquivo `.env`: o da pasta de configuracao e depois o do diretorio atual (nao o das pastas acima), entao o seu vence o do repositorio. O `.env` do diretorio atual nao pode definir `KOBANA_ACCOUNT_URL`, `KOBANA_CONFIG_DIR`, tokens (`KOBANA_<PRODUTO>_TOKEN`, `KADU_TOKEN`), `KOBANA_CREDENTIALS_FILE`, `KOBANA_CLIENT_ID`, `KOBANA_CLIENT_SECRET`, `KOBANA_ENVIRONMENT` nem as variaveis de proxy (`HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, `NO_PROXY`); o CLI avisa o que ignorou e o que esse arquivo definiu. Um token sem ambiente (`KOBANA_<PRODUTO>_TOKEN`, ou `KOBANA_CREDENTIALS_FILE` sem `environment`, que vale so para producao) so vai para um host sem HTTPS com `--env development` na linha de comando.
 
 ---
 

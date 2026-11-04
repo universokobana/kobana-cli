@@ -33,18 +33,30 @@ pub fn config_dir() -> PathBuf {
 }
 
 /// Variables a project's `.env` may not set: where the CLI logs in (and
-/// refreshes tokens), where it keeps credentials, and the credentials
-/// themselves. A repository someone else wrote could otherwise send the login
-/// to its own server, have credentials saved inside it, or make the CLI act
-/// with its own token or OAuth client. Product tokens are matched by
-/// [`is_credential_var`].
+/// refreshes tokens), where it keeps credentials, the credentials themselves,
+/// which environment it talks to and through which proxy. A repository
+/// someone else wrote could otherwise send the login to its own server, have
+/// credentials saved inside it, make the CLI act with its own token or OAuth
+/// client, or switch to the plain-HTTP development hosts and route the
+/// request — bearer token included — through a proxy it names. Product
+/// tokens are matched by [`is_credential_var`]; proxy variables are matched
+/// in any case (`http_proxy`, `HTTP_PROXY`), as reqwest reads them.
 const PROJECT_DOTENV_BLOCKED: &[&str] = &[
     "KOBANA_ACCOUNT_URL",
     "KOBANA_CONFIG_DIR",
     "KOBANA_CREDENTIALS_FILE",
     "KOBANA_CLIENT_ID",
     "KOBANA_CLIENT_SECRET",
+    "KOBANA_ENVIRONMENT",
 ];
+
+const PROXY_VARS: &[&str] = &["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY"];
+
+fn is_blocked_var(key: &str) -> bool {
+    PROJECT_DOTENV_BLOCKED.contains(&key)
+        || is_credential_var(key)
+        || PROXY_VARS.iter().any(|p| key.eq_ignore_ascii_case(p))
+}
 
 /// A product's token variable: `KOBANA_<PRODUCT>_TOKEN` or one of the
 /// registered aliases (`KADU_TOKEN`)
@@ -55,29 +67,37 @@ fn is_credential_var(key: &str) -> bool {
             .any(|p| p.token_env_aliases.contains(&key))
 }
 
-/// Load .env files: the current directory's (never its parents') and the
-/// config dir's. Variables already set win over both. Returns the variables
-/// the project's `.env` set but were ignored, to warn about once the
-/// language is known.
-pub fn load_dotenv() -> Vec<String> {
-    let ignored = apply_project_dotenv(std::path::Path::new(".env"));
-    let _ = dotenvy::from_path(config_dir().join(".env"));
-    ignored
+/// What the project's `.env` did, to say once the language is known
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct ProjectDotenv {
+    /// Variables it tried to set but may not
+    pub ignored: Vec<String>,
+    /// Variables it set: the user did not type them, so they are named
+    pub applied: Vec<String>,
 }
 
-fn apply_project_dotenv(path: &std::path::Path) -> Vec<String> {
+/// Load .env files: the config dir's, then the current directory's (never its
+/// parents'). Variables already set win over both, so the user's own file
+/// wins over the checked-out one.
+pub fn load_dotenv() -> ProjectDotenv {
+    let _ = dotenvy::from_path(config_dir().join(".env"));
+    apply_project_dotenv(std::path::Path::new(".env"))
+}
+
+fn apply_project_dotenv(path: &std::path::Path) -> ProjectDotenv {
     let Ok(entries) = dotenvy::from_path_iter(path) else {
-        return Vec::new();
+        return ProjectDotenv::default();
     };
-    let mut ignored = Vec::new();
+    let mut report = ProjectDotenv::default();
     for (key, value) in entries.flatten() {
-        if PROJECT_DOTENV_BLOCKED.contains(&key.as_str()) || is_credential_var(&key) {
-            ignored.push(key);
+        if is_blocked_var(&key) {
+            report.ignored.push(key);
         } else if std::env::var_os(&key).is_none() {
-            std::env::set_var(key, value);
+            std::env::set_var(&key, value);
+            report.applied.push(key);
         }
     }
-    ignored
+    report
 }
 
 /// Resolve the environment from the `--env` flag or KOBANA_ENVIRONMENT.
@@ -116,7 +136,9 @@ mod tests {
             format!(
                 "KOBANA_ACCOUNT_URL=https://evil.example\nKOBANA_CONFIG_DIR=/tmp/evil\n\
                  KOBANA_BANKING_TOKEN=t\nKADU_TOKEN=t\nKOBANA_CREDENTIALS_FILE=/tmp/c.json\n\
-                 KOBANA_CLIENT_SECRET=s\n{var}=ok\n"
+                 KOBANA_CLIENT_SECRET=s\nKOBANA_ENVIRONMENT=development\n\
+                 http_proxy=http://evil.example:8080\nALL_PROXY=http://evil.example:8080\n\
+                 NO_PROXY=\n{var}=ok\n"
             ),
         )
         .unwrap();
@@ -127,14 +149,33 @@ mod tests {
             "KADU_TOKEN",
             "KOBANA_CREDENTIALS_FILE",
             "KOBANA_CLIENT_SECRET",
+            "KOBANA_ENVIRONMENT",
+            "http_proxy",
+            "ALL_PROXY",
+            "NO_PROXY",
         ];
         let before: Vec<_> = blocked.iter().map(|k| std::env::var(k).ok()).collect();
 
-        let ignored = apply_project_dotenv(&path);
-        assert_eq!(ignored, blocked);
+        let report = apply_project_dotenv(&path);
+        assert_eq!(report.ignored, blocked);
+        assert_eq!(report.applied, std::slice::from_ref(&var));
         assert_eq!(std::env::var(&var).as_deref(), Ok("ok"));
         let after: Vec<_> = blocked.iter().map(|k| std::env::var(k).ok()).collect();
         assert_eq!(after, before);
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn a_variable_already_set_is_not_applied_nor_reported() {
+        let dir = std::env::temp_dir().join(format!("kobana-dotenv-set-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let var = format!("KOBANA_DOTENV_SET_TEST_{}", std::process::id());
+        std::env::set_var(&var, "mine");
+        let path = dir.join(".env");
+        std::fs::write(&path, format!("{var}=theirs\n")).unwrap();
+        let report = apply_project_dotenv(&path);
+        assert_eq!(report, ProjectDotenv::default());
+        assert_eq!(std::env::var(&var).as_deref(), Ok("mine"));
         std::fs::remove_dir_all(dir).ok();
     }
 

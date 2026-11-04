@@ -665,16 +665,25 @@ OpenAPI specs embutidos. O caminho segue a mesma forma do comando:
 | `KOBANA_LOG` | Nível de log para stderr (ex: `kobana=debug`) |
 | `KOBANA_LOG_FILE` | Diretório para logs JSON com rotação diária |
 
-Variáveis também podem ser definidas em um arquivo `.env`: o do diretório
-atual (não o das pastas acima dele) e o da pasta de configuração. Uma variável
-já definida no ambiente vence os dois. Por segurança, o `.env` do diretório
-atual não pode definir onde o CLI entra e guarda credenciais nem as próprias
-credenciais: `KOBANA_ACCOUNT_URL`, `KOBANA_CONFIG_DIR`, os tokens
+Variáveis também podem ser definidas em um arquivo `.env`: o da pasta de
+configuração e o do diretório atual (não o das pastas acima dele), nessa
+ordem — o seu vence o do repositório, e uma variável já definida no ambiente
+vence os dois. Por segurança, o `.env` do diretório atual não pode definir
+onde o CLI entra e guarda credenciais, as próprias credenciais, o ambiente nem
+o proxy: `KOBANA_ACCOUNT_URL`, `KOBANA_CONFIG_DIR`, os tokens
 (`KOBANA_<PRODUTO>_TOKEN`, `KADU_TOKEN`), `KOBANA_CREDENTIALS_FILE`,
-`KOBANA_CLIENT_ID` e `KOBANA_CLIENT_SECRET` (o CLI avisa e ignora). Um
-repositório de terceiros poderia mandar o login para outro servidor, guardar as
-credenciais dentro dele ou fazer o CLI agir com o token de outra pessoa.
-Defina essas no ambiente ou no `.env` da pasta de configuração.
+`KOBANA_CLIENT_ID`, `KOBANA_CLIENT_SECRET`, `KOBANA_ENVIRONMENT`,
+`HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY` e `NO_PROXY` (o CLI avisa e ignora;
+também avisa quais variáveis esse `.env` definiu). Um repositório de terceiros
+poderia mandar o login para outro servidor, guardar as credenciais dentro dele,
+fazer o CLI agir com o token de outra pessoa, ou trocar para os hosts de
+desenvolvimento em HTTP puro e passar a requisição — com o seu token — por um
+proxy dele. Defina essas no ambiente ou no `.env` da pasta de configuração.
+
+Um token que não é de um ambiente (`KOBANA_<PRODUTO>_TOKEN`, ou um
+`KOBANA_CREDENTIALS_FILE` sem `environment`, que vale só para produção) só
+vai para um host sem HTTPS quando `--env development` é passado na linha de
+comando.
 
 ## Códigos de Saída
 

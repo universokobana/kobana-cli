@@ -22,7 +22,7 @@ use kobana::trf;
 #[tokio::main]
 async fn main() {
     // Load .env files
-    let ignored_dotenv = config::load_dotenv();
+    let project_dotenv = config::load_dotenv();
 
     // The language must be fixed before any command or message is built
     let args: Vec<String> = std::env::args().collect();
@@ -30,13 +30,25 @@ async fn main() {
         kobana::i18n::set_lang(lang);
     }
 
-    for var in ignored_dotenv {
+    for var in project_dotenv.ignored {
         eprintln!(
             "{}",
             trf!(
                 pt: "Aviso: {var} no .env do diretório atual foi ignorada; defina-a no ambiente ou no .env da pasta de configuração",
                 en: "Warning: {var} in the current directory's .env was ignored; set it in the environment or in the config folder's .env",
                 es: "Aviso: {var} en el .env del directorio actual se ignoró; defínela en el entorno o en el .env de la carpeta de configuración",
+            )
+        );
+    }
+    // What a checked-out `.env` did set is never silent either
+    if !project_dotenv.applied.is_empty() {
+        let vars = project_dotenv.applied.join(", ");
+        eprintln!(
+            "{}",
+            trf!(
+                pt: "Aviso: o .env do diretório atual definiu {vars}",
+                en: "Warning: the current directory's .env set {vars}",
+                es: "Aviso: el .env del directorio actual definió {vars}",
             )
         );
     }
@@ -118,7 +130,7 @@ async fn run() -> Result<(), KobanaError> {
                     matches.get_one::<String>("env").map(|s| s.as_str()),
                 )?;
                 let helper_dry_run = helper_matches.get_flag("dry-run");
-                let token = token_unless_dry_run(loaded.product, &env, helper_dry_run).await?;
+                let token = token_unless_dry_run(loaded.product, &env, explicit_env(&matches), helper_dry_run).await?;
                 let client = product::client_for(loaded.product, &env, &token, helper_dry_run)?;
                 return helper.execute(&client, helper_matches).await;
             }
@@ -144,7 +156,7 @@ async fn run() -> Result<(), KobanaError> {
     )?;
 
     let dry_run = matches.get_flag("dry-run");
-    let token = token_unless_dry_run(loaded_product.product, &env, dry_run).await?;
+    let token = token_unless_dry_run(loaded_product.product, &env, explicit_env(&matches), dry_run).await?;
 
     // Create client — each product has its own API host and TLS requirements
     let client = product::client_for(loaded_product.product, &env, &token, dry_run)?;
@@ -153,16 +165,29 @@ async fn run() -> Result<(), KobanaError> {
     executor::execute(&client, endpoint, &matches).await
 }
 
+/// Whether `--env` was typed on this command line
+fn explicit_env(matches: &clap::ArgMatches) -> bool {
+    matches.get_one::<String>("env").is_some()
+}
+
 /// The product's token, or none for a dry run. A dry run sends nothing and
 /// shows no `Authorization`, so it must not touch the credentials either:
 /// resolving would refresh over the network and rewrite the credentials file.
+///
+/// A token that is not bound to an environment (`KOBANA_<PRODUCT>_TOKEN`, a
+/// credentials file without `environment`) only goes to a plain-HTTP host
+/// when `--env` was typed: a production token must not travel in the clear
+/// because something in the environment said `development`.
 async fn token_unless_dry_run(
     product: &product::Product,
     env: &config::Environment,
+    explicit_env: bool,
     dry_run: bool,
 ) -> Result<String, KobanaError> {
     if dry_run {
         return Ok(String::new());
     }
-    auth::resolve_token(product, env).await
+    let token = auth::resolve(product, env).await?;
+    auth::refuse_unbound_token_in_the_clear(&token, product.base_url(env)?, explicit_env)?;
+    Ok(token.access_token)
 }

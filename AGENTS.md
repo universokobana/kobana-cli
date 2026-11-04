@@ -240,6 +240,38 @@ ruby scripts/build-spec-translations.rb
 | `helpers/boleto.rs`  | `+emitir` and `+cancelar-lote` helpers                         |
 | `helpers/pix.rs`     | `+cobrar` helper                                               |
 
+## User Docs (`user-docs/`, cli.kobana.com.br)
+
+The public site is a Docusaurus project in `user-docs/`, published at
+`cli.kobana.com.br` in pt-BR, en and es (`/pt`, `/en`, `/es`). It follows the
+Kobana `user-docs-*` standards (`kobana-next-apps/docs/standards`) and its shell
+(header, footer, assistant, page actions, docs MCP in `api/`) is copied from
+`kobana-billing/user-docs` — keep those files identical to the billing ones.
+What is specific to this site: two sections (Documentação, Manual), the landing
+page (`src/pages/index.tsx`, dark/lime like www.kobana.com.br) and `CURRENT_APP = null`.
+
+> [!IMPORTANT]
+> **The manual is generated, never edited.** `docs/manual/<product>/*.md`,
+> `docs/manual/commands/*.md`, their `i18n/{en,es}` copies and
+> `manual-sidebar.json` come from `scripts/generate-manual.mjs`, which reads the
+> `kobana` binary (`--help`, `kobana schema`, in each `--lang`) and the embedded
+> specs. After changing a spec, a command name or a help string:
+>
+> ```bash
+> cargo build --release
+> cd user-docs && npm run gen-manual     # CI runs gen-manual:check and fails when stale
+> ```
+>
+> Only `docs/manual/index.md` (and its translations) in the manual is hand-written.
+
+The guide pages (`docs/getting-started`, `usage`, `reference`, `docs-mcp.md`)
+are hand-written: a new page is created in all three languages in the same
+commit, with the same id, and listed in `sidebars.ts`. Check them against the
+CLI (`README.md` has the same facts); never document a flag you did not run.
+
+Preview with the production build, as in `user-docs/README.md`
+(`npm run build && npm run serve:prod`), never `docusaurus start`.
+
 ## Languages
 
 Everything the CLI says to a person is in Portuguese, English or Spanish:
@@ -485,14 +517,25 @@ Current helpers:
 | `KOBANA_LOG_FILE` | Directory for JSON log files with daily rotation. Off by default. |
 
 All variables can also live in a `.env` file (loaded via `dotenvy`): the
-current directory's — never its parents' — and the config dir's; a variable
-already set wins. The current directory's `.env` may come from a repository
+config dir's first, then the current directory's — never its parents' — so
+the user's own file wins over a checked-out one, and a variable already set
+wins over both. The current directory's `.env` may come from a repository
 someone else wrote, so it may not set where the CLI logs in and keeps
-credentials, nor the credentials themselves: `KOBANA_ACCOUNT_URL`,
-`KOBANA_CONFIG_DIR`, `KOBANA_CREDENTIALS_FILE`, `KOBANA_CLIENT_ID`,
-`KOBANA_CLIENT_SECRET` and every product token (`KOBANA_*_TOKEN` and
-`Product::token_env_aliases`) — `PROJECT_DOTENV_BLOCKED` and
-`is_credential_var` in `config.rs`; the CLI warns and ignores them. Saved tokens are refreshed only at the server that issued them
+credentials, the credentials themselves, the environment or the proxy:
+`KOBANA_ACCOUNT_URL`, `KOBANA_CONFIG_DIR`, `KOBANA_CREDENTIALS_FILE`,
+`KOBANA_CLIENT_ID`, `KOBANA_CLIENT_SECRET`, `KOBANA_ENVIRONMENT`, the proxy
+variables reqwest reads (`HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, `NO_PROXY`,
+any case) and every product token (`KOBANA_*_TOKEN` and
+`Product::token_env_aliases`) — `is_blocked_var` in `config.rs`; the CLI
+warns and ignores them, and names the variables that file did set. The
+attack this closes: `KOBANA_ENVIRONMENT=development` switches banking, inbox
+and kadu to plain-HTTP localhost hosts and `http_proxy` makes reqwest send
+the whole request, bearer token included, to the proxy. As a second wall,
+`auth::refuse_unbound_token_in_the_clear` (called from `main.rs` for every
+request) refuses to send a token that is not bound to an environment
+(`KOBANA_<PRODUCT>_TOKEN`, a credentials file without `environment`) to an
+`http://` base URL unless `--env` was typed on the command line; a
+credentials file without `environment` serves production only. Saved tokens are refreshed only at the server that issued them
 (`StoredCredentials::issuer`), never at the current `KOBANA_ACCOUNT_URL`.
 
 ## Exit Codes
