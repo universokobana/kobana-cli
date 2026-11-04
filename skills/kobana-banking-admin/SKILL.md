@@ -1,0 +1,66 @@
+---
+name: kobana-banking-admin
+description: "Kobana Administração: Subcontas, usuários, conexões, certificados."
+metadata:
+  version: 0.1.0
+  openclaw:
+    category: "finance"
+    requires:
+      bins:
+        - kobana
+    cliHelp: "kobana banking admin --help"
+---
+
+# admin — Administração
+
+> **PREREQUISITE:** Read `../kobana-shared/SKILL.md` for auth, global flags, and security rules.
+
+```bash
+kobana banking admin <resource> <method> [flags]
+```
+
+## API Resources
+
+### certificates
+- `list` — Listar Certificados
+- `create` — Incluir um Certificado
+- `delete` — Excluir um Certificado. Params: `uid`
+
+### commands
+- `list` — Listar Comandos
+- `get` — Visualizar Comando. Params: `uid`
+
+### connections
+- `list` — Listar Conexões
+- `create` — Incluir uma Conexão
+- `get` — Informações da conexão. Params: `uid`
+- `update` — Atualizar Conexão. Params: `uid`
+- `delete` — Excluir uma Conexão. Params: `uid`
+
+### connections associations
+- `create` — Conectar Conta de Serviço. Params: `uid`
+- `delete` — Desconectar Conta de Serviço. Params: `uid`
+
+### subaccounts
+- `list` — Listar Subcontas
+- `create` — Criar uma Subconta
+- `get` — Visualizar uma Subconta. Params: `uid`
+- `update` — Alterar Subconta. Params: `uid`
+
+### users
+- `list` — Listar Usuários
+- `create` — Incluir um Usuário
+- `update` — Alterar Dados De Um Usuário. Params: `uid`
+- `delete` — Excluir um Usuário. Params: `uid`
+
+## Conta do token: `kobana banking me <method>`
+
+- `get` — Obter informações do usuário autenticado
+
+## Discovering Commands
+
+```bash
+kobana banking admin --help
+kobana banking admin subaccounts --help
+kobana schema banking.admin.subaccounts.create
+```

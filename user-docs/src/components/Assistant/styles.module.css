@@ -1,0 +1,421 @@
+.askButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  height: 2.25rem;
+  /* Same 4px gap as between the language and theme buttons (the language
+     item supplies it, see LocaleDropdownNavbarItem/styles.module.css). */
+  margin: 0;
+  padding: 0 0.75rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--ifm-navbar-link-color);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* Below 997px the "⋮" menu (components/MobileActions) carries Ask AI. */
+@media (max-width: 996px) {
+  .askButton {
+    display: none;
+  }
+}
+
+/* The navbar centres its links over the full bar; a wide right group would
+   collide with them, so the label only shows where there is room. */
+@media (max-width: 1599px) {
+  .askLabel {
+    display: none;
+  }
+
+  .askButton {
+    width: 2.25rem;
+    justify-content: center;
+    padding: 0;
+  }
+}
+
+.askButton:hover,
+.askButton[aria-expanded='true'] {
+  background: var(--ifm-hover-overlay);
+}
+
+/* Drag handle on the panel's left border, grip centred vertically. */
+.resize {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -5px;
+  z-index: 1;
+  width: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.resize::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  width: 2px;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.resize:hover::before,
+.resize:focus-visible::before,
+.resize[data-dragging]::before {
+  background: var(--ifm-color-primary);
+}
+
+.resize:focus-visible {
+  outline: none;
+}
+
+.grip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 28px;
+  border: 1px solid var(--ifm-toc-border-color);
+  border-radius: 4px;
+  background: var(--ifm-background-color);
+  color: var(--ifm-color-emphasis-600);
+}
+
+.resize:hover .grip,
+.resize[data-dragging] .grip {
+  color: var(--ifm-font-color-base);
+}
+
+/* Dragging over the page must not select its text. */
+:global(html:has([data-dragging])) {
+  user-select: none;
+  cursor: col-resize;
+}
+
+/* Right-side drawer over the page, like the TOC column; full width on phones. */
+.panel {
+  position: fixed;
+  top: var(--ifm-navbar-height);
+  right: 0;
+  bottom: 0;
+  /* Below the navbar (same layer otherwise, and later in the DOM): its
+     dropdowns (language) must open over the panel. */
+  z-index: calc(var(--ifm-z-index-fixed) - 1);
+  display: flex;
+  flex-direction: column;
+  width: min(var(--assistant-width, 28rem), 100vw);
+  /* Nothing inside may widen the panel past the screen. */
+  max-width: 100vw;
+  overflow: hidden;
+  border-left: 1px solid var(--ifm-toc-border-color);
+  background: var(--ifm-background-color);
+  box-shadow: var(--ifm-global-shadow-md);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--ifm-toc-border-color);
+}
+
+.headerTitle {
+  flex: 1;
+  font-weight: 600;
+}
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--ifm-color-emphasis-700);
+  cursor: pointer;
+}
+
+.iconButton:hover {
+  background: var(--ifm-hover-overlay);
+}
+
+.body {
+  flex: 1;
+  /* Vertical scroll only, and it stops at the panel's ends instead of
+     chaining to the page behind it. */
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.875rem;
+}
+
+.empty p {
+  margin-bottom: 0.25rem;
+}
+
+.suggestion {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--ifm-toc-border-color);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--ifm-font-color-base);
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.suggestion:hover {
+  background: var(--ifm-hover-overlay);
+}
+
+.user {
+  align-self: flex-end;
+  max-width: 85%;
+  overflow-wrap: anywhere;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--ifm-toc-border-color);
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  white-space: pre-wrap;
+}
+
+.assistant {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.markdown {
+  /* Flex children default to min-width: auto, so a long URL or a wide table
+     would stretch the answer past the panel and cut every line on the right. */
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Wide tables and code scroll sideways on their own, not the whole panel. */
+.markdown table,
+.markdown pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Cells keep whole words: a narrow table is better scrolled than split mid-word. */
+.markdown table {
+  overflow-wrap: normal;
+}
+
+.markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown :global(.theme-code-block) {
+  margin-bottom: 0.75rem;
+}
+
+.markdown h1,
+.markdown h2,
+.markdown h3 {
+  font-size: 1rem;
+  margin: 0.75rem 0 0.375rem;
+}
+
+.markdown ul,
+.markdown ol {
+  padding-left: 1.25rem;
+}
+
+.messageActions {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: -0.25rem;
+}
+
+.messageAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 0;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--ifm-color-emphasis-600);
+  cursor: pointer;
+}
+
+.messageAction:hover {
+  background: var(--ifm-hover-overlay);
+  color: var(--ifm-font-color-base);
+}
+
+.tool {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  background: var(--ifm-color-emphasis-100);
+  color: var(--ifm-color-emphasis-700);
+  font-size: 0.75rem;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error {
+  color: var(--ifm-color-danger);
+  font-size: 0.875rem;
+}
+
+.form {
+  position: relative;
+  margin: 0 1rem;
+}
+
+.input {
+  width: 100%;
+  padding: 0.625rem 2.75rem 0.625rem 0.75rem;
+  border: 1px solid var(--ifm-toc-border-color);
+  border-radius: 0.625rem;
+  background: var(--ifm-background-surface-color);
+  color: var(--ifm-font-color-base);
+  font: inherit;
+  font-size: 0.875rem;
+  resize: none;
+}
+
+.input:focus {
+  outline: 2px solid var(--ifm-color-primary);
+  outline-offset: -1px;
+}
+
+.send {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.625rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: var(--ifm-color-primary);
+  color: var(--ifm-background-color);
+  cursor: pointer;
+}
+
+.send:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.disclaimer {
+  margin: 0.375rem 1rem 0.75rem;
+  color: var(--ifm-color-emphasis-600);
+  font-size: 0.7rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+  }
+
+  .resize::before {
+    transition: none;
+  }
+}
+
+/* Phones: the panel covers the whole screen below the navbar, whatever width
+   was stored on desktop (the stored width is clamped to 60% of the window,
+   which on a phone left a strip of the page showing), and nothing to resize. */
+@media (max-width: 996px) {
+  .resize {
+    display: none;
+  }
+
+  .panel {
+    left: 0;
+    width: auto;
+    max-width: none;
+    border-left: 0;
+  }
+
+  /* iOS zooms into any field under 16px on focus; the zoomed page then pans
+     sideways and the panel shows cut off on the right. */
+  .input {
+    font-size: 1rem;
+  }
+
+  /* The page behind must not scroll (or pan sideways) while the panel covers
+     it: the touch belongs to the panel. */
+  :global(html.assistant-open),
+  :global(html.assistant-open body) {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+}
+
+/* Wide screens: the open panel pushes the page instead of covering it, and
+   takes the place of the page's table of contents (right column), which is
+   hidden while it is open so the article keeps its width. */
+@media (min-width: 1200px) {
+  :global(html.assistant-open) :global(.main-wrapper) {
+    margin-right: min(var(--assistant-width, 28rem), 100vw);
+  }
+
+  :global(html.assistant-open) :global(.col--3:has(.theme-doc-toc-desktop)) {
+    display: none;
+  }
+
+}
+
+/* Docusaurus caps the article column at 75% with !important inside
+   `@layer docusaurus.theme-classic`. An unlayered !important loses to a
+   layered one whatever the specificity, but a sublayer's !important beats its
+   parent layer's own rules. */
+@layer docusaurus.theme-classic.assistant {
+  @media (min-width: 1200px) {
+    :global(html.assistant-open) :global(.row > .col[class*='docItemCol']) {
+      max-width: 100% !important;
+    }
+  }
+}

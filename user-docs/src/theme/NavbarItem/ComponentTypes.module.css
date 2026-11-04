@@ -1,0 +1,6 @@
+/* Below 997px the "⋮" menu (components/MobileActions) has the theme toggle. */
+@media (max-width: 996px) {
+  .desktopOnly {
+    display: none;
+  }
+}

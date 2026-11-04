@@ -1,0 +1,42 @@
+{
+  "theme.SearchBar.label": {
+    "message": "Buscar",
+    "description": "Search bar/page (@easyops-cn/docusaurus-search-local)"
+  },
+  "theme.SearchBar.noResultsText": {
+    "message": "Nenhum resultado",
+    "description": "Search bar/page (@easyops-cn/docusaurus-search-local)"
+  },
+  "theme.SearchBar.seeAll": {
+    "message": "Ver todos os resultados",
+    "description": "Search bar/page (@easyops-cn/docusaurus-search-local)"
+  },
+  "theme.SearchBar.seeAllOutsideContext": {
+    "message": "Ver todos os resultados fora de \"{context}\"",
+    "description": "Search bar/page (@easyops-cn/docusaurus-search-local)"
+  },
+  "theme.SearchBar.searchInContext": {
+    "message": "Ver todos os resultados em \"{context}\"",
+    "description": "Search bar/page (@easyops-cn/docusaurus-search-local)"
+  },
+  "theme.SearchPage.emptyResultsTitle": {
+    "message": "Buscar na documentação",
+    "description": "Search bar/page (@easyops-cn/docusaurus-search-local)"
+  },
+  "theme.SearchPage.existingResultsTitle": {
+    "message": "Resultados da busca por \"{query}\"",
+    "description": "Search bar/page (@easyops-cn/docusaurus-search-local)"
+  },
+  "theme.SearchPage.noResultsText": {
+    "message": "Nenhum documento encontrado",
+    "description": "Search bar/page (@easyops-cn/docusaurus-search-local)"
+  },
+  "theme.SearchPage.documentsFound.plurals": {
+    "message": "1 documento encontrado|{count} documentos encontrados",
+    "description": "Search bar/page (@easyops-cn/docusaurus-search-local)"
+  },
+  "theme.SearchPage.searchContext.everywhere": {
+    "message": "Em todo lugar",
+    "description": "Search bar/page (@easyops-cn/docusaurus-search-local)"
+  }
+}

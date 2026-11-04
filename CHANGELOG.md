@@ -28,8 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Sandbox do banking em `api.sandbox.kobana.com.br`** — o host `api-sandbox.kobana.com.br` deixou de ser usado por `--env sandbox`
 - **`.env` da pasta de configuração carrega antes do `.env` do projeto (incompatível)** — a ordem era a inversa, e um `.env` de um repositório vencia o seu. Agora o seu vence; uma variável já definida no ambiente continua vencendo os dois
 - **`KOBANA_CREDENTIALS_FILE` sem `environment` vale só para produção (incompatível)** — antes valia para qualquer ambiente. Um arquivo gerado por `auth export` traz o campo e não muda
+
+### Changed
+
+- **Skills do Gateway Bancário com o prefixo do produto** — `kobana-admin`, `-charge`, `-data`, `-edi`, `-financial`, `-mailbox`, `-payment`, `-security`, `-transfer` e `-v1` viraram `kobana-banking-*`, como `kobana-billing` e `kobana-finance` já seguiam o nome do produto. Quem copiou as skills antigas para a pasta do agente precisa trocá-las. A nova skill `kobana-banking` é um mapa curto que aponta, pela tarefa, para a skill de domínio certa
 
 ### Added
 

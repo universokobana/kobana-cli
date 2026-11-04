@@ -251,7 +251,7 @@ Product {
     ],
     hosts: Hosts {
         production: "https://api.kobana.com.br",
-        sandbox: Some("https://api-sandbox.kobana.com.br"),
+        sandbox: Some("https://api.sandbox.kobana.com.br"),
         development: Some("http://localhost:5005/api"),
     },
     specs: &[
@@ -999,7 +999,7 @@ mod tests {
         let banking = &REGISTRY[0];
         assert_eq!(
             banking.base_url(&Environment::Sandbox).unwrap(),
-            "https://api-sandbox.kobana.com.br"
+            "https://api.sandbox.kobana.com.br"
         );
 
         let no_dev = Product {

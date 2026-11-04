@@ -1,0 +1,16 @@
+{
+  // Same compiler options the functions get from user-docs/tsconfig.json
+  // (via @docusaurus/tsconfig), without the `extends`: the app's test runner
+  // transforms these files and resolves the nearest tsconfig, and in CI
+  // user-docs/node_modules is not installed, so the `extends` can't resolve.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true
+  }
+}

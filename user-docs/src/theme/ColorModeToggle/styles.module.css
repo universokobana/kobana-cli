@@ -1,0 +1,39 @@
+.toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
+  color: var(--ifm-navbar-link-color);
+}
+
+.toggle:hover {
+  background: var(--ifm-hover-overlay);
+}
+
+.sun,
+.moon {
+  transition:
+    transform 0.2s,
+    opacity 0.2s;
+}
+
+/* Moon sits on top of the Sun; data-theme picks which one shows. */
+.moon {
+  position: absolute;
+}
+
+:global([data-theme='light']) .moon,
+:global([data-theme='dark']) .sun {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sun,
+  .moon {
+    transition: none;
+  }
+}

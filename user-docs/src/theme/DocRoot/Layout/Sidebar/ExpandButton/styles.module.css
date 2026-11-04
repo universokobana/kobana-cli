@@ -1,0 +1,39 @@
+/* Room for the icon button in the collapsed strip. */
+:global(:root) {
+  --doc-sidebar-hidden-width: 3rem;
+}
+
+@media (min-width: 997px) {
+  .expand {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    padding-top: calc(var(--ifm-navbar-height) + 0.5rem);
+  }
+
+  .expand:focus-visible {
+    outline: none;
+  }
+
+  .icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.375rem;
+    color: var(--ifm-color-emphasis-600);
+  }
+
+  .expand:hover .icon,
+  .expand:focus-visible .icon {
+    background: var(--ifm-hover-overlay);
+    color: var(--ifm-font-color-base);
+  }
+
+  .expand:focus-visible .icon {
+    outline: 2px solid var(--ifm-color-primary);
+    outline-offset: -2px;
+  }
+}

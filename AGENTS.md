@@ -118,7 +118,8 @@ name loses the prefix and keeps the old one as an alias (`edi edi-boxes` →
 the previous release's `kobana schema --list` back through `--help`.
 
 Sandbox hosts follow `api.<product>.sandbox.kobana.com.br`, except banking,
-which predates the convention (`api-sandbox.kobana.com.br`). Kadu lives on its
+which has no product segment (`api.sandbox.kobana.com.br`, like its production
+host `api.kobana.com.br`). Kadu lives on its
 own domain (`api.kadu.ia.br`) and has staging, not a sandbox, so its `sandbox`
 is `None`; `development` is its local dev server (`localhost:3030/api`).
 

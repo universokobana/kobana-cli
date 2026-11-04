@@ -1,0 +1,644 @@
+/* ===== Self-hosted fonts (variable) ===== */
+@import '@fontsource-variable/work-sans/index.css';
+@import '@fontsource-variable/work-sans/wght-italic.css';
+@import '@fontsource-variable/syne/index.css';
+
+/* ===== Kobana Branding ===== */
+
+:root {
+  /* Primary: Roxo (#A630DA) para light mode */
+  --ifm-color-primary: #a630da;
+  --ifm-color-primary-dark: #952bc5;
+  --ifm-color-primary-darker: #8d29ba;
+  --ifm-color-primary-darkest: #742299;
+  --ifm-color-primary-light: #b145e0;
+  --ifm-color-primary-lighter: #b950e2;
+  --ifm-color-primary-lightest: #ca74e9;
+
+  /* Background & text */
+  --ifm-background-color: #fdfdfb;
+  --ifm-font-color-base: #000000;
+  --ifm-font-color-secondary: #676767;
+
+  /* Typography */
+  --ifm-font-family-base: 'Work Sans Variable', 'Work Sans', system-ui, -apple-system, sans-serif;
+  --ifm-heading-font-family: 'Syne Variable', 'Syne', system-ui, -apple-system, sans-serif;
+  --ifm-font-size-base: 16px;
+  --ifm-code-font-size: 95%;
+
+  /* Navbar */
+  --ifm-navbar-background-color: #fdfdfb;
+  --ifm-navbar-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+
+  /* Sidebar */
+  --doc-sidebar-width: 280px;
+
+  /* Scrollbar — mirrors the app's `.scrollbar-thin` (styles/globals.css): 8px,
+     no rail, thumb only. Infima drives `.thin-scrollbar` entirely from these,
+     so overriding the variables is enough — no new selector. */
+  --ifm-scrollbar-size: 8px;
+  --ifm-scrollbar-track-background-color: transparent;
+  --ifm-scrollbar-thumb-background-color: #dcdcd8;
+  --ifm-scrollbar-thumb-hover-background-color: #bdbdb8;
+
+  /* Sidebar chevrons. Infima paints a black glyph and, in dark, inverts it to
+     pure white — the brightest thing in the sidebar, for a control that should
+     recede. Baking the tone into the icon lets the filter go, so each theme
+     states its own colour instead of fighting an invert chain. */
+  --ifm-menu-link-sublist-icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" viewBox="0 0 24 24"><path fill="rgba(0,0,0,0.32)" d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"></path></svg>');
+  --ifm-menu-link-sublist-icon-filter: none;
+}
+
+[data-theme='dark'] {
+  /* Primary: Verde-limão (#D3FD54) para dark mode */
+  --ifm-color-primary: #d3fd54;
+  --ifm-color-primary-dark: #c9fd2f;
+  --ifm-color-primary-darker: #c4fd1c;
+  --ifm-color-primary-darkest: #a8e600;
+  --ifm-color-primary-light: #ddfd79;
+  --ifm-color-primary-lighter: #e2fe8c;
+  --ifm-color-primary-lightest: #f1feb6;
+
+  --ifm-background-color: #0a0a0a;
+  --ifm-font-color-base: #fdfdfb;
+  --ifm-navbar-background-color: #0a0a0a;
+
+  /* Infima's dark default track is #444 — built for a lighter dark than our
+     #0a0a0a, where it reads as a bright rail. Drop the rail, keep a quiet thumb. */
+  --ifm-scrollbar-track-background-color: transparent;
+  --ifm-scrollbar-thumb-background-color: #2e2e2e;
+  --ifm-scrollbar-thumb-hover-background-color: #454545;
+
+  --ifm-menu-link-sublist-icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" viewBox="0 0 24 24"><path fill="rgba(255,255,255,0.34)" d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"></path></svg>');
+  --ifm-menu-link-sublist-icon-filter: none;
+
+  /* Search dropdown: the selected row's background is --ifm-color-primary
+     (lime in dark mode), but the plugin's default active text colour is
+     always --ifm-color-white — white-on-lime reads muddy and low-contrast.
+     Dark text matches how lime is used everywhere else in dark mode
+     (buttons, badges) and keeps the row legible. */
+  --search-local-hit-active-color: #0a0a0a;
+}
+
+/* ===== Typography ===== */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--ifm-heading-font-family);
+  font-weight: 700;
+}
+
+/* ===== Scrollbar ===== */
+
+/* Two things scroll on an API page: the sidebar, which carries Infima's
+   `.thin-scrollbar`, and the Request/Response panel, which the openapi theme
+   leaves on the browser default — a fat light bar next to a thin dark one.
+   Infima only sets `scrollbar-width` and leaves `scrollbar-color` alone, which
+   is why Firefox (and Chrome 121+) painted a light rail regardless of the
+   ::-webkit rules below. */
+.thin-scrollbar,
+.openapi-right-panel__container {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ifm-scrollbar-thumb-background-color) transparent;
+}
+
+/* The panel has no `.thin-scrollbar` class, so Infima's ::-webkit block never
+   reaches it. Same variables, so the two stay in step. */
+.openapi-right-panel__container::-webkit-scrollbar {
+  height: var(--ifm-scrollbar-size);
+  width: var(--ifm-scrollbar-size);
+}
+
+.openapi-right-panel__container::-webkit-scrollbar-track {
+  background: var(--ifm-scrollbar-track-background-color);
+  border-radius: 10px;
+}
+
+.openapi-right-panel__container::-webkit-scrollbar-thumb {
+  background: var(--ifm-scrollbar-thumb-background-color);
+  border-radius: 10px;
+}
+
+.openapi-right-panel__container::-webkit-scrollbar-thumb:hover {
+  background: var(--ifm-scrollbar-thumb-hover-background-color);
+}
+
+/* ===== Navbar ===== */
+
+/* Centering the nav links on the BAR, not on the space left over beside the
+   brand — the two differ by ~60px here, which reads as "off-centre".
+   Docusaurus has no centre region: the links are siblings of the brand inside
+   the left group. So the left group is stretched across the full bar and centres
+   its own children, while the brand is lifted out of that flow and pinned left.
+   `pointer-events` is what keeps the stretched group from swallowing clicks
+   meant for the language/theme controls on the right.
+   Desktop only — below 997px Docusaurus collapses this into the burger menu. */
+@media (min-width: 997px) {
+  .navbar__inner {
+    position: relative;
+  }
+
+  .navbar__items:not(.navbar__items--right) {
+    position: absolute;
+    inset: 0;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .navbar__items:not(.navbar__items--right) > .navbar__link {
+    pointer-events: auto;
+  }
+
+  .navbar__brand {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-right: 0;
+  }
+
+  .navbar__items--right {
+    margin-left: auto;
+  }
+}
+
+/* Only the logo links home — the product name beside it is plain text.
+   Docusaurus wraps BOTH in a single <a href="/">, so the anchor stops taking
+   hits and the logo opts back in. Killing the events on the title alone does
+   nothing: the click just falls through to the <a> underneath and still
+   navigates. Hit-testing stops at the logo, but the event still bubbles to the
+   anchor, so the mark keeps working as a home link. */
+.navbar__brand {
+  pointer-events: none;
+}
+
+.navbar__logo {
+  pointer-events: auto;
+}
+
+/* Syne is the display face — it earns the headings, not the product name sitting
+   next to the logo. */
+.navbar__title {
+  font-family: var(--ifm-font-family-base);
+  font-weight: 400;
+  color: #676767;
+  cursor: default;
+}
+
+[data-theme='dark'] .navbar__title {
+  color: #a0a0a0;
+}
+
+/* Infima gives the wrapper a fixed 2rem height and stretches the image to fill
+   it. We want the mark at 28px instead, which leaves 4px of slack — so the
+   wrapper has to center it, otherwise the image rides the top edge and sits 2px
+   above the title's center. */
+.navbar__logo {
+  display: flex;
+  align-items: center;
+}
+
+/* `width: auto` is load-bearing: the logo is 411x80 (ratio 5.14), and pinning
+   only the height lets the width attribute through and squashes the mark ~17%.
+   The 1px nudge is optical, not geometric — the boxes already share a center,
+   but the title carries a lowercase descender that drags its ink slightly
+   lower than the all-caps wordmark. */
+.navbar__logo img {
+  height: 28px;
+  width: auto;
+  display: block;
+  transform: translateY(1px);
+}
+
+/* ===== Footer ===== */
+
+.footer {
+  background-color: #000000;
+  color: #fdfdfb;
+  padding-top: 3rem;
+}
+
+.footer__title {
+  font-family: 'Syne Variable', 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #d3fd54;
+}
+
+.footer__link-item {
+  color: #b0b0b0;
+  font-size: 0.875rem;
+  line-height: 2;
+}
+
+.footer__link-item:hover {
+  color: #d3fd54;
+  text-decoration: none;
+}
+
+.footer__logo {
+  margin-bottom: 1.5rem;
+}
+
+.footer__bottom {
+  border-top: 1px solid #1a1a1a;
+  padding-top: 1.5rem;
+  margin-top: 2rem;
+}
+
+.footer__copyright {
+  color: #a0a0a0;
+  font-size: 0.75rem;
+}
+
+/* ===== Sidebar ===== */
+
+/* The rail between sidebar and content: the scrollbar and the menu's own
+   indentation already separate the two, so the border only adds a seam. */
+.theme-doc-sidebar-container {
+  border-right: none !important;
+}
+
+/* Infima blows the 24-unit glyph up to 2rem inside a 1.25rem box, so it renders
+   scaled up and cropped. 1.5rem lands it at 1:1 — the chevron the icon was drawn
+   to be, rather than a magnified slice of it. Both carets share the treatment:
+   `::after` on collapsible links, `::before` on the standalone caret button. */
+.menu__link--sublist-caret::after,
+.menu__caret::before {
+  background-size: 1.5rem 1.5rem;
+}
+
+.menu__link {
+  font-size: 0.9rem;
+}
+
+.menu__link--active:not(.menu__link--sublist) {
+  font-weight: 600;
+}
+
+/* ===== Inline links in content (a11y: not color-only) ===== */
+
+.theme-doc-markdown a:not(.card):not(.button):not(.menu__link):not(.tabs__link):not(.pagination-nav__link),
+.markdown a:not(.card):not(.button) {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+
+.theme-doc-markdown a:not(.card):not(.button):hover,
+.markdown a:not(.card):not(.button):hover {
+  text-decoration-thickness: 2px;
+}
+
+/* ===== Code blocks ===== */
+
+.docusaurus-highlight-code-line {
+  background-color: rgba(0, 0, 0, 0.1);
+  display: block;
+  margin: 0 calc(-1 * var(--ifm-pre-padding));
+  padding: 0 var(--ifm-pre-padding);
+}
+
+[data-theme='dark'] .docusaurus-highlight-code-line {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* ===== Tables ===== */
+
+table {
+  font-size: 0.9rem;
+}
+
+table th {
+  font-family: 'Syne Variable', 'Syne', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+}
+
+/* ===== Footer (Kobana custom layout) ===== */
+
+.footer-kobana .footer__title {
+  color: var(--ifm-color-primary, #d3fd54);
+  font-family: 'Syne Variable', 'Syne', sans-serif;
+  font-weight: 600;
+}
+
+.footer-kobana .footer__link-item {
+  color: #fff;
+  opacity: 0.85;
+}
+
+.footer-kobana .footer__link-item:hover {
+  opacity: 1;
+  text-decoration: none;
+}
+
+.footer-kobana__divider {
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  margin: 2rem 0;
+}
+
+.footer-kobana__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.footer-kobana__row--bottom {
+  align-items: flex-end;
+}
+
+.footer-kobana__badges {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.footer-kobana__badges img {
+  height: 70px;
+  width: auto;
+}
+
+.footer-kobana__commercial {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.footer-kobana__commercial-label {
+  color: var(--ifm-color-primary, #d3fd54);
+  font-family: 'Syne Variable', 'Syne', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.footer-kobana__phone {
+  font-family: 'Syne Variable', 'Syne', sans-serif;
+  font-size: 3rem;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  line-height: 1.05;
+}
+
+.footer-kobana__phone:hover {
+  color: var(--ifm-color-primary, #d3fd54);
+  text-decoration: none;
+}
+
+.footer-kobana__contact-icons {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.footer-kobana__contact-icons a {
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transition: all 0.15s ease;
+}
+
+.footer-kobana__contact-icons a:hover {
+  color: #000;
+  background: var(--ifm-color-primary, #d3fd54);
+  border-color: var(--ifm-color-primary, #d3fd54);
+}
+
+.footer-kobana__brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.footer-kobana__logo {
+  height: 32px;
+  width: auto;
+}
+
+.footer-kobana__bird {
+  height: 60px;
+  width: auto;
+  opacity: 0.9;
+}
+
+.footer-kobana__copyright {
+  text-align: right;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.92);
+  max-width: 60%;
+}
+
+@media (max-width: 768px) {
+  .footer-kobana__row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .footer-kobana__commercial {
+    align-items: flex-start;
+  }
+  .footer-kobana__phone {
+    font-size: 2.25rem;
+  }
+  .footer-kobana__copyright {
+    text-align: left;
+    max-width: 100%;
+  }
+}
+
+.footer-kobana__badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 90px;
+  padding: 0.5rem 0.5rem 0.4rem;
+  border: 2px solid var(--ifm-color-primary, #d3fd54);
+  border-radius: 6px;
+  color: var(--ifm-color-primary, #d3fd54);
+  font-family: 'Syne Variable', 'Syne', sans-serif;
+  font-size: 0.55rem;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+}
+
+.footer-kobana__badge strong {
+  font-weight: 700;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  margin: 0.2rem 0;
+}
+
+.footer-kobana__badge-tag {
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  opacity: 0.85;
+}
+
+.footer-kobana__badge-meta {
+  font-size: 0.45rem;
+  opacity: 0.7;
+  margin-top: 0.15rem;
+}
+
+.footer-kobana__bird {
+  color: #a630da;
+}
+
+/* ===== Footer spacing tweaks (match kobana.com.br) ===== */
+
+.footer-kobana {
+  padding: 5rem 0 2.5rem;
+}
+
+.footer-kobana .footer__links {
+  margin-bottom: 5rem;
+}
+
+.footer-kobana .footer__col {
+  margin-bottom: 2rem;
+}
+
+.footer-kobana .footer__title {
+  font-size: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.footer-kobana .footer__item {
+  margin: 0.6rem 0;
+  font-size: 0.875rem;
+}
+
+.footer-kobana__row {
+  margin-top: 0;
+  padding: 1rem 0;
+}
+
+.footer-kobana__row--bottom {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.footer-kobana__phone {
+  font-size: 4rem;
+  letter-spacing: -0.02em;
+}
+
+.footer-kobana__commercial-label {
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.footer-kobana__contact-icons {
+  margin-top: 1rem;
+  gap: 1rem;
+}
+
+.footer-kobana__contact-icons a {
+  width: 44px;
+  height: 44px;
+}
+
+.footer-kobana__badges img {
+  height: 90px;
+}
+
+.footer-kobana__badges {
+  gap: 1rem;
+}
+
+.footer-kobana__brand {
+  gap: 1.5rem;
+}
+
+.footer-kobana__logo {
+  height: 28px;
+}
+
+.footer-kobana__bird {
+  height: 80px;
+}
+
+.footer-kobana__copyright {
+  font-size: 0.7rem;
+  line-height: 1.6;
+  max-width: 50%;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+@media (max-width: 768px) {
+  .footer-kobana {
+    padding: 3rem 0 2rem;
+  }
+  .footer-kobana .footer__links {
+    margin-bottom: 3rem;
+  }
+  .footer-kobana__row--bottom {
+    margin-top: 2.5rem;
+  }
+  .footer-kobana__phone {
+    font-size: 2.5rem;
+  }
+}
+
+/* ===== Wider container (match kobana.com.br) ===== */
+
+.footer-kobana .container,
+.footer-kobana .container-fluid {
+  max-width: 1440px;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+.footer-kobana .footer__title {
+  text-transform: none;
+}
+
+/* ===== Landing page (src/pages/index.tsx) ===== */
+
+/* The landing is dark in both color modes, like the marketing site; the navbar
+   above it follows suit so the page reads as one surface. */
+body:has(.kobana-landing) .navbar {
+  --ifm-navbar-background-color: #000000;
+  --ifm-navbar-link-color: #fdfdfb;
+  --ifm-navbar-link-hover-color: #d3fd54;
+  --ifm-color-primary: #d3fd54;
+  --ifm-font-color-base: #fdfdfb;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+body:has(.kobana-landing) .navbar__title {
+  color: #a0a0a0;
+}
+
+body:has(.kobana-landing) .navbar__logo img {
+  content: url('/img/kobana-logo-hor-negativo.png');
+}
+
+/* ===== Command manual ===== */
+
+/* The manual pages are long tables of flags; keep them from forcing a
+   horizontal page scroll on small screens. */
+.markdown table {
+  display: block;
+  overflow-x: auto;
+}
+
+/* The landing belongs to no section, so the mobile section switcher would only
+   show the first one, truncated. The sections stay in the burger menu. */
+body:has(.kobana-landing) .navbar button:has(> span[class*='current_']) {
+  display: none;
+}

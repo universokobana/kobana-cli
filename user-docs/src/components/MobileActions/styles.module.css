@@ -1,0 +1,102 @@
+/* Only where the header icons don't fit (Docusaurus' mobile breakpoint). */
+.root {
+  position: relative;
+  display: none;
+}
+
+@media (max-width: 996px) {
+  .root {
+    display: flex;
+    align-items: center;
+    margin-right: 0.25rem;
+  }
+
+  /* The theme puts the search box in absolute position at the right edge,
+     over anything else in the group; back in the flow, it sits after "⋮". */
+  :global(.navbar__items--right [class*='navbarSearchContainer']) {
+    position: static !important;
+  }
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--ifm-navbar-link-color);
+  cursor: pointer;
+}
+
+.trigger:hover,
+.trigger[aria-expanded='true'] {
+  background: var(--ifm-hover-overlay);
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  width: min(16rem, calc(100vw - 2rem));
+  max-height: calc(100vh - var(--ifm-navbar-height) - 1rem);
+  overflow-y: auto;
+  padding: 0.25rem;
+  border: 1px solid var(--ifm-toc-border-color);
+  border-radius: 0.5rem;
+  background: var(--ifm-background-surface-color);
+  box-shadow: var(--ifm-global-shadow-md);
+}
+
+.label {
+  margin-top: 0.25rem;
+  padding: 0.5rem 0.625rem 0.25rem;
+  border-top: 1px solid var(--ifm-toc-border-color);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ifm-color-emphasis-600);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  padding: 0.5rem 0.625rem;
+  border: 0;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--ifm-font-color-base);
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.item:hover {
+  background: var(--ifm-hover-overlay);
+  color: var(--ifm-font-color-base);
+  text-decoration: none;
+}
+
+.item[aria-current='true'] {
+  color: var(--ifm-color-primary);
+  font-weight: 500;
+}
+
+.flag {
+  width: 1rem;
+  text-align: center;
+}
+
+.check {
+  margin-left: auto;
+}

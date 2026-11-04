@@ -1,0 +1,79 @@
+.group {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-right: 1rem;
+}
+
+@media (min-width: 997px) {
+  .group {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-right: 0;
+    pointer-events: auto;
+  }
+
+  .group :global(.navbar__brand) {
+    position: static;
+    transform: none;
+  }
+}
+
+/* The product name sits on a line below the logo, at every width: beside it,
+   the brand took the room the centred links and, on phones, the section
+   switcher need. */
+.group :global(.navbar__brand) {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.125rem;
+}
+
+.group :global(.navbar__logo) {
+  margin-right: 0;
+}
+
+.group :global(.navbar__logo img) {
+  height: 18px;
+  transform: none;
+}
+
+.group :global(.navbar__title) {
+  font-size: 0.75rem;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+/* Narrow desktop: centred, the links reach the right-side icons. Start them
+   right after the brand instead. */
+@media (min-width: 997px) and (max-width: 1199px) {
+  :global(.navbar__items:not(.navbar__items--right)) {
+    justify-content: flex-start !important;
+    padding-left: 14rem;
+  }
+}
+
+/* Phones and small tablets: the left group gives way to the right-side "⋮"
+   and search. The brand keeps its size; the section switcher gives way. */
+@media (max-width: 996px) {
+  .group {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-right: 0.5rem;
+  }
+
+  .group :global(.navbar__brand) {
+    flex-shrink: 0;
+    margin-right: 0.25rem;
+  }
+}
+
+/* Narrow phones: even on its own line the name is wider than the logo and
+   leaves the section switcher a few pixels; the logo alone is enough. */
+@media (max-width: 479px) {
+  .group :global(.navbar__title) {
+    display: none;
+  }
+}

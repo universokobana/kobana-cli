@@ -1,0 +1,10 @@
+{
+  "copyright": {
+    "message": "© 2008/2026 Kobana Tecnologia Ltda. | CNPJ: 05.813.794/0001-26 | Calçada das Margaridas, 163, Sala 02 — Centro Comercial Alphaville — Barueri, SP — 06453-038",
+    "description": "Footer copyright"
+  },
+  "logo.alt": {
+    "message": "Kobana",
+    "description": "Footer logo alt text"
+  }
+}

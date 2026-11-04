@@ -1,0 +1,35 @@
+/* Icon-only trigger, like the apps' language switcher. */
+.trigger {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0 !important;
+  border-radius: 0.5rem;
+}
+
+.trigger,
+.trigger:hover {
+  color: var(--ifm-navbar-link-color) !important;
+}
+
+.trigger:hover {
+  background: var(--ifm-hover-overlay);
+}
+
+/* Infima draws a caret after dropdown triggers; the apps show none. */
+.trigger::after {
+  display: none !important;
+}
+
+.globe {
+  display: block;
+}
+
+/* The navbar item's own padding spread the icon buttons 12px+ apart; the
+   apps keep assistant, language and theme 4px from each other. */
+:global(.navbar__item.dropdown):has(> .trigger) {
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kobana CLI</title>
+<meta name="description" content="Kobana nos seus terminais: as APIs de todos os produtos em um único comando." />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" href="/favicon/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
+<link rel="alternate" hreflang="pt-BR" href="https://cli.kobana.com.br/pt/" />
+<link rel="alternate" hreflang="en" href="https://cli.kobana.com.br/en/" />
+<link rel="alternate" hreflang="es" href="https://cli.kobana.com.br/es/" />
+<link rel="alternate" hreflang="x-default" href="https://cli.kobana.com.br/" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;700&family=Syne:wght@500;700&display=swap">
+<style>
+  :root {
+    --bg: #000;
+    --fg: #fff;
+    --muted: rgba(255,255,255,0.65);
+    --primary: #d3fd54;
+    --card-bg: rgba(255,255,255,0.04);
+    --card-border: rgba(255,255,255,0.1);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Work Sans', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  main {
+    max-width: 960px;
+    width: 100%;
+    text-align: center;
+  }
+  .brand {
+    font-family: 'Syne', sans-serif;
+    color: var(--primary);
+    font-size: 0.85rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    line-height: 1.1;
+    margin: 0 0 1rem;
+    font-weight: 700;
+  }
+  p.lead {
+    color: var(--muted);
+    font-size: 1.05rem;
+    margin: 0 0 3rem;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+    margin: 0 auto;
+    max-width: 800px;
+  }
+  a.locale {
+    display: block;
+    padding: 2rem 1.5rem;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    color: var(--fg);
+    text-decoration: none;
+    transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+  a.locale:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary);
+    background: rgba(211, 253, 84, 0.06);
+  }
+  a.locale .flag {
+    font-size: 2.5rem;
+    line-height: 1;
+    margin-bottom: 0.75rem;
+  }
+  a.locale .label {
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+  }
+  a.locale .meta {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  footer {
+    margin-top: 4rem;
+    color: var(--muted);
+    font-size: 0.75rem;
+  }
+</style>
+</head>
+<body>
+<main>
+  <div class="brand">Kobana</div>
+  <h1>Kobana CLI</h1>
+  <p class="lead">Escolha o idioma · Choose your language · Elige tu idioma</p>
+  <div class="grid">
+    <a class="locale" href="/pt/" hreflang="pt-BR">
+      <div class="flag">🇧🇷</div>
+      <div class="label">Português</div>
+      <div class="meta">Brasil</div>
+    </a>
+    <a class="locale" href="/en/" hreflang="en">
+      <div class="flag">🇺🇸</div>
+      <div class="label">English</div>
+      <div class="meta">United States</div>
+    </a>
+    <a class="locale" href="/es/" hreflang="es">
+      <div class="flag">🇪🇸</div>
+      <div class="label">Español</div>
+      <div class="meta">España / América Latina</div>
+    </a>
+  </div>
+  <footer>© 2008/2026 Kobana Tecnologia Ltda.</footer>
+</main>
+<script>
+  (function () {
+    try {
+      if (sessionStorage.getItem('kb-skip-locale-redirect') === '1') return;
+      var langs = (navigator.languages || [navigator.language || 'pt-BR']).map(function (l) {
+        return (l || '').toLowerCase();
+      });
+      var pick = null;
+      for (var i = 0; i < langs.length; i++) {
+        var t = langs[i];
+        if (!t) continue;
+        if (t === 'pt' || t.indexOf('pt-') === 0) { pick = '/pt/'; break; }
+        if (t === 'en' || t.indexOf('en-') === 0) { pick = '/en/'; break; }
+        if (t === 'es' || t.indexOf('es-') === 0) { pick = '/es/'; break; }
+      }
+      if (!pick) return;
+      sessionStorage.setItem('kb-skip-locale-redirect', '1');
+      window.location.replace(pick);
+    } catch (e) {}
+  })();
+</script>
+</body>
+</html>

@@ -20,6 +20,29 @@ jobs:
       - run: cargo test --all
       - run: cargo clippy -- -D warnings
 
+  docs:
+    name: User docs (cli.kobana.com.br)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: user-docs/package-lock.json
+      - run: cargo build --release
+      - run: npm ci
+        working-directory: user-docs
+      # The manual is generated from the binary: fail when it is out of date.
+      - run: npm run gen-manual:check
+        working-directory: user-docs
+      - run: npm run typecheck
+        working-directory: user-docs
+      - run: npm run build
+        working-directory: user-docs
+
   build:
     name: Build (${{ matrix.target }})
     needs: test
