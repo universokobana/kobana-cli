@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- **No Windows, o `.env` do projeto driblava a lista de bloqueio pela caixa das letras** — `kobana_account_url=`, `kobana_credentials_file=`, `kobana_banking_token=`, `kadu_token=` ou `kobana_environment=` em minúsculas não batiam com a lista, eram aplicados e, como o Windows lê variáveis de ambiente sem distinguir caixa, valiam como as maiúsculas: um repositório podia mandar o login (e o client secret) para outro servidor ou fazer o CLI agir com o token dele. A comparação agora ignora a caixa. Linux e macOS não eram afetados
+
 ## [0.12.1] - 2026-11-04
 
 ### Security

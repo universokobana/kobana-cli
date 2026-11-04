@@ -526,7 +526,9 @@ credentials, the credentials themselves, the environment or the proxy:
 `KOBANA_CLIENT_ID`, `KOBANA_CLIENT_SECRET`, `KOBANA_ENVIRONMENT`, the proxy
 variables reqwest reads (`HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, `NO_PROXY`,
 any case) and every product token (`KOBANA_*_TOKEN` and
-`Product::token_env_aliases`) — `is_blocked_var` in `config.rs`; the CLI
+`Product::token_env_aliases`) — `is_blocked_var` in `config.rs`, matched
+without regard to case because Windows looks variables up case-insensitively
+(`kobana_account_url=` would be read back as `KOBANA_ACCOUNT_URL`); the CLI
 warns and ignores them, and names the variables that file did set. The
 attack this closes: `KOBANA_ENVIRONMENT=development` switches banking, inbox
 and kadu to plain-HTTP localhost hosts and `http_proxy` makes reqwest send

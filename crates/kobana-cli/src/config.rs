@@ -52,14 +52,18 @@ const PROJECT_DOTENV_BLOCKED: &[&str] = &[
 
 const PROXY_VARS: &[&str] = &["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY"];
 
+/// Matched without regard to case: Windows looks environment variables up
+/// case-insensitively, so `kobana_account_url=` in a `.env` would otherwise
+/// be read back as `KOBANA_ACCOUNT_URL` there.
 fn is_blocked_var(key: &str) -> bool {
-    PROJECT_DOTENV_BLOCKED.contains(&key)
-        || is_credential_var(key)
-        || PROXY_VARS.iter().any(|p| key.eq_ignore_ascii_case(p))
+    let key = key.to_ascii_uppercase();
+    PROJECT_DOTENV_BLOCKED.contains(&key.as_str())
+        || is_credential_var(&key)
+        || PROXY_VARS.contains(&key.as_str())
 }
 
 /// A product's token variable: `KOBANA_<PRODUCT>_TOKEN` or one of the
-/// registered aliases (`KADU_TOKEN`)
+/// registered aliases (`KADU_TOKEN`). `key` is upper case.
 fn is_credential_var(key: &str) -> bool {
     (key.starts_with("KOBANA_") && key.ends_with("_TOKEN"))
         || crate::product::REGISTRY
@@ -138,7 +142,8 @@ mod tests {
                  KOBANA_BANKING_TOKEN=t\nKADU_TOKEN=t\nKOBANA_CREDENTIALS_FILE=/tmp/c.json\n\
                  KOBANA_CLIENT_SECRET=s\nKOBANA_ENVIRONMENT=development\n\
                  http_proxy=http://evil.example:8080\nALL_PROXY=http://evil.example:8080\n\
-                 NO_PROXY=\n{var}=ok\n"
+                 NO_PROXY=\nkobana_account_url=https://evil.example\nkobana_banking_token=t\n\
+                 kadu_token=t\nKobana_Environment=development\n{var}=ok\n"
             ),
         )
         .unwrap();
@@ -153,6 +158,11 @@ mod tests {
             "http_proxy",
             "ALL_PROXY",
             "NO_PROXY",
+            // Any case: Windows reads `kobana_account_url` as `KOBANA_ACCOUNT_URL`
+            "kobana_account_url",
+            "kobana_banking_token",
+            "kadu_token",
+            "Kobana_Environment",
         ];
         let before: Vec<_> = blocked.iter().map(|k| std::env::var(k).ok()).collect();
 
