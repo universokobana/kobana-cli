@@ -91,7 +91,7 @@ fn show_endpoint_schema(
 ) -> Result<(), KobanaError> {
     // Parse a path like "banking.charge.pix.create" or "inbox.emails.list"
     let parts: Vec<&str> = endpoint_path.split('.').collect();
-    if parts.len() < 3 || !product::is_product(parts[0]) {
+    if parts.len() < 2 || !product::is_product(parts[0]) {
         return Err(KobanaError::Validation(trf!(
             pt: "caminho de endpoint inválido '{endpoint_path}'. Use o formato produto.recurso.metodo (ex.: banking.charge.pix.create)",
             en: "invalid endpoint path '{endpoint_path}'. Use format: product.resource.method (e.g., banking.charge.pix.create)",
@@ -99,9 +99,7 @@ fn show_endpoint_schema(
         )));
     }
 
-    let (product_name, method_name) = (parts[0], *parts.last().unwrap());
-    let resource_parts = &parts[1..parts.len() - 1];
-
+    let product_name = parts[0];
     let loaded = product::find(products, product_name)
         .ok_or_else(|| {
             KobanaError::Schema(trf!(
@@ -110,6 +108,30 @@ fn show_endpoint_schema(
                 es: "producto '{product_name}' no encontrado",
             ))
         })?;
+
+    // `banking.me`: a node that runs by its own name has no method to write
+    let by_name = parts.len() >= 2
+        && parts[1..]
+            .iter()
+            .try_fold(&loaded.tree, |node, part| node.child(part))
+            .and_then(|node| node.default_endpoint(parts.last().unwrap()))
+            .is_some();
+    if by_name {
+        let node = parts[1..]
+            .iter()
+            .try_fold(&loaded.tree, |node, part| node.child(part))
+            .expect("checked above");
+        return print_endpoint(loaded, node.default_endpoint(parts.last().unwrap()).unwrap());
+    }
+    if parts.len() < 3 {
+        return Err(KobanaError::Validation(trf!(
+            pt: "caminho de endpoint inválido '{endpoint_path}'. Use o formato produto.recurso.metodo (ex.: banking.charge.pix.create)",
+            en: "invalid endpoint path '{endpoint_path}'. Use format: product.resource.method (e.g., banking.charge.pix.create)",
+            es: "ruta de endpoint inválida '{endpoint_path}'. Usa el formato producto.recurso.metodo (ej.: banking.charge.pix.create)",
+        )));
+    }
+    let method_name = *parts.last().unwrap();
+    let resource_parts = &parts[1..parts.len() - 1];
 
     // API versions stopped being path segments; say so rather than reporting
     // a missing endpoint for every pre-existing `banking.v1.…` path
@@ -128,31 +150,25 @@ fn show_endpoint_schema(
 
     // Walk the same tree the CLI dispatches on, so schema output can never
     // drift from what the commands actually accept
+    let walk = |parts: &[&str]| {
+        parts
+            .iter()
+            .try_fold(&loaded.tree, |node, part| node.child(part))
+    };
+
     // `…recipients.remove.create`, the path before `remove` became an action
     // of `recipients`, still finds it
-    if method_name == "create" {
-        if let Some((action, parents)) = resource_parts.split_last() {
-            let mut node = Some(&loaded.tree);
-            for part in parents {
-                node = node.and_then(|n| n.children.get(*part));
-            }
-            if let Some(endpoint) = node.and_then(|n| {
-                n.endpoints
-                    .iter()
-                    .find(|e| e.legacy_create && e.cli_method == *action)
-            }) {
-                return print_endpoint(loaded, endpoint);
-            }
+    if let Some((action, parents)) = resource_parts.split_last() {
+        if let Some(endpoint) = walk(parents).and_then(|n| {
+            n.endpoints
+                .iter()
+                .find(|e| e.legacy_create && e.cli_method == *action && method_name == "create")
+        }) {
+            return print_endpoint(loaded, endpoint);
         }
     }
 
-    let mut node = &loaded.tree;
-    for part in resource_parts {
-        node = node.children.get(*part).ok_or_else(|| {
-            not_found(endpoint_path)
-        })?;
-    }
-
+    let node = walk(resource_parts).ok_or_else(|| not_found(endpoint_path))?;
     let endpoint = node
         .endpoints
         .iter()

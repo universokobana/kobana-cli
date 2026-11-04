@@ -442,6 +442,12 @@ fn merge(into: &mut CommandNode, from: CommandNode) {
         }
     }
 
+    for alias in from.aliases {
+        if !into.aliases.contains(&alias) {
+            into.aliases.push(alias);
+        }
+    }
+
     for (name, child) in from.children {
         merge(into.children.entry(name).or_default(), child);
     }
@@ -455,6 +461,17 @@ pub fn find<'a>(products: &'a [LoadedProduct], slug: &str) -> Option<&'a LoadedP
 /// Whether a slug names a registered product (no specs needed)
 pub fn is_product(slug: &str) -> bool {
     REGISTRY.iter().any(|p| p.slug == slug)
+}
+
+/// Portuguese names a top-level resource also answers to, out of the help.
+pub fn resource_aliases(product: &str, name: &str) -> &'static [&'static str] {
+    match (product, name) {
+        ("banking", "bank-billets") => &["boletos"],
+        ("banking", "customers") => &["clientes"],
+        ("banking", "payments") => &["pagamentos"],
+        ("banking", "transfers") => &["transferencias"],
+        _ => &[],
+    }
 }
 
 /// Human-readable about text for a product's top-level resources.
@@ -1043,3 +1060,4 @@ mod oauth_tests {
         }
     }
 }
+

@@ -72,7 +72,7 @@ credentials with the banking product. Every request needs **two** things:
 export KOBANA_WORKSPACE_ID=WORKSPACE_ID
 
 kobana finance financial-accounts list --fields "id,name,balance"
-kobana finance cash-flow get --params '{"start_date": "2026-01-01", "end_date": "2026-01-31"}'
+kobana finance cash-flow --params '{"start_date": "2026-01-01", "end_date": "2026-01-31"}'
 
 # Aggregates keep large result sets out of the context window
 kobana finance payables aggregates get --params '{"group_by": "category"}'

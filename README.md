@@ -68,7 +68,7 @@ Toda rota age sobre um espaço de trabalho, informado no cabeçalho
 
 ```bash
 kobana finance payables list --params '{"status": "pending"}'
-kobana finance cash-flow get --params '{"start_date": "2026-01-01"}'
+kobana finance cash-flow --params '{"start_date": "2026-01-01"}'
 ```
 
 Os endpoints `aggregates` de `payables`, `receivables` e
@@ -88,8 +88,13 @@ Recursos principais: `subscriptions`, `plans`, `plan-groups`, `products`,
 
 ```bash
 kobana billing subscriptions list --params '{"status": "active"}'
-kobana billing invoices finalize --params '{"id": "INVOICE_ID"}'
+kobana billing invoices finalize INVOICE_ID
 ```
+
+Os identificadores do caminho vão como argumentos, na ordem em que aparecem na
+rota (`kobana banking charge pix commands get PIX_UID UID`); `--params
+'{"id": "…"}'` continua valendo. Recursos que só leem rodam pelo nome
+(`kobana banking me`, `kobana billing organization`).
 
 ### Inbox Autônomo — `inbox`
 
@@ -508,7 +513,7 @@ kobana finance payables aggregates get --params '{"group_by": "category"}'
 kobana finance payables send-to-bank --dry-run --params '{"id": "PAYABLE_ID"}'
 
 # Fluxo de caixa do mês
-kobana finance cash-flow get \
+kobana finance cash-flow \
   --params '{"start_date": "2026-01-01", "end_date": "2026-01-31"}'
 ```
 

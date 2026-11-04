@@ -107,6 +107,16 @@ impl ResolvedEndpoint {
         }
     }
 
+    /// Whether the path ends in an id (`/webhooks/{id}`): the endpoint reads
+    /// or changes one record, not the resource itself.
+    pub fn ends_with_param(&self) -> bool {
+        self.path_template
+            .trim_end_matches('/')
+            .rsplit('/')
+            .next()
+            .is_some_and(|seg| seg.starts_with('{') && seg.ends_with('}'))
+    }
+
     /// Whether `name` calls this command, by its name or an alias.
     pub fn answers_to(&self, name: &str) -> bool {
         self.cli_method == name || self.aliases().contains(&name)
@@ -118,6 +128,59 @@ impl ResolvedEndpoint {
 pub struct CommandNode {
     pub children: BTreeMap<String, CommandNode>,
     pub endpoints: Vec<ResolvedEndpoint>,
+    /// Names the node answered to before they were shortened
+    /// (`edi edi-boxes` is `edi boxes`)
+    pub aliases: Vec<String>,
+}
+
+/// First word of a node name that makes it a verb of its own
+/// (`builder tools create-page`): the method name would only repeat it.
+const VERBS: &[&str] = &[
+    "activate", "create", "deactivate", "delete", "describe", "duplicate", "fetch", "get",
+    "insert", "list", "move", "preview", "read", "register", "remove", "rename", "resend", "save",
+    "sync", "update",
+];
+
+impl CommandNode {
+    /// The child called `name`, or that used to be.
+    pub fn child(&self, name: &str) -> Option<&CommandNode> {
+        self.children.get(name).or_else(|| {
+            self.children
+                .values()
+                .find(|child| child.aliases.iter().any(|alias| alias == name))
+        })
+    }
+
+    /// What the node's own name runs, with no method after it. `name` is the
+    /// node's name in its parent.
+    ///
+    /// - The read of a singleton (`me`, `organization`): a `get` that does not
+    ///   end in an id, in a node with no `list`.
+    /// - The only thing a leaf node does, when that is a read (`userinfo`) or
+    ///   the node is named for a verb (`email activate`, `create-page`): the
+    ///   method would only repeat it. A noun (`builder draft`) keeps its
+    ///   method, so that its name alone never changes anything.
+    ///
+    /// A `delete` is never implied: it keeps its name. The method name still
+    /// works after the node's, as it always did.
+    pub fn default_endpoint(&self, name: &str) -> Option<&ResolvedEndpoint> {
+        let reads = |e: &&ResolvedEndpoint| e.http_method == HttpMethod::Get && !e.ends_with_param();
+        if !self.endpoints.iter().any(|e| e.cli_method == "list") {
+            if let Some(e) = self
+                .endpoints
+                .iter()
+                .find(|e| e.cli_method == "get" && reads(e))
+            {
+                return Some(e);
+            }
+        }
+        let [only] = self.endpoints.as_slice() else {
+            return None;
+        };
+        let verb_named = name.split('-').any(|word| VERBS.contains(&word));
+        let implied = only.http_method != HttpMethod::Delete && (reads(&only) || verb_named);
+        (self.children.is_empty() && implied).then_some(only)
+    }
 }
 
 impl ApiSpec {
@@ -195,7 +258,9 @@ impl ApiSpec {
             let raw_segments: Vec<&str> = stripped.split('/').filter(|s| !s.is_empty()).collect();
 
             // Collect resource segments (non-param) and path params
-            let mut resource_segments = Vec::new();
+            let mut resource_segments: Vec<String> = Vec::new();
+            // The name a segment had before a repeated prefix was dropped
+            let mut segment_aliases: Vec<Option<String>> = Vec::new();
             let mut path_params = Vec::new();
 
             for seg in &raw_segments {
@@ -203,7 +268,23 @@ impl ApiSpec {
                     let param_name = seg[1..seg.len() - 1].to_string();
                     path_params.push(param_name);
                 } else {
-                    resource_segments.push(seg.replace('_', "-"));
+                    let name = seg.replace('_', "-");
+                    // `/edi/edi_boxes` is `edi boxes`
+                    let short = resource_segments
+                        .last()
+                        .and_then(|prev| name.strip_prefix(&format!("{prev}-")))
+                        .filter(|rest| !rest.is_empty())
+                        .map(String::from);
+                    match short {
+                        Some(short) => {
+                            resource_segments.push(short);
+                            segment_aliases.push(Some(name));
+                        }
+                        None => {
+                            resource_segments.push(name);
+                            segment_aliases.push(None);
+                        }
+                    }
                 }
             }
 
@@ -225,9 +306,8 @@ impl ApiSpec {
             // `…/recipients`) is an action of that resource too: `holidays
             // sync`, `inboxes recipients remove` — not a resource `sync` with
             // a `create` in it, its name until the next release after 0.8.0.
-            let is_nested_action = raw_segments.len() >= 2
+            let nested_under_parent = raw_segments.len() >= 2
                 && path_item.operations.len() == 1
-                && path_item.operations.contains_key(&HttpMethod::Post)
                 && {
                     let last = raw_segments.last().unwrap();
                     let second_last = raw_segments[raw_segments.len() - 2];
@@ -236,6 +316,8 @@ impl ApiSpec {
                 && path
                     .rsplit_once('/')
                     .is_some_and(|(parent, _)| self.paths.contains_key(parent));
+            let is_nested_action =
+                nested_under_parent && path_item.operations.contains_key(&HttpMethod::Post);
             let last_is_action =
                 (is_action_path || is_nested_action) && path_item.operations.len() == 1;
 
@@ -266,8 +348,13 @@ impl ApiSpec {
                 };
 
                 let mut node = &mut root;
-                for seg in tree_segments {
+                for (seg, alias) in tree_segments.iter().zip(&segment_aliases) {
                     node = node.children.entry(seg.clone()).or_default();
+                    if let Some(alias) = alias {
+                        if !node.aliases.contains(alias) {
+                            node.aliases.push(alias.clone());
+                        }
+                    }
                 }
 
                 // One command per name and path: PUT and PATCH on one path

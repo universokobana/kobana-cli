@@ -156,7 +156,11 @@ pub async fn execute(
     endpoint: &ResolvedEndpoint,
     root_matches: &clap::ArgMatches,
 ) -> Result<(), KobanaError> {
-    let params_json = json_arg(root_matches, "params")?;
+    let params_json = with_positional_ids(
+        json_arg(root_matches, "params")?,
+        endpoint,
+        &crate::commands::path_ids(root_matches),
+    )?;
     let body_json = json_arg(root_matches, "json")?;
 
     // Validate inputs
@@ -239,6 +243,37 @@ pub async fn execute(
 
     let body = send(client, &api_request, output.verbose).await?;
     output.print(&body)
+}
+
+/// The path ids given as positional arguments, put in `--params` under the
+/// names of the path's placeholders, in order. One given in both places takes
+/// the positional value.
+fn with_positional_ids(
+    params: Option<serde_json::Value>,
+    endpoint: &ResolvedEndpoint,
+    ids: &[String],
+) -> Result<Option<serde_json::Value>, KobanaError> {
+    if ids.is_empty() {
+        return Ok(params);
+    }
+    let mut obj = match params {
+        None => serde_json::Map::new(),
+        Some(serde_json::Value::Object(obj)) => obj,
+        Some(_) => {
+            return Err(KobanaError::Validation(
+                kobana::tr!(
+                    pt: "--params precisa ser um objeto JSON para receber os identificadores do caminho",
+                    en: "--params must be a JSON object to take the path identifiers",
+                    es: "--params debe ser un objeto JSON para recibir los identificadores de la ruta",
+                )
+                .to_string(),
+            ))
+        }
+    };
+    for (name, id) in endpoint.path_params.iter().zip(ids) {
+        obj.insert(name.clone(), serde_json::Value::String(id.clone()));
+    }
+    Ok(Some(serde_json::Value::Object(obj)))
 }
 
 /// Headers the client always sets itself; a spec declaring them as parameters
@@ -448,6 +483,19 @@ mod tests {
         let params = Some(params);
         let (path, used) = resolve_path_template(template, &params)?;
         Ok((path, query_without(params, &used)))
+    }
+
+    #[test]
+    fn positional_ids_fill_the_path_in_order_and_win_over_params() {
+        let mut ep = endpoint();
+        ep.path_params = vec!["pix_uid".into(), "uid".into()];
+        let ids = ["P1".to_string(), "C1".to_string()];
+        let merged = with_positional_ids(Some(serde_json::json!({"page": 2, "uid": "old"})), &ep, &ids)
+            .unwrap()
+            .unwrap();
+        assert_eq!(merged, serde_json::json!({"page": 2, "pix_uid": "P1", "uid": "C1"}));
+        assert_eq!(with_positional_ids(None, &ep, &[]).unwrap(), None);
+        assert!(with_positional_ids(Some(serde_json::json!([1])), &ep, &ids).is_err());
     }
 
     #[test]

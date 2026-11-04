@@ -20,12 +20,48 @@ fn leaf_usage(path: &str) -> String {
     format!("{path} {}", clap_i18n::options_placeholder())
 }
 
+/// Usage line of an endpoint: its path ids, then the options
+fn endpoint_usage(path: &str, endpoint: &ResolvedEndpoint, subcommands: bool) -> String {
+    let ids: String = endpoint
+        .path_params
+        .iter()
+        .map(|p| format!(" [{}]", p.to_uppercase()))
+        .collect();
+    let command = if subcommands {
+        format!(" {}", clap_i18n::command_placeholder().replace('<', "[").replace('>', "]"))
+    } else {
+        String::new()
+    };
+    format!("{path}{ids} {}{command}", clap_i18n::options_placeholder())
+}
+
 /// Build a clap Command tree from a CommandNode tree. `path` is the command
 /// line that reaches it, e.g. `kobana banking bank-billets`.
 pub fn build_command_tree(node: &CommandNode, name: &str, path: &str) -> Command {
-    let mut cmd = clap_i18n::command(name.to_string(), node_usage(path))
-        .subcommand_required(true)
-        .arg_required_else_help(true);
+    // A node that runs by its own name (`kobana banking me`) takes the
+    // endpoint's arguments; its method stays as a hidden subcommand
+    let default = node.default_endpoint(name);
+    let mut cmd = match default {
+        Some(endpoint) => {
+            // Hidden subcommands (its own method) do not count
+            let subcommands = !node.children.is_empty() || node.endpoints.len() > 1;
+            let mut cmd = clap_i18n::command(name.to_string(), endpoint_usage(path, endpoint, subcommands));
+            if let Some(summary) = &endpoint.operation.summary {
+                cmd = cmd.about(summary.clone());
+            }
+            if let Some(desc) = &endpoint.operation.description {
+                cmd = cmd.long_about(desc.clone());
+            }
+            if endpoint.operation.deprecated {
+                cmd = cmd.hide(true);
+            }
+            with_path_ids(cmd, endpoint)
+        }
+        None => clap_i18n::command(name.to_string(), node_usage(path))
+            .subcommand_required(true)
+            .arg_required_else_help(true),
+    }
+    .aliases(node.aliases.clone());
 
     // Add child subcommands (resource groups)
     for (child_name, child_node) in &node.children {
@@ -35,20 +71,62 @@ pub fn build_command_tree(node: &CommandNode, name: &str, path: &str) -> Command
 
     // Add method subcommands (endpoints)
     for endpoint in &node.endpoints {
-        let method_cmd = build_method_command(endpoint, path);
+        let mut method_cmd = build_method_command(endpoint, path);
+        if default.is_some_and(|d| std::ptr::eq(d, endpoint)) {
+            method_cmd = method_cmd.hide(true);
+        }
         cmd = cmd.subcommand(method_cmd);
     }
 
     cmd
 }
 
+/// The ids of the endpoint's path as positional arguments, in the order of the
+/// path: `kobana banking bank-billets get 123` instead of `--params '{"id":123}'`.
+/// `--params` still works and is read first.
+fn with_path_ids(cmd: Command, endpoint: &ResolvedEndpoint) -> Command {
+    if endpoint.path_params.is_empty() {
+        return cmd;
+    }
+    let names: Vec<String> = endpoint.path_params.iter().map(|p| p.to_uppercase()).collect();
+    cmd.arg(
+        Arg::new(PATH_IDS)
+            .num_args(0..=names.len())
+            .value_names(names)
+            .help_heading(clap_i18n::arguments_heading())
+            .help(tr!(
+                pt: "Identificadores do caminho, na ordem; também podem vir em --params",
+                en: "Path identifiers, in order; they can also come in --params",
+                es: "Identificadores de la ruta, en orden; también pueden venir en --params",
+            )),
+    )
+}
+
+/// Id of the positional arguments that carry an endpoint's path ids
+pub const PATH_IDS: &str = "path-ids";
+
+/// The path ids given as positional arguments, wherever they sit in the
+/// command line (`get 1` or, for a node that runs itself, `me 1`)
+pub fn path_ids(matches: &clap::ArgMatches) -> Vec<String> {
+    let mut ids = Vec::new();
+    let mut current = Some(matches);
+    while let Some(m) = current {
+        if let Ok(Some(values)) = m.try_get_many::<String>(PATH_IDS) {
+            ids.extend(values.cloned());
+        }
+        current = m.subcommand().map(|(_, sub)| sub);
+    }
+    ids
+}
+
 /// Build a clap Command for a single endpoint method
 fn build_method_command(endpoint: &ResolvedEndpoint, parent_path: &str) -> Command {
     let mut cmd = clap_i18n::command(
         endpoint.cli_method.clone(),
-        leaf_usage(&format!("{parent_path} {}", endpoint.cli_method)),
+        endpoint_usage(&format!("{parent_path} {}", endpoint.cli_method), endpoint, false),
     )
     .aliases(endpoint.aliases().iter().copied());
+    cmd = with_path_ids(cmd, endpoint);
 
     // Set help/about from operation summary
     if let Some(summary) = &endpoint.operation.summary {
@@ -92,7 +170,8 @@ fn build_product_command(loaded: &LoadedProduct) -> Command {
         .arg_required_else_help(true);
 
     for (name, node) in &loaded.tree.children {
-        let mut child = build_command_tree(node, name, &format!("{path} {name}"));
+        let mut child = build_command_tree(node, name, &format!("{path} {name}"))
+            .aliases(product::resource_aliases(loaded.product.slug, name).iter().copied());
         if let Some(about) = product::resource_about(loaded.product.slug, name) {
             child = child.about(about);
         }
@@ -431,11 +510,19 @@ pub fn resolve_endpoint<'a>(
 }
 
 fn resolve_in_tree<'a>(node: &'a CommandNode, matches: &clap::ArgMatches) -> Option<&'a ResolvedEndpoint> {
-    let (sub_name, sub_matches) = matches.subcommand()?;
+    resolve_node(node, "", matches)
+}
 
-    // A child node (resource group)
+/// `name` is the node's name in its parent. A node reached with no method
+/// after it runs its default endpoint (`kobana banking me`).
+fn resolve_node<'a>(node: &'a CommandNode, name: &str, matches: &clap::ArgMatches) -> Option<&'a ResolvedEndpoint> {
+    let Some((sub_name, sub_matches)) = matches.subcommand() else {
+        return node.default_endpoint(name);
+    };
+
+    // A child node (resource group); clap reports an aliased one by its name
     if let Some(child) = node.children.get(sub_name) {
-        return resolve_in_tree(child, sub_matches);
+        return resolve_node(child, sub_name, sub_matches);
     }
 
     // An endpoint method; its hidden `<action> create` (the line before it
@@ -569,5 +656,81 @@ mod tests {
         for name in ["+emitir", "+cancelar-lote", "+cobrar"] {
             assert!(banking.find_subcommand(name).is_some(), "{name} missing under banking");
         }
+    }
+
+    /// The endpoint a command line reaches, as `METHOD path`
+    fn reaches(args: &[&str]) -> String {
+        let products = product::load_all().unwrap();
+        let mut line = vec!["kobana"];
+        line.extend(args);
+        let matches = build_root_command(&products).try_get_matches_from(line).unwrap();
+        let (_, endpoint) = resolve_endpoint(&matches, &products).expect("a command line that reaches an endpoint");
+        format!("{} {}", endpoint.http_method, endpoint.path_template)
+    }
+
+    #[test]
+    fn a_singleton_runs_by_its_name_and_by_its_old_one() {
+        assert_eq!(reaches(&["banking", "me"]), "GET /v2/me");
+        assert_eq!(reaches(&["banking", "me", "get"]), "GET /v2/me");
+        assert_eq!(reaches(&["banking", "me", "list"]), "GET /v2/me");
+        assert_eq!(reaches(&["billing", "organization"]), "GET /v1/organization");
+        assert_eq!(reaches(&["billing", "organization", "update"]), "PATCH /v1/organization");
+    }
+
+    #[test]
+    fn an_action_runs_without_the_verb_of_its_method() {
+        assert_eq!(
+            reaches(&["banking", "mailbox", "entries", "email", "activate"]),
+            "PUT /v2/mailbox/entries/{entry_uid}/email/activate"
+        );
+        assert_eq!(
+            reaches(&["banking", "mailbox", "entries", "email", "activate", "update"]),
+            "PUT /v2/mailbox/entries/{entry_uid}/email/activate"
+        );
+        assert_eq!(reaches(&["banking", "userinfo"]), "GET /v1/userinfo");
+        assert_eq!(reaches(&["banking", "customers", "cnpj-cpf", "list"]), "GET /v1/customers/cnpj_cpf");
+    }
+
+    #[test]
+    fn a_node_never_changes_anything_by_its_name_alone() {
+        let products = product::load_all().unwrap();
+        // A noun with a write, a delete and a resource with its own methods
+        for args in [
+            ["dashboards", "builder", "draft"].as_slice(),
+            ["banking", "bank-billets"].as_slice(),
+            ["banking", "payment", "pix-batches"].as_slice(),
+        ] {
+            let mut line = vec!["kobana"];
+            line.extend(args);
+            let matches = build_root_command(&products).try_get_matches_from(line);
+            assert!(
+                matches.is_err() || resolve_endpoint(&matches.unwrap(), &products).is_none(),
+                "{args:?} runs by its name"
+            );
+        }
+    }
+
+    #[test]
+    fn path_ids_are_positional() {
+        let products = product::load_all().unwrap();
+        let ids = |args: &[&str]| {
+            let mut line = vec!["kobana"];
+            line.extend(args);
+            path_ids(&build_root_command(&products).try_get_matches_from(line).unwrap())
+        };
+        assert_eq!(ids(&["banking", "bank-billets", "get", "123"]), ["123"]);
+        assert_eq!(ids(&["banking", "charge", "pix", "commands", "get", "P1", "C1"]), ["P1", "C1"]);
+        assert_eq!(ids(&["banking", "bank-billets", "get"]), Vec::<String>::new());
+        assert_eq!(ids(&["banking", "boletos", "get", "9"]), ["9"]);
+        // More ids than the path has
+        assert!(build_root_command(&products)
+            .try_get_matches_from(["kobana", "banking", "bank-billets", "get", "1", "2"])
+            .is_err());
+    }
+
+    #[test]
+    fn a_prefix_the_parent_repeats_is_dropped_and_still_answers() {
+        assert_eq!(reaches(&["banking", "edi", "boxes", "list"]), "GET /v2/edi/edi_boxes");
+        assert_eq!(reaches(&["banking", "edi", "edi-boxes", "list"]), "GET /v2/edi/edi_boxes");
     }
 }

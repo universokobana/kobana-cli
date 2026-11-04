@@ -42,7 +42,14 @@ kobana banking financial accounts balances list --params '{"financial_account_ui
 
 Gerado a partir da arvore de comandos do binario. A fonte de verdade e o proprio CLI: `kobana schema --list` lista os metodos de todos os produtos, `kobana <produto> <recurso> --help` mostra os de um recurso e `kobana schema <produto>.<recurso>.<metodo>` o schema de cada um. Os outros seis produtos (`finance`, `billing`, `inbox`, `dunning`, `dashboards`, `kadu`) seguem as mesmas regras de nome.
 
-Parametros de caminho (`{id}`, `{uid}`, `{pix_uid}`…) vao em `--params`. Um segmento depois de um parametro vira acao do recurso (`/v2/charge/pix/{uid}/cancel` → `charge pix cancel`).
+Parametros de caminho (`{id}`, `{uid}`, `{pix_uid}`…) vao como argumentos posicionais, na ordem do caminho (`kobana banking bank-billets get 123`, `kobana banking charge pix commands get PIX_UID UID`), ou em `--params` (`--params '{"id": "123"}'`); o posicional vence quando os dois aparecem. Um segmento depois de um parametro vira acao do recurso (`/v2/charge/pix/{uid}/cancel` → `charge pix cancel`).
+
+Alguns comandos rodam so com o nome, sem o metodo (o metodo continua valendo e fica fora da ajuda):
+
+- recursos que so tem uma leitura, sem id no fim do caminho: `kobana banking me`, `kobana billing organization` (a alteracao segue como `organization update`), `kobana dashboards settings`, `kobana banking userinfo`;
+- acoes cujo nome ja e um verbo: `kobana banking mailbox entries email activate ENTRY_UID`, `kobana banking webhook-deliveries resend`, `kobana dashboards builder tools create-page`.
+
+Um `delete` nunca fica implicito, e um nome que e substantivo (`builder draft`) mantem o metodo: so o nome nunca altera nada. Nomes em portugues respondem no banking: `boletos` (`bank-billets`), `clientes`, `pagamentos`, `transferencias`.
 
 ### V1 — API Legada (Boletos)
 
@@ -201,7 +208,7 @@ Parametros de caminho (`{id}`, `{uid}`, `{pix_uid}`…) vao em `--params`. Um se
 
 | Recurso | Metodos | Path da API |
 |---------|---------|-------------|
-| `me` | `get` | `/v2/me` |
+| `me` | `get` (ou só `me`) | `/v2/me` |
 | `payments` | `list`, `create`, `barcode`, `get`, `approve`, `cancel` | `/v2/payments` |
 | `transfers` | `list`, `create`, `get`, `cancel` | `/v2/transfers` |
 
@@ -448,7 +455,7 @@ kobana banking financial providers list
 kobana banking admin subaccounts list --fields "uid,name,status"
 
 # Ver informacoes da conta
-kobana banking me get
+kobana banking me
 ```
 
 ---

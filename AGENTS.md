@@ -106,6 +106,17 @@ a CLI segment: `/v1/bank_billets` and `/v2/charge/pix` read as
 therefore adds its resources next to the existing ones — check the merged
 `--help` for name clashes, which `merge()` resolves first-spec-wins.
 
+Commands read as the user would say them, not as the API names its routes
+(`CommandNode::default_endpoint` in `spec.rs`): a node whose only job is a read
+(`banking me`, `billing organization`) or a verb-named action (`email
+activate`) runs by its own name; its method stays as a hidden subcommand, so
+older lines keep working. A `delete` is never implied and a noun with a write
+(`builder draft`) keeps its method. Path ids are positional (`bank-billets get
+123`), merged into `--params` by the executor. A segment repeating its parent's
+name loses the prefix and keeps the old one as an alias (`edi edi-boxes` →
+`edi boxes`). The compatibility test is to feed every `(resource, method)` of
+the previous release's `kobana schema --list` back through `--help`.
+
 Sandbox hosts follow `api.<product>.sandbox.kobana.com.br`, except banking,
 which predates the convention (`api-sandbox.kobana.com.br`). Kadu lives on its
 own domain (`api.kadu.ia.br`) and has staging, not a sandbox, so its `sandbox`
