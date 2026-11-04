@@ -213,8 +213,9 @@ const config: Config = {
     colorMode: {
       defaultMode: 'light',
       respectPrefersColorScheme: true,
-      // The toggle is the `custom-colorMode` navbar item (see items above).
-      disableSwitch: true,
+      // The toggle is the `custom-colorMode` navbar item (see items above); the
+      // stock one is nulled in theme/Navbar/ColorModeToggle. Not disableSwitch:
+      // it discards the stored choice, so light mode never stuck.
     },
     navbar: {
       title: 'Kobana CLI',
@@ -252,7 +253,7 @@ const config: Config = {
           position: 'right',
         },
         // Theme toggle and apps menu as items, so they sit before the search
-        // (theme/NavbarItem/ComponentTypes; colorMode.disableSwitch below).
+        // (theme/NavbarItem/ComponentTypes; see colorMode below).
         {
           type: 'custom-colorMode',
           position: 'right',

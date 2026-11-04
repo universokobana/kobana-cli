@@ -10,8 +10,8 @@ import styles from './ComponentTypes.module.css';
 
 // The right side of the navbar is declared item by item, so the order is
 // ours: Ask AI, language, theme, apps menu, search. Docusaurus' own theme
-// toggle always comes after every item, so it is disabled
-// (colorMode.disableSwitch) and rendered here as `custom-colorMode`.
+// toggle always comes after every item, so the stock one is nulled
+// (theme/Navbar/ColorModeToggle) and this one is rendered as `custom-colorMode`.
 
 function ColorModeNavbarItem({mobile}: {mobile?: boolean}): ReactNode {
   const {colorMode, setColorMode} = useColorMode();
