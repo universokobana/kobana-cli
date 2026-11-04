@@ -58,9 +58,11 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             artifact: kobana-linux-amd64
+            nfpm_arch: amd64
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             artifact: kobana-linux-arm64
+            nfpm_arch: arm64
           - os: macos-latest
             target: x86_64-apple-darwin
             artifact: kobana-darwin-amd64
@@ -168,6 +170,28 @@ jobs:
           $sig = Get-AuthenticodeSignature "${{ matrix.artifact }}"
           if ($sig.Status -ne 'Valid') { throw "signature is $($sig.Status)" }
 
+      # .deb and .rpm are built on every run so packaging breakage shows up
+      # before a release; they are signed and published by the release job.
+      - name: Package (.deb, .rpm)
+        if: runner.os == 'Linux'
+        run: |
+          VERSION=$(grep '^version' crates/kobana-cli/Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          NFPM_VERSION=2.48.0
+          curl -fsSL "https://github.com/goreleaser/nfpm/releases/download/v${NFPM_VERSION}/nfpm_${NFPM_VERSION}_Linux_x86_64.tar.gz" | tar xz nfpm
+          mkdir -p dist pkgs
+          cp ${{ matrix.artifact }} dist/kobana
+          for fmt in deb rpm; do
+            NFPM_ARCH=${{ matrix.nfpm_arch }} VERSION="$VERSION" ./nfpm package -p $fmt -f packaging/nfpm.yaml -t pkgs/
+          done
+          ls -l pkgs
+
+      - name: Upload packages
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v5
+        with:
+          name: pkgs-${{ matrix.target }}
+          path: pkgs/*
+
       - name: Upload artifact
         uses: actions/upload-artifact@v5
         with:
@@ -185,6 +209,8 @@ jobs:
       attestations: write
     env:
       WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+    outputs:
+      site_built: ${{ steps.repo.outputs.built }}
     steps:
       - uses: actions/checkout@v5
 
@@ -198,10 +224,30 @@ jobs:
         with:
           path: artifacts
 
+      # Signs the .rpm files in place and builds the apt/dnf/zypper site, so the
+      # attested and released rpm are the signed ones.
+      - name: Sign packages and build apt/dnf repos
+        id: repo
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          PAGES_BASE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+        run: |
+          if [ -z "$GPG_PRIVATE_KEY" ]; then
+            echo "::warning::GPG_PRIVATE_KEY not set - Linux packages are unsigned and no repo is published"
+            exit 0
+          fi
+          sudo apt-get update
+          sudo apt-get install -y createrepo-c rpm dpkg-dev apt-utils gnupg
+          bash scripts/publish-linux-repo.sh artifacts
+          echo "built=true" >> "$GITHUB_OUTPUT"
+
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v2
         with:
-          subject-path: artifacts/*/kobana-*
+          subject-path: |
+            artifacts/*/kobana-*
+            artifacts/*/kobana_*
 
       - name: Create release
         uses: softprops/action-gh-release@v2
@@ -284,3 +330,26 @@ jobs:
           installers-regex: 'windows-amd64\.exe$'
           fork-user: universokobana
           token: ${{ env.WINGET_TOKEN }}
+
+      - name: Upload Pages artifact
+        if: steps.repo.outputs.built == 'true'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ./site
+
+  # apt/dnf/zypper repositories at https://<owner>.github.io/<repo>/
+  deploy-pages:
+    name: Deploy package repositories
+    needs: release
+    if: needs.release.outputs.site_built == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v5

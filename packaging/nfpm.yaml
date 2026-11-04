@@ -1,0 +1,28 @@
+# .deb and .rpm of the CLI. Built in CI by `nfpm package` with these variables:
+#   NFPM_ARCH  amd64 | arm64      (nfpm maps it to x86_64 / aarch64 for rpm)
+#   VERSION    1.2.3              (no leading v)
+#
+# The already-built executable must be at dist/kobana (nfpm does not expand
+# variables in `src`).
+name: kobana
+arch: ${NFPM_ARCH}
+platform: linux
+version: ${VERSION}
+section: utils
+priority: optional
+maintainer: Kobana <noreply@kobana.com.br>
+vendor: Kobana
+homepage: https://cli.kobana.com.br
+license: MIT
+description: |
+  Command-line interface for the Kobana financial API.
+  Statements, balances, payments and billing from the terminal.
+contents:
+  - src: dist/kobana
+    dst: /usr/bin/kobana
+    file_info:
+      mode: 0755
+  - src: LICENSE
+    dst: /usr/share/doc/kobana/copyright
+    file_info:
+      mode: 0644
