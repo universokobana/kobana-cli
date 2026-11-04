@@ -13,6 +13,8 @@
 #   KOBANA_BIN_DIR      onde fica o link no PATH (padrão: ~/.local/bin)
 #   KOBANA_LANG         idioma das mensagens: pt, en ou es (padrão: o do sistema)
 #   NO_COLOR            desliga as cores
+#   KOBANA_ACCESSIBLE_COLORS  alto contraste: negrito e sublinhado, sem matizes
+#   KOBANA_SCREEN_READER      só texto: sem banner, emojis nem barra de progresso
 
 set -euo pipefail
 
@@ -142,22 +144,49 @@ load_messages "$(detect_lang)"
 
 # --- saída -------------------------------------------------------------------
 
+# The CLI's notion of an enabled setting (and gh's): set, and not empty, 0,
+# false, no or off, in any case
+truthy() {
+  case "$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')" in
+    "" | 0 | false | no | off) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
+# Screen readers read the banner, the emojis and a redrawn progress bar out
+# symbol by symbol: KOBANA_SCREEN_READER leaves the words alone
+SCREEN_READER=""
+if truthy "${KOBANA_SCREEN_READER:-}"; then SCREEN_READER=1; fi
+
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
-  LIME=$'\033[38;2;211;253;84m'
   BOLD=$'\033[1m'
-  LINK=$'\033[4;34m'
-  RED=$'\033[31m'
   RESET=$'\033[0m'
+  if truthy "${KOBANA_ACCESSIBLE_COLORS:-}"; then
+    # High contrast: the theme's own text color, set apart by bold/underline
+    LIME="$BOLD" LINK=$'\033[4m' RED="$BOLD"
+  else
+    LIME=$'\033[38;2;211;253;84m'
+    LINK=$'\033[4;34m'
+    RED=$'\033[31m'
+  fi
 else
   LIME="" BOLD="" LINK="" RED="" RESET=""
 fi
 
-say() { printf '%s %s\n' "$1" "$2"; }
+say() {
+  if [ -n "$SCREEN_READER" ]; then
+    printf '%s\n' "$2"
+  else
+    printf '%s %s\n' "$1" "$2"
+  fi
+}
 # shellcheck disable=SC2059 # the format is one of the M_* messages
 msg() { local fmt="$1"; shift; printf "$fmt" "$@"; }
 blank() { printf '\n'; }
 fail() {
-  printf '%s❌ %s%s\n' "$RED" "$1" "$RESET" >&2
+  local mark="❌ "
+  [ -z "$SCREEN_READER" ] || mark=""
+  printf '%s%s%s%s\n' "$RED" "$mark" "$1" "$RESET" >&2
   exit 1
 }
 
@@ -204,7 +233,14 @@ http_get() {
 }
 
 download() {
-  if command -v curl >/dev/null 2>&1; then
+  if [ -n "$SCREEN_READER" ]; then
+    # No progress bar: it redraws one line over and over
+    if command -v curl >/dev/null 2>&1; then
+      curl -fsSL -o "$2" "$1"
+    else
+      wget -q -O "$2" "$1"
+    fi
+  elif command -v curl >/dev/null 2>&1; then
     curl -fL --progress-bar -o "$2" "$1"
   else
     wget -q --show-progress -O "$2" "$1"
@@ -224,8 +260,10 @@ sha256_of() {
 main() {
   say "👋" "$M_HELLO"
   blank
-  banner
-  blank
+  if [ -z "$SCREEN_READER" ]; then
+    banner
+    blank
+  fi
 
   local asset release_json tag
   asset="$(detect_asset)"

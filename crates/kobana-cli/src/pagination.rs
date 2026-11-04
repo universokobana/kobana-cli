@@ -6,7 +6,7 @@ use kobana::spec::{ParameterLocation, ResolvedEndpoint};
 use std::io::Write;
 
 use crate::executor::Output;
-use crate::formatter::{filter_fields, format_output};
+use crate::formatter::{filter_fields, format_output, json_text};
 
 /// How an endpoint pages its results, read from the parameters its spec declares
 #[derive(Debug, PartialEq, Eq)]
@@ -127,6 +127,7 @@ pub async fn paginate_all(
 ) -> Result<(), KobanaError> {
     let (fields, output_format, verbose) = (&output.fields, output.format.as_str(), output.verbose);
     let mut sink = Sink::new(output.path.as_deref());
+    let to_terminal = output.path.is_none() && std::io::IsTerminal::is_terminal(&std::io::stdout());
     let strategy = strategy(endpoint);
     let mut page = 1u64;
     let mut cursor: Option<String> = None;
@@ -229,7 +230,8 @@ pub async fn paginate_all(
                 } else {
                     item.clone()
                 };
-                sink.write(&format!("{}\n", serde_json::to_string(&filtered)?))?;
+                // One line per item, or what `--jq` makes of it
+                sink.write(&json_text(&filtered, false, to_terminal, false)?)?;
             }
             pages_fetched += 1;
             page += 1;

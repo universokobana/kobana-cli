@@ -212,12 +212,12 @@ pub fn client_for(
         _ => {
             if !dry_run {
                 let slug = product.slug;
-                warn(&trf!(
-                    pt: "⚠ {slug} exige um certificado de cliente (mTLS). Defina {var} com o \
+                crate::ui::warn(&trf!(
+                    pt: "{slug} exige um certificado de cliente (mTLS). Defina {var} com o \
                          caminho de um arquivo PEM com a cadeia do certificado e a chave privada.",
-                    en: "⚠ {slug} requires a client certificate (mTLS). Set {var} to a PEM file \
+                    en: "{slug} requires a client certificate (mTLS). Set {var} to a PEM file \
                          holding the certificate chain and its private key.",
-                    es: "⚠ {slug} exige un certificado de cliente (mTLS). Define {var} con la \
+                    es: "{slug} exige un certificado de cliente (mTLS). Define {var} con la \
                          ruta de un archivo PEM con la cadena del certificado y la clave privada.",
                 ));
             }
@@ -227,13 +227,6 @@ pub fn client_for(
     Ok(client.with_default_headers(default_headers))
 }
 
-fn warn(msg: &str) {
-    if std::io::IsTerminal::is_terminal(&std::io::stderr()) {
-        eprintln!("\x1b[33m{msg}\x1b[0m");
-    } else {
-        eprintln!("{msg}");
-    }
-}
 
 /// Every product wired into the CLI.
 ///

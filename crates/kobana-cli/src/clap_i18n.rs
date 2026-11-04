@@ -3,15 +3,17 @@
 //! which swaps those for the user's language, and parse errors go through
 //! [`exit_with`], which rewrites the common ones.
 
-use clap::builder::styling::{AnsiColor, Style};
+use clap::builder::styling::Style;
 use clap::error::{ContextKind, ContextValue, ErrorKind};
 use clap::{Arg, ArgAction, Command};
 use kobana::{tr, trf};
 
+use crate::ui::{self, Role, Stream};
+
+// Help text styles carry no hue (bold, underline), so they read the same in
+// the high-contrast palette; clap drops them when color is off
 const HEADING: Style = Style::new().bold().underline();
 const LITERAL: Style = Style::new().bold();
-const ERROR: Style = AnsiColor::Red.on_default().bold();
-const TIP: Style = AnsiColor::Green.on_default();
 
 /// `[OPÇÕES]`, the placeholder for options in a usage line
 pub fn options_placeholder() -> &'static str {
@@ -64,7 +66,9 @@ pub fn arguments_heading() -> &'static str {
 /// are replaced by localized ones (global settings, so they reach every
 /// subcommand).
 pub fn root(cmd: Command) -> Command {
-    cmd.disable_help_flag(true)
+    cmd.color(ui::clap_color_choice())
+        .styles(ui::clap_styles())
+        .disable_help_flag(true)
         .disable_version_flag(true)
         .disable_help_subcommand(true)
         .arg(
@@ -170,21 +174,16 @@ pub fn exit_with(err: clap::Error) -> ! {
         std::process::exit(USAGE_EXIT_CODE)
     };
 
-    let styled = std::io::IsTerminal::is_terminal(&std::io::stderr());
-    let paint = |style: Style, text: &str| {
-        if styled {
-            format!("{style}{text}{style:#}")
-        } else {
-            text.to_string()
-        }
-    };
+    // Each part is named in words (erro:, dica:, Uso:): the color only repeats it
+    let styled = ui::color(Stream::Stderr);
+    let paint = |role: Role, text: &str| ui::paint(role, text, Stream::Stderr);
 
     let mut out = format!(
         "{} {message}\n",
-        paint(ERROR, tr!(pt: "erro:", en: "error:", es: "error:"))
+        paint(Role::Error, tr!(pt: "erro:", en: "error:", es: "error:"))
     );
     if let Some(tip) = suggestion(&err) {
-        out.push_str(&format!("\n  {} {tip}\n", paint(TIP, tr!(pt: "dica:", en: "tip:", es: "sugerencia:"))));
+        out.push_str(&format!("\n  {} {tip}\n", paint(Role::Tip, tr!(pt: "dica:", en: "tip:", es: "sugerencia:"))));
     }
     if let Some(ContextValue::StyledStr(usage)) = err.get(ContextKind::Usage) {
         let usage = if styled { usage.ansi().to_string() } else { usage.to_string() };
@@ -192,7 +191,7 @@ pub fn exit_with(err: clap::Error) -> ! {
         let usage = usage.split_once(' ').map_or(usage.as_str(), |(_, rest)| rest);
         out.push_str(&format!(
             "\n{} {usage}\n",
-            paint(HEADING, tr!(pt: "Uso:", en: "Usage:", es: "Uso:"))
+            paint(Role::Heading, tr!(pt: "Uso:", en: "Usage:", es: "Uso:"))
         ));
     }
     out.push_str(&format!(

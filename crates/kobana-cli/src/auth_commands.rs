@@ -6,61 +6,14 @@ use crate::config::{self, Environment};
 use crate::credential_store::{self, StoredCredentials};
 use crate::oauth;
 use crate::product::Product;
+use crate::ui;
 
-/// A (name, description) pair laid out in two columns for inquire
-#[derive(Clone)]
-struct LabeledOption {
-    name: String,
-    description: String,
-    width: usize,
-}
-
-impl std::fmt::Display for LabeledOption {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.description.is_empty() {
-            return write!(f, "{}", self.name);
-        }
-        write!(
-            f,
-            "{:<width$}  {}",
-            self.name,
-            self.description,
-            width = self.width
-        )
-    }
-}
-
-fn labeled(items: Vec<(String, String)>) -> Vec<LabeledOption> {
-    let width = items.iter().map(|(name, _)| name.len()).max().unwrap_or(0);
-    items
-        .into_iter()
-        .map(|(name, description)| LabeledOption { name, description, width })
-        .collect()
-}
-
-/// Confirmation line of a multi-select: the names only, not the columns
-fn names_only(options: &[inquire::list_option::ListOption<&LabeledOption>]) -> String {
-    options.iter().map(|o| o.value.name.as_str()).collect::<Vec<_>>().join(", ")
-}
-
-fn multi_select_help() -> &'static str {
-    tr!(
-        pt: "↑↓ Navegar · Espaço Selecionar · →/← Todos/Nenhum · Digite para filtrar · Enter Confirmar · Esc Cancelar",
-        en: "↑↓ Move · Space Select · →/← All/None · Type to filter · Enter Confirm · Esc Cancel",
-        es: "↑↓ Navegar · Espacio Seleccionar · →/← Todos/Ninguno · Escribe para filtrar · Enter Confirmar · Esc Cancelar",
-    )
-}
-
-fn selection_cancelled(e: inquire::InquireError) -> KobanaError {
+fn selection_cancelled(e: String) -> KobanaError {
     KobanaError::Auth(trf!(
         pt: "seleção cancelada: {e}",
         en: "selection cancelled: {e}",
         es: "selección cancelada: {e}",
     ))
-}
-
-fn is_terminal() -> bool {
-    std::io::IsTerminal::is_terminal(&std::io::stdin())
 }
 
 /// The part of `{product}/{group}.{rest}` before the first `.`
@@ -96,18 +49,16 @@ fn group_label(product: &str, group: &str) -> String {
         .unwrap_or_default()
 }
 
-fn pick_many(
-    message: &str,
-    options: Vec<LabeledOption>,
-) -> Result<Vec<LabeledOption>, KobanaError> {
-    let all: Vec<usize> = (0..options.len()).collect();
-    inquire::MultiSelect::new(message, options)
-        .with_default(&all)
-        .with_page_size(20)
-        .with_formatter(&names_only)
-        .with_help_message(multi_select_help())
-        .prompt()
-        .map_err(selection_cancelled)
+/// The names picked out of `items` (name, description), `defaults` chosen up front
+fn pick_many(message: &str, items: Vec<(String, String)>, defaults: &[usize]) -> Result<Vec<String>, KobanaError> {
+    let options = ui::choices(items);
+    let picked = ui::multi_select(message, options.clone(), defaults).map_err(selection_cancelled)?;
+    Ok(picked.into_iter().map(|i| options[i].name.clone()).collect())
+}
+
+/// Every index of a list of `len` options
+fn all(len: usize) -> Vec<usize> {
+    (0..len).collect()
 }
 
 /// Screens 2..N: the product's published resource scopes, grouped by the
@@ -126,60 +77,61 @@ fn prompt_scopes(product: &Product, catalog: &oauth::ScopeCatalog) -> Result<Vec
 
     let mut chosen: Vec<String> = Vec::new();
     if groups.iter().any(|(_, scopes)| scopes.len() > 1) {
-        let options = labeled(
-            groups
-                .iter()
-                .map(|(g, _)| (g.clone(), group_label(slug, g)))
-                .collect(),
-        );
+        let items: Vec<(String, String)> = groups
+            .iter()
+            .map(|(g, _)| (g.clone(), group_label(slug, g)))
+            .collect();
+        let defaults = all(items.len());
         let selected = pick_many(
             &trf!(
                 pt: "{slug}: selecione os grupos de recursos",
                 en: "{slug}: select the resource groups",
                 es: "{slug}: selecciona los grupos de recursos",
             ),
-            options,
+            items,
+            &defaults,
         )?;
+        // The tree branch only draws the nesting; the simple prompts say it in words
+        let branch = if ui::accessible_prompter() { "" } else { "  └─ " };
         for group in selected {
-            let scopes = &groups.iter().find(|(g, _)| *g == group.name).expect("listed").1;
+            let scopes = &groups.iter().find(|(g, _)| *g == group).expect("listed").1;
             if scopes.len() == 1 {
                 chosen.extend(scopes.iter().cloned());
                 continue;
             }
-            let options = labeled(
-                scopes
-                    .iter()
-                    .map(|s| (s.clone(), scope_label(slug, s)))
-                    .collect(),
-            );
-            let subs = pick_many(
-                &trf!(
-                    pt: "  └─ {}: selecione os sub-escopos",
-                    en: "  └─ {}: select the sub-scopes",
-                    es: "  └─ {}: selecciona los sub-alcances",
-                    group.name
-                ),
-                options,
-            )?;
-            chosen.extend(subs.into_iter().map(|o| o.name));
-        }
-    } else {
-        let options = labeled(
-            catalog
-                .resources
+            let items: Vec<(String, String)> = scopes
                 .iter()
                 .map(|s| (s.clone(), scope_label(slug, s)))
-                .collect(),
-        );
+                .collect();
+            let defaults = all(items.len());
+            let subs = pick_many(
+                &trf!(
+                    pt: "{branch}{group}: selecione os sub-escopos",
+                    en: "{branch}{group}: select the sub-scopes",
+                    es: "{branch}{group}: selecciona los sub-alcances",
+                ),
+                items,
+                &defaults,
+            )?;
+            chosen.extend(subs);
+        }
+    } else {
+        let items: Vec<(String, String)> = catalog
+            .resources
+            .iter()
+            .map(|s| (s.clone(), scope_label(slug, s)))
+            .collect();
+        let defaults = all(items.len());
         let selected = pick_many(
             &trf!(
                 pt: "{slug}: selecione os recursos",
                 en: "{slug}: select the resources",
                 es: "{slug}: selecciona los recursos",
             ),
-            options,
+            items,
+            &defaults,
         )?;
-        chosen.extend(selected.into_iter().map(|o| o.name));
+        chosen.extend(selected);
     }
 
     if chosen.is_empty() {
@@ -194,26 +146,20 @@ fn prompt_scopes(product: &Product, catalog: &oauth::ScopeCatalog) -> Result<Vec
     }
 
     // --- Final screen: access levels (global wildcards) ---
-    let options = labeled(
-        oauth::ACCESS_LEVELS
-            .iter()
-            .map(|(name, labels)| (name.to_string(), kobana::i18n::pick(*labels).to_string()))
-            .collect(),
-    );
-    let levels = inquire::MultiSelect::new(
+    let items: Vec<(String, String)> = oauth::ACCESS_LEVELS
+        .iter()
+        .map(|(name, labels)| (name.to_string(), kobana::i18n::pick(*labels).to_string()))
+        .collect();
+    let levels = pick_many(
         tr!(
             pt: "Níveis de acesso (valem para todos os recursos escolhidos)",
             en: "Access levels (apply to every chosen resource)",
             es: "Niveles de acceso (valen para todos los recursos elegidos)",
         ),
-        options,
-    )
-    .with_default(&[0])
-    .with_formatter(&names_only)
-    .with_help_message(multi_select_help())
-    .prompt()
-    .map_err(selection_cancelled)?;
-    chosen.extend(levels.into_iter().map(|o| o.name));
+        items,
+        &[0],
+    )?;
+    chosen.extend(levels);
 
     Ok(chosen)
 }
@@ -257,7 +203,9 @@ async fn handle_login(
     env: &Environment,
     verbose: bool,
 ) -> Result<(), KobanaError> {
-    let interactive = is_terminal();
+    // Asking needs a person at a terminal; a script or an agent gets the
+    // defaults below (gh: KOBANA_PROMPT_DISABLED, no TTY)
+    let interactive = ui::can_prompt();
     let slug = product.slug;
     // Flags win over their env vars, and both choose the flow the same way
     let client_id = matches
@@ -413,8 +361,8 @@ fn save_and_report(
             es: "{var} está definida y tiene precedencia sobre estas credenciales",
         ));
     }
-    println!("{}", serde_json::to_string_pretty(&report).unwrap_or_default());
-    Ok(())
+    // The credentials are saved: a failing --jq must not report a failed login
+    crate::formatter::print_json(&report, true, true)
 }
 
 fn handle_logout(product: &Product, env: &Environment) -> Result<(), KobanaError> {
@@ -429,8 +377,7 @@ fn handle_logout(product: &Product, env: &Environment) -> Result<(), KobanaError
             tr!(pt: "Não havia credenciais salvas.", en: "There were no saved credentials.", es: "No había credenciales guardadas.")
         },
     });
-    println!("{report}");
-    Ok(())
+    crate::formatter::print_json(&report, false, removed)
 }
 
 /// What `auth status` reports. "Not configured" only when nothing is: a
@@ -490,8 +437,7 @@ fn handle_status(product: &Product, env: &Environment) -> Result<(), KobanaError
     let mut report = product_status(product, env);
     report["product"] = product.slug.into();
     report["environment"] = env.as_str().into();
-    println!("{}", serde_json::to_string_pretty(&report).unwrap_or_default());
-    Ok(())
+    crate::formatter::print_json(&report, true, false)
 }
 
 /// `auth export`: the token the API calls would use, from the same source
@@ -511,8 +457,7 @@ async fn handle_export(product: &Product, env: &Environment) -> Result<(), Koban
     if let TokenSource::CredentialsFile(path) = &token.source {
         report["file"] = path.clone().into();
     }
-    println!("{report}");
-    Ok(())
+    crate::formatter::print_json(&report, false, false)
 }
 
 #[cfg(test)]

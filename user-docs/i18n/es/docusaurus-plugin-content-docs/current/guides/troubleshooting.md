@@ -98,7 +98,7 @@ La ruta no puede contener `..`, ser un enlace simbólico, una carpeta ni un disp
 
 ### El aviso "Nueva versión disponible"
 
-Es un aviso por stderr, una vez al día. `kobana update` la instala. No afecta el stdout ni el código de salida.
+Es un aviso por stderr, una vez al día, solo en un terminal (nunca en un pipe, en CI ni en un agente). `kobana update` la instala. No afecta el stdout ni el código de salida; `KOBANA_NO_UPDATE_NOTIFIER=1` lo apaga.
 
 ## ¿Todavía no se resolvió?
 

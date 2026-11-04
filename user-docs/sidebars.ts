@@ -63,6 +63,7 @@ const sidebars: SidebarsConfig = {
         'usage/schema',
         'usage/helpers',
         'usage/languages',
+        'usage/accessibility',
         'usage/scripting',
       ],
     },

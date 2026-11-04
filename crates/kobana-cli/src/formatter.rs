@@ -1,6 +1,50 @@
 use kobana::error::KobanaError;
 use kobana::{tr, trf};
 
+use crate::{jq, ui};
+
+/// JSON as the CLI prints it, ending in a line break: through `--jq` when one
+/// was given (one result per line, indented only on a terminal), otherwise
+/// `value` itself, indented when `pretty`. `to_terminal` says where it goes.
+///
+/// `committed` says the command already changed something (a write went
+/// through, credentials were saved). A `--jq` that fails then gives a warning
+/// and the unfiltered JSON, and the command still succeeds: a failure exit
+/// would invite a retry that repeats the change.
+pub fn json_text(
+    value: &serde_json::Value,
+    pretty: bool,
+    to_terminal: bool,
+    committed: bool,
+) -> Result<String, KobanaError> {
+    let plain = || -> Result<String, KobanaError> {
+        let text = if pretty { serde_json::to_string_pretty(value)? } else { serde_json::to_string(value)? };
+        Ok(text + "\n")
+    };
+    let Some(expr) = jq::expr() else {
+        return plain();
+    };
+    match jq::render(expr, value, pretty && to_terminal, to_terminal) {
+        Ok(text) => Ok(text),
+        Err(e) if committed => {
+            ui::warn(&trf!(
+                pt: "{e}; a operação foi feita e a resposta vai sem o filtro",
+                en: "{e}; the operation went through and the response follows unfiltered",
+                es: "{e}; la operación se realizó y la respuesta va sin el filtro",
+            ));
+            plain()
+        }
+        Err(e) => Err(e),
+    }
+}
+
+/// Print JSON to stdout with [`json_text`]
+pub fn print_json(value: &serde_json::Value, pretty: bool, committed: bool) -> Result<(), KobanaError> {
+    let to_terminal = std::io::IsTerminal::is_terminal(&std::io::stdout());
+    print!("{}", json_text(value, pretty, to_terminal, committed)?);
+    Ok(())
+}
+
 /// Format output based on the requested format
 pub fn format_output(value: &serde_json::Value, format: &str) -> Result<String, KobanaError> {
     match format {
@@ -10,7 +54,7 @@ pub fn format_output(value: &serde_json::Value, format: &str) -> Result<String, 
                 en: "JSON formatting error: {e}",
                 es: "error al formatear el JSON: {e}",
             ))),
-        "table" => format_table(value),
+        "table" => format_table(value, ui::screen_reader()),
         "csv" => format_csv(value),
         other => Err(KobanaError::Validation(trf!(
             pt: "formato de saída desconhecido '{other}'. Use: json, table, csv",
@@ -70,7 +114,8 @@ fn filter_single_object(value: &serde_json::Value, fields: &[&str]) -> serde_jso
     }
 }
 
-fn format_table(value: &serde_json::Value) -> Result<String, KobanaError> {
+/// `plain`: the screen-reader layout, see below
+fn format_table(value: &serde_json::Value, plain: bool) -> Result<String, KobanaError> {
     use comfy_table::{Table, ContentArrangement};
 
     let items = extract_items(value);
@@ -91,7 +136,15 @@ fn format_table(value: &serde_json::Value) -> Result<String, KobanaError> {
     }
 
     let mut table = Table::new();
-    table.set_content_arrangement(ContentArrangement::Dynamic);
+    if plain {
+        // A screen reader reads borders out character by character, and a
+        // cell wrapped onto a second line splits its record: no borders,
+        // one line per record
+        table.load_preset(comfy_table::presets::NOTHING);
+        table.set_content_arrangement(ContentArrangement::Disabled);
+    } else {
+        table.set_content_arrangement(ContentArrangement::Dynamic);
+    }
     table.set_header(&columns);
 
     for item in &items {
@@ -214,6 +267,18 @@ mod tests {
         assert_eq!(cell_text(&serde_json::json!("=x"), false), "=x");
         assert_eq!(cell_text(&serde_json::json!(-10.5), true), "-10.5");
         assert_eq!(cell_text(&serde_json::Value::Null, true), "");
+    }
+
+    #[test]
+    fn the_screen_reader_table_has_no_borders_and_one_line_per_record() {
+        let long = "x".repeat(400);
+        let value = serde_json::json!({"data": [{"id": 1, "note": long}, {"id": 2, "note": "b"}]});
+        let table = format_table(&value, true).unwrap();
+        assert_eq!(table.lines().count(), 3, "header + 2 records: {table}");
+        assert!(!table.chars().any(|c| "|+-=│─┼╞╡═".contains(c)), "{table}");
+        assert!(table.lines().next().unwrap().contains("id"), "{table}");
+        // The default keeps its borders
+        assert!(format_table(&value, false).unwrap().contains('+'));
     }
 
     #[test]

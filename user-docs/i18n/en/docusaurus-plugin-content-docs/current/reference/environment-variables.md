@@ -27,6 +27,21 @@ description: All the variables kobana reads — credentials, configuration and l
 | `KOBANA_ENVIRONMENT` | `production` (default), `sandbox` or `development`; any other value is an error |
 | `KOBANA_LANG` | `pt`, `en` or `es`. `--lang` wins |
 
+## Accessibility and terminal
+
+See [Accessibility](/usage/accessibility). The `KOBANA_*` ones apply with any value except empty, `0`, `false`, `no` and `off`.
+
+| Variable | Description |
+|---|---|
+| `NO_COLOR` | Any non-empty value turns colors off (like `--no-color`) |
+| `CLICOLOR` | `0` turns colors off |
+| `CLICOLOR_FORCE` | Other than `0`: colors even outside a terminal (loses to `NO_COLOR` and `--no-color`) |
+| `KOBANA_ACCESSIBLE_COLORS` | High contrast: bold and underline in the theme's text color, no hues |
+| `KOBANA_SCREEN_READER` | Screen reader mode: no decorative symbols, tables without borders, simple prompts |
+| `KOBANA_ACCESSIBLE_PROMPTER` | The simple prompts alone (numbered list, answer on one line) |
+| `KOBANA_PROMPT_DISABLED` | Never asks; the command line decides. Without a terminal (pipe, CI, agent), the CLI does not ask anyway |
+| `KOBANA_NO_UPDATE_NOTIFIER` | No new-version notice (which never shows outside a terminal or with `CI`) |
+
 ## Logs
 
 | Variable | Description |

@@ -15,7 +15,7 @@ pub fn init_logging() -> Result<(), KobanaError> {
     let stderr_layer = fmt::layer()
         .with_writer(std::io::stderr)
         .with_target(false)
-        .with_ansi(true)
+        .with_ansi(crate::ui::color(crate::ui::Stream::Stderr))
         .compact()
         .with_filter(
             EnvFilter::try_new(&env_filter)

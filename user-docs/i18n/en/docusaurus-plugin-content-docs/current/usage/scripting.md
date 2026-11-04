@@ -26,6 +26,7 @@ kobana billing invoices list --params '{"status": "open"}' --page-all --fields "
 - The [exit code](/reference/exit-codes) says what went wrong: `1` API error, `2` authentication, `3` validation, `4` schema, `5` internal.
 - Use `KOBANA_<PRODUCT>_TOKEN` instead of interactive login, and `--env sandbox` to test.
 - Fix `--idempotency-key` on calls that may be retried.
+- Without a terminal, the CLI never asks anything nor shows the new-version notice; `--jq` filters the output with no `jq` installed. See [Accessibility](/usage/accessibility#scripts-and-ai-agents).
 - A `.env` in the current folder **cannot** define tokens or credentials: the CLI warns and ignores them. See [Environment variables](/reference/environment-variables).
 
 ## With AI agents

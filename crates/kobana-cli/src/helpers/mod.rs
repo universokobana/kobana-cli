@@ -104,10 +104,9 @@ pub(crate) async fn post(
         multipart: false,
         files: Vec::new(),
     };
-    let output = executor::Output::from_matches(matches)?;
+    let output = executor::Output::from_matches(matches)?.committed(true);
     if matches.get_flag("dry-run") {
-        println!("{}", serde_json::to_string_pretty(&executor::dry_run_report(client, &request))?);
-        return Ok(());
+        return crate::formatter::print_json(&executor::dry_run_report(client, &request), true, false);
     }
     let response = executor::send(client, &request, output.verbose).await?;
     output.print(&response)

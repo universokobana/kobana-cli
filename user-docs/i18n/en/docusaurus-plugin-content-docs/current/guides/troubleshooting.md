@@ -98,7 +98,7 @@ The path cannot contain `..`, be a symbolic link, a folder or a device.
 
 ### The "New version available" notice
 
-It is a notice on stderr, once a day. `kobana update` installs it. It affects neither stdout nor the exit code.
+It is a notice on stderr, once a day, on a terminal only (never in a pipe, in CI or in an agent). `kobana update` installs it. It affects neither stdout nor the exit code; `KOBANA_NO_UPDATE_NOTIFIER=1` turns it off.
 
 ## Still not solved?
 

@@ -98,7 +98,7 @@ O caminho não pode ter `..`, ser link simbólico, pasta ou dispositivo.
 
 ### O aviso "Nova versão disponível"
 
-É um aviso no stderr, uma vez por dia. `kobana update` instala. Não afeta o stdout nem o código de saída.
+É um aviso no stderr, uma vez por dia, só num terminal (nunca num pipe, no CI ou num agente). `kobana update` instala. Não afeta o stdout nem o código de saída; `KOBANA_NO_UPDATE_NOTIFIER=1` o desliga.
 
 ## Ainda não resolveu?
 

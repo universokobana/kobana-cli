@@ -659,6 +659,9 @@ kobana banking bank-billets list --params '{"status": "opened"}' \
 kobana billing invoices list --page-all --fields "id,status" \
   | jq -s 'group_by(.status) | map({status: .[0].status, total: length})'
 
+# Só os ids, sem precisar do jq instalado (--jq, como no gh)
+kobana banking bank-billets list --jq '.[].id'
+
 # Testar em sandbox (inbox, dashboards e kadu não têm: o CLI recusa)
 kobana banking bank-billets list --env sandbox
 
@@ -685,6 +688,36 @@ kobana banking +cobrar --valor 99.90 --vencimento 2026-05-01T23:59:59-03:00 \
 # Cancelar boletos em lote
 kobana banking +cancelar-lote --ids "123,456,789"
 ```
+
+## Acessibilidade
+
+O CLI segue as práticas de acessibilidade do GitHub CLI (`gh accessibility`).
+`kobana accessibility` (ou `kobana a11y`) mostra as opções e o que está ligado
+no terminal atual. Detalhes em [cli.kobana.com.br › Acessibilidade](https://cli.kobana.com.br/pt/usage/accessibility).
+
+- **Cores.** Só reforçam o que o texto já diz (`erro:`, `Aviso:`, `dica:`) e
+  usam as 16 cores ANSI do terminal. `--no-color`, `NO_COLOR` ou `CLICOLOR=0`
+  desligam; `CLICOLOR_FORCE=1` liga fora de um terminal;
+  `KOBANA_ACCESSIBLE_COLORS=1` troca a paleta por alto contraste (negrito e
+  sublinhado na cor do texto do tema, sem matizes).
+- **Leitor de tela.** `KOBANA_SCREEN_READER=1` deixa só texto estático: sem
+  símbolos decorativos, tabelas sem bordas (uma linha por registro) e perguntas
+  simples. O CLI não tem spinners nem animações.
+- **Perguntas.** `KOBANA_ACCESSIBLE_PROMPTER=1` troca as listas interativas do
+  `auth login` e do `update` por uma lista numerada respondida numa linha
+  (`1, 3, 5-7` ou `todos`); `KOBANA_PROMPT_DISABLED=1` nunca pergunta.
+- **Scripts e agentes.** Sem terminal (`stdin`, `stdout` e `stderr`), o CLI
+  não pergunta nada nem mostra o aviso de versão nova (`KOBANA_NO_UPDATE_NOTIFIER=1`
+  o desliga também no terminal). A saída é JSON; `--fields` escolhe campos e
+  `--jq` filtra com uma expressão jq, sem precisar do `jq` instalado — em toda
+  saída JSON, inclusive cada item do `--page-all`, `--dry-run`, `schema` e
+  `auth status`. A expressão é conferida antes de qualquer requisição; `env` e
+  `$ENV` ficam de fora, para não expor os tokens do ambiente. Se ela falhar na
+  resposta de uma escrita, a resposta sai sem o filtro e o código é `0` (a
+  operação foi feita).
+
+As variáveis `KOBANA_*` valem com qualquer valor, menos vazio, `0`, `false`,
+`no` e `off`; para manter a escolha, ponha-as no `.env` da pasta de configuração.
 
 ## Introspecção de Schema
 
@@ -724,6 +757,8 @@ OpenAPI specs embutidos. O caminho segue a mesma forma do comando:
 | `--idempotency-key <KEY>` | Chave de idempotência customizada |
 | `--file <CAMPO=CAMINHO>` | Arquivo enviado como parte de um formulário multipart (repetível) |
 | `--lang <IDIOMA>` | Idioma das mensagens: `pt`, `en` ou `es` |
+| `--jq <EXPRESSÃO>` | Filtra a saída JSON com uma expressão jq (não precisa do `jq` instalado; não combina com `table`/`csv`) |
+| `--no-color` | Desliga as cores (como `NO_COLOR`) |
 
 ## Variáveis de Ambiente
 
@@ -740,6 +775,12 @@ OpenAPI specs embutidos. O caminho segue a mesma forma do comando:
 | `KOBANA_LANG` | `pt`, `en` ou `es` (default: `LC_ALL`/`LC_MESSAGES`/`LANG`, depois o idioma do sistema). `--lang` vence |
 | `KOBANA_LOG` | Nível de log para stderr (ex: `kobana=debug`) |
 | `KOBANA_LOG_FILE` | Diretório para logs JSON com rotação diária |
+| `NO_COLOR` / `CLICOLOR` / `CLICOLOR_FORCE` | Sem cores (qualquer valor) / `0` desliga as cores / cores mesmo fora de um terminal |
+| `KOBANA_ACCESSIBLE_COLORS` | Paleta de alto contraste: negrito e sublinhado, sem matizes |
+| `KOBANA_SCREEN_READER` | Modo leitor de tela: sem símbolos decorativos, tabelas sem bordas, perguntas simples |
+| `KOBANA_ACCESSIBLE_PROMPTER` | Só as perguntas simples (lista numerada respondida numa linha) |
+| `KOBANA_PROMPT_DISABLED` | Nunca pergunta (fora de um terminal o CLI já não pergunta) |
+| `KOBANA_NO_UPDATE_NOTIFIER` | Sem o aviso de versão nova (fora de um terminal ou no CI ele já não aparece) |
 
 Variáveis também podem ser definidas em um arquivo `.env`: o da pasta de
 configuração e o do diretório atual (não o das pastas acima dele), nessa
@@ -874,7 +915,7 @@ categoria. `--verbose` mostra a requisição e a resposta, sem o token.
 | `invalid --json JSON` | JSON inválido: aspas simples por fora e duplas por dentro (no PowerShell, escape as internas ou use um arquivo) |
 | Token no `.env` ignorado | O `.env` da pasta atual não define credenciais (pode vir de um repositório de terceiros). Use o ambiente ou o `.env` da pasta de configuração |
 | Resposta enorme | `--fields`, `--page-limit` ou os endpoints `aggregates` |
-| "Nova versão disponível" | Aviso no stderr, uma vez por dia; `kobana update` instala. Não afeta stdout nem o código de saída |
+| "Nova versão disponível" | Aviso no stderr, uma vez por dia, só num terminal; `kobana update` instala. Não afeta stdout nem o código de saída; `KOBANA_NO_UPDATE_NOTIFIER=1` desliga |
 
 Não resolveu? Abra uma [issue](https://github.com/universokobana/kobana-cli/issues)
 com o comando (sem tokens), a saída e `kobana --version`.

@@ -26,6 +26,23 @@ kobana banking bank-billets list --output-format csv     # CSV
 kobana banking bank-billets list --fields "id,amount,status,due_at"
 ```
 
+## Filter with `--jq` {#jq}
+
+`--jq` applies a [jq](https://jqlang.github.io/jq/manual/) expression to the JSON output, like `gh`'s `--jq` — with no `jq` installed. Each result goes on its own line: a string as is (like `jq -r`), the rest as JSON, indented only on a terminal.
+
+```bash
+kobana banking bank-billets list --jq '.[].id'
+kobana billing invoices list --page-all --jq 'select(.status == "open") | [.id, .total] | @tsv'
+kobana banking auth status --jq .authenticated
+```
+
+- It applies to every JSON output: API responses (including each `--page-all` item), `--dry-run`, `kobana schema`, `auth status` and `kobana update` (which, with `--jq`, only reports).
+- It runs after `--fields`, and does not go with `--output-format table` or `csv`.
+- The expression is checked before any request: a syntax error exits with code `3` without sending anything.
+- If the expression fails on the response of a write (`create`, `update`, `delete`, helpers), the CLI warns on stderr and prints the response unfiltered, with code `0`: the operation went through, and repeating it would not be safe.
+- On a terminal, a string's control characters become `�`, so that text from the API cannot send escape sequences to the screen.
+- `env` and `$ENV` do not exist in `--jq`, so that an expression — written by an agent, for example — cannot read the tokens in the environment; neither do modules (`import`, `include`) and `input`.
+
 ## Save to a file
 
 ```bash

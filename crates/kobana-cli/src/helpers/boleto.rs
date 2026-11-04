@@ -115,7 +115,7 @@ impl Helper for CancelarLoteBoletos {
         Box::pin(async move {
             super::reject_options(matches, "+cancelar-lote", &["params", "json", "file"])?;
             let ids = parse_ids(matches.get_one::<String>("ids").unwrap())?;
-            let output = executor::Output::from_matches(matches)?;
+            let output = executor::Output::from_matches(matches)?.committed(true);
             let requests: Vec<ApiRequest> = ids
                 .iter()
                 .map(|id| ApiRequest {
@@ -133,8 +133,7 @@ impl Helper for CancelarLoteBoletos {
             // One dry-run report per request, as each would be sent
             if matches.get_flag("dry-run") {
                 let reports: Vec<_> = requests.iter().map(|r| executor::dry_run_report(client, r)).collect();
-                println!("{}", serde_json::to_string_pretty(&reports)?);
-                return Ok(());
+                return crate::formatter::print_json(&serde_json::Value::Array(reports), true, false);
             }
 
             let mut results = Vec::new();
@@ -268,7 +267,7 @@ mod tests {
         let ok = serde_json::json!({"id": "1", "status": "cancelled"});
         let bad = serde_json::json!({"id": "2", "status": "error", "status_code": 422});
 
-        let output = executor::Output { fields: None, format: "json".into(), path: None, verbose: false };
+        let output = executor::Output { fields: None, format: "json".into(), path: None, verbose: false, committed: true };
         assert!(batch_outcome(vec![ok.clone()], None, &output).is_ok());
 
         let err = batch_outcome(vec![ok.clone(), bad.clone()], Some(Some(422)), &output).unwrap_err();

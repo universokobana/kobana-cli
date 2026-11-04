@@ -4,47 +4,77 @@ use kobana::{tr, trf};
 use kobana::spec::{HttpMethod, ParameterLocation, ResolvedEndpoint};
 use kobana::validate::validate_identifier;
 
-use crate::formatter::{filter_fields, format_output};
+use crate::formatter::{filter_fields, format_output, json_text};
 use crate::pagination;
 use crate::validate;
 
 /// How a response is shown: the global `--fields`, `--output-format`,
-/// `--output` and `--verbose`. Dynamic commands and helpers share it.
+/// `--output`, `--verbose` and `--jq`. Dynamic commands and helpers share it.
 pub struct Output {
     pub fields: Option<String>,
     pub format: String,
     pub path: Option<String>,
     pub verbose: bool,
+    /// The request changed something (any method but GET): a `--jq` that
+    /// fails on its response must not turn it into a failure, see
+    /// [`json_text`]
+    pub committed: bool,
 }
 
 impl Output {
     /// Read from any matches the global options reach (root or a subcommand).
-    /// `--output` is validated here, before anything is sent.
+    /// `--output` and `--jq` are validated here, before anything is sent.
     pub fn from_matches(matches: &clap::ArgMatches) -> Result<Self, KobanaError> {
         if let Some(path) = matches.get_one::<String>("output") {
             validate::validate_output_path(path)?;
         }
+        let format = matches
+            .get_one::<String>("output-format")
+            .cloned()
+            .unwrap_or_else(|| "json".into());
+        if crate::jq::expr().is_some() && format != "json" {
+            return Err(KobanaError::Validation(trf!(
+                pt: "--jq filtra JSON e não combina com --output-format {format}",
+                en: "--jq filters JSON and does not go with --output-format {format}",
+                es: "--jq filtra JSON y no combina con --output-format {format}",
+            )));
+        }
         Ok(Self {
             fields: matches.get_one::<String>("fields").cloned(),
-            format: matches
-                .get_one::<String>("output-format")
-                .cloned()
-                .unwrap_or_else(|| "json".into()),
+            format,
             path: matches.get_one::<String>("output").cloned(),
             verbose: matches.get_flag("verbose"),
+            committed: false,
         })
     }
 
-    /// Apply `--fields`, format, and print or save to `--output`
+    /// Mark the response as that of a request that changed something
+    pub fn committed(mut self, committed: bool) -> Self {
+        self.committed = committed;
+        self
+    }
+
+    /// Apply `--fields`, then `--jq` or the format, and print or save to
+    /// `--output`
     pub fn print(&self, value: &serde_json::Value) -> Result<(), KobanaError> {
         let output = match &self.fields {
             Some(fields) => filter_fields(value, fields),
             None => value.clone(),
         };
-        let formatted = format_output(&output, &self.format)?;
+        let to_terminal = self.path.is_none() && std::io::IsTerminal::is_terminal(&std::io::stdout());
+        let json = self.format == "json";
+        let formatted = if json {
+            json_text(&output, true, to_terminal, self.committed)?
+        } else {
+            format_output(&output, &self.format)?
+        };
 
         let Some(path) = &self.path else {
-            println!("{formatted}");
+            if json {
+                print!("{formatted}");
+            } else {
+                println!("{formatted}");
+            }
             return Ok(());
         };
         validate::open_output(path)
@@ -182,7 +212,7 @@ pub async fn execute(
         kobana::client::multipart_text_fields(body_json.as_ref())?;
     }
 
-    let output = Output::from_matches(root_matches)?;
+    let output = Output::from_matches(root_matches)?.committed(endpoint.http_method != HttpMethod::Get);
     let dry_run = root_matches.get_flag("dry-run");
 
     let page_all = root_matches.get_flag("page-all");
@@ -237,8 +267,7 @@ pub async fn execute(
 
     // Dry run: show the request without executing
     if dry_run {
-        println!("{}", serde_json::to_string_pretty(&dry_run_report(client, &api_request))?);
-        return Ok(());
+        return crate::formatter::print_json(&dry_run_report(client, &api_request), true, false);
     }
 
     let body = send(client, &api_request, output.verbose).await?;

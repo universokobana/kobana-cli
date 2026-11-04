@@ -49,6 +49,8 @@ kobana-cli/
 │           ├── credential_store.rs # AES-256-GCM encrypt/decrypt de credenciais
 │           ├── oauth.rs          # OAuth2 flows (authorization code, client credentials)
 │           ├── formatter.rs      # Output: JSON (default), table, CSV
+│           ├── jq.rs             # --jq: expressoes jq em processo (jaq), sem env/$ENV
+│           ├── ui.rs             # Cores, leitor de tela, perguntas, `kobana accessibility`
 │           ├── pagination.rs     # --page-all, NDJSON streaming
 │           ├── validate.rs       # CLI-specific input validation
 │           ├── logging.rs        # Structured logging (tracing) para stderr

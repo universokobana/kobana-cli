@@ -26,6 +26,7 @@ kobana billing invoices list --params '{"status": "open"}' --page-all --fields "
 - El [código de salida](/reference/exit-codes) dice qué falló: `1` error de API, `2` autenticación, `3` validación, `4` schema, `5` interno.
 - Usa `KOBANA_<PRODUCTO>_TOKEN` en lugar del inicio de sesión interactivo, y `--env sandbox` para probar.
 - Fija `--idempotency-key` en las llamadas que pueden repetirse.
+- Sin terminal, el CLI nunca pregunta ni muestra el aviso de versión nueva; `--jq` filtra la salida sin tener `jq` instalado. Ver [Accesibilidad](/usage/accessibility#scripts-y-agentes-de-ia).
 - Un `.env` en la carpeta actual **no** puede definir tokens ni credenciales: el CLI avisa y lo ignora. Consulta [Variables de entorno](/reference/environment-variables).
 
 ## Con agentes de IA

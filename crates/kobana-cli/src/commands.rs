@@ -365,6 +365,28 @@ pub fn build_root_command(products: &[LoadedProduct]) -> Command {
                 .hide_default_value(true),
         )
         .arg(
+            Arg::new("jq")
+                .long("jq")
+                .global(true)
+                .value_name(tr!(pt: "EXPRESSÃO", en: "EXPRESSION", es: "EXPRESIÓN"))
+                .help(tr!(
+                    pt: "Filtra a saída JSON com uma expressão jq, ex.: '.data[].id' (não precisa do jq instalado)",
+                    en: "Filter the JSON output with a jq expression, e.g. '.data[].id' (no jq install needed)",
+                    es: "Filtra la salida JSON con una expresión jq, ej.: '.data[].id' (no necesita jq instalado)",
+                )),
+        )
+        .arg(
+            Arg::new("no-color")
+                .long("no-color")
+                .global(true)
+                .action(clap::ArgAction::SetTrue)
+                .help(tr!(
+                    pt: "Desliga as cores (também: NO_COLOR ou CLICOLOR=0); veja `kobana accessibility`",
+                    en: "Turn colors off (also: NO_COLOR or CLICOLOR=0); see `kobana accessibility`",
+                    es: "Desactiva los colores (también: NO_COLOR o CLICOLOR=0); vea `kobana accessibility`",
+                )),
+        )
+        .arg(
             Arg::new("lang")
                 .long("lang")
                 .global(true)
@@ -473,6 +495,18 @@ pub fn build_root_command(products: &[LoadedProduct]) -> Command {
                         es: "Imprime la salida en JSON en lugar de un mensaje",
                     )),
             ),
+    );
+
+    // `kobana accessibility` (`a11y`), like `gh accessibility`
+    root = root.subcommand(
+        clap_i18n::command("accessibility", leaf_usage("kobana accessibility"))
+            // clap's "[aliases: …]" is English-only: the about names it instead
+            .alias("a11y")
+            .about(tr!(
+                pt: "Mostra as opções de acessibilidade: cores, leitor de tela, perguntas e scripts (também: a11y)",
+                en: "Show the accessibility options: colors, screen reader, prompts and scripts (also: a11y)",
+                es: "Muestra las opciones de accesibilidad: colores, lector de pantalla, preguntas y scripts (también: a11y)",
+            )),
     );
 
     root.subcommand(clap_i18n::help_subcommand())

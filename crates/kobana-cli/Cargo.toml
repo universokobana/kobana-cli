@@ -32,6 +32,10 @@ zeroize = "1"
 base64 = "0.22"
 rand = "0.9"
 inquire = "0.7"
+# `--jq`: jq expressions run in-process, like `gh --jq` (no jq needed on the machine)
+jaq-core = "3"
+jaq-std = "3"
+jaq-json = "2"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

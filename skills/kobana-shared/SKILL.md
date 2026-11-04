@@ -50,6 +50,7 @@ kobana billing auth status
 | `--output-format <FORMAT>` | Output format: `json` (default), `table`, `csv` |
 | `--dry-run` | Validate and show request without calling the API |
 | `--fields <FIELDS>` | Limit response fields (protects AI context windows) |
+| `--jq <EXPRESSION>` | Filter the JSON output with a jq expression, e.g. `'.[].id'` (no jq install needed; checked before any request) |
 | `--env <ENV>` | API environment: `production` (default), `sandbox`, or `development` |
 | `--verbose` | Show request/response details on stderr |
 

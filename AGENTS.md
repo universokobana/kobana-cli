@@ -230,7 +230,9 @@ ruby scripts/build-spec-translations.rb
 | `credential_store.rs`| AES-256-GCM encryption/decryption of credential files          |
 | `oauth.rs`           | OAuth2 Authorization Code and Client Credentials flows         |
 | `schema.rs`          | `kobana schema` command — introspect API endpoint schemas      |
-| `formatter.rs`       | Output formatting: JSON (default), table, CSV                  |
+| `formatter.rs`       | Output formatting: JSON (default), table, CSV; `print_json`/`json_text`, the one way JSON reaches stdout |
+| `jq.rs`              | `--jq`: jq expressions run in-process (jaq), without `env`/`$ENV`, modules or `input` |
+| `ui.rs`              | Terminal presentation and accessibility: color decision and palette, `--no-color`, screen-reader mode, prompts (`confirm`, `multi_select`, `can_prompt`), `kobana accessibility` |
 | `pagination.rs`      | Auto-pagination with NDJSON streaming output — `cursor`/`meta.next_cursor` when the endpoint declares a `cursor` query parameter, `page`/`per_page` otherwise |
 | `validate.rs`        | CLI-specific input validation for `--params` and `--json`      |
 | `config.rs`          | Config directory, `.env` loading, environment management       |
@@ -333,7 +335,10 @@ picked from `KOBANA_LANG`, then `LC_ALL`, `LC_MESSAGES`, `LANG` (a bare `C`/`POS
 falls back to macOS's `AppleLocale`; anything else is English). Every string
 lives in `load_messages` as an `M_*` printf format — add a new one to all three
 languages. The ASCII banner is in the brand lime (`#D3FD54`, 24-bit color; off
-when stdout is not a TTY or `NO_COLOR` is set).
+when stdout is not a TTY or `NO_COLOR` is set). It follows the CLI's
+accessibility settings: `KOBANA_ACCESSIBLE_COLORS` swaps the hues for bold and
+underline, and `KOBANA_SCREEN_READER` drops the banner, the emojis and curl's
+progress bar (truthy parsing as in `ui::truthy`).
 
 `kobana update` checks the same `digest` before replacing the binary and refuses
 an asset whose SHA-256 is missing or does not match.
@@ -510,6 +515,21 @@ Current helpers:
 | `KOBANA_ENVIRONMENT` | `production` (default), `sandbox` or `development` |
 | `KOBANA_LANG` | `pt`, `en` or `es` (default: `LC_ALL`/`LC_MESSAGES`/`LANG`, then the system language). `--lang` wins over it |
 
+### Terminal & accessibility
+
+The `KOBANA_*` switches take gh's truthy values: anything but empty, `0`,
+`false`, `no`, `off` (`ui::truthy`).
+
+| Variable | Description |
+|----------|-------------|
+| `NO_COLOR` | Any non-empty value turns color off (like `--no-color`) |
+| `CLICOLOR` / `CLICOLOR_FORCE` | `0` turns color off / not `0` keeps color when piped |
+| `KOBANA_ACCESSIBLE_COLORS` | High-contrast palette: bold/underline, no hues |
+| `KOBANA_SCREEN_READER` | Static text: no decorative symbols, borderless one-line-per-record tables, simple prompts |
+| `KOBANA_ACCESSIBLE_PROMPTER` | Simple prompts only |
+| `KOBANA_PROMPT_DISABLED` | Never prompt |
+| `KOBANA_NO_UPDATE_NOTIFIER` | No new-version notice (never shown without a TTY or in `CI` anyway) |
+
 ### Logging
 
 | Variable | Description |
@@ -546,6 +566,40 @@ request) refuses to send a token that is not bound to an environment
 `http://` base URL unless `--env` was typed on the command line; a
 credentials file without `environment` serves production only. Saved tokens are refreshed only at the server that issued them
 (`StoredCredentials::issuer`), never at the current `KOBANA_ACCOUNT_URL`.
+
+## Accessibility (`ui.rs`)
+
+The CLI follows the GitHub CLI's accessibility model (`gh accessibility`,
+`gh help environment`); `kobana accessibility` (`a11y`) prints it, and
+`user-docs/docs/usage/accessibility.md` documents it. Rules for new code:
+
+- **Color never carries meaning alone.** Style text with `ui::paint(Role, …)`
+  (or `ui::warn`) next to a word that says the same (`erro:`, `Aviso:`,
+  `dica:`); never write `\x1b[…` by hand. The palette is the 16 ANSI colors
+  only (no greys, no 256/24-bit), and `KOBANA_ACCESSIBLE_COLORS` swaps it for
+  bold/underline without hues. `ui::color(stream)` decides: `--no-color`, then
+  `NO_COLOR`, `CLICOLOR_FORCE`, `CLICOLOR=0`, then TTY and `TERM=dumb` — the
+  order clap's anstream uses, so help and messages agree.
+- **No spinners or animations.** Progress is a new line on stderr, never a
+  redrawn one. A decorative symbol (`✓`, `└─`) goes through
+  `ui::decoration`, which drops it under `KOBANA_SCREEN_READER`.
+- **Prompts** go through `ui::confirm`/`ui::multi_select` (numbered list read
+  on one line under `KOBANA_ACCESSIBLE_PROMPTER`/`KOBANA_SCREEN_READER`), and
+  only when `ui::can_prompt()` — stdin, stdout and stderr a TTY and no
+  `KOBANA_PROMPT_DISABLED`. Otherwise the command takes what a flag gives
+  (`auth login`: every published resource + `read`; `update`: print the command).
+- **JSON reaches stdout through `formatter::print_json`/`json_text`**, so
+  `--jq` applies to it. Pass `committed = true` when the command already
+  changed something: a `--jq` failing on that output then warns and prints the
+  JSON unfiltered with exit 0, because a failure exit would invite a retry
+  that repeats the write. `--jq` is compiled in `main` before anything runs
+  and refused with `table`/`csv` in `Output::from_matches`.
+- **`--jq` is sandboxed.** The expression may come from an agent: `env` is
+  filtered out of jaq's native functions and `$ENV` is never defined, so it
+  cannot print the tokens in the environment; the loader reads no modules and
+  `input`/`inputs` are not loaded. Keep it that way when bumping jaq.
+- The update notice (`update::should_auto_check`) runs only with stdout and
+  stderr on a TTY, outside `CI`, and without `KOBANA_NO_UPDATE_NOTIFIER`.
 
 ## Exit Codes
 

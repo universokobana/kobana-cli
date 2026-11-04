@@ -42,8 +42,7 @@ fn list_products(products: &[LoadedProduct]) -> Result<(), KobanaError> {
         );
     }
 
-    println!("{}", serde_json::to_string_pretty(&out)?);
-    Ok(())
+    crate::formatter::print_json(&serde_json::Value::Object(out), true, false)
 }
 
 fn list_resources(node: &CommandNode) -> Vec<serde_json::Value> {
@@ -245,8 +244,7 @@ fn print_endpoint(
         "responses": endpoint.operation.responses,
     });
 
-    println!("{}", serde_json::to_string_pretty(&schema_output)?);
-    Ok(())
+    crate::formatter::print_json(&schema_output, true, false)
 }
 
 #[cfg(test)]

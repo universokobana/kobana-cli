@@ -108,7 +108,7 @@ function run(args, lang) {
           [...args, '--lang', lang],
           {
             maxBuffer: 64 * 1024 * 1024,
-            env: {...process.env, KOBANA_LANG: lang, NO_COLOR: '1', KOBANA_NO_UPDATE_CHECK: '1', KOBANA_CONFIG_DIR: join(ROOT, '.docusaurus/kobana-config')},
+            env: {...process.env, KOBANA_LANG: lang, NO_COLOR: '1', KOBANA_NO_UPDATE_NOTIFIER: '1', KOBANA_CONFIG_DIR: join(ROOT, '.docusaurus/kobana-config')},
           },
           (err, stdout) => {
             release();
@@ -260,7 +260,7 @@ function findOperation(product, method, path) {
 const flagOf = (name) => name.split(/\s+/).find((w) => w.startsWith('--'));
 let globalFlags = new Set();
 const COMMON_ERRORS = new Set(['401', '403', '429', '500']);
-const SKIP_ROOT = new Set(['schema', 'completions', 'update', 'help']);
+const SKIP_ROOT = new Set(['schema', 'completions', 'update', 'accessibility', 'help']);
 
 /** Walks `kobana <product> ...` in one language. */
 async function walk(lang, path) {
@@ -445,7 +445,7 @@ async function main() {
     const globalNames = new Set(globalOpts.map((o) => flagOf(o.name)));
     globalFlags = globalNames;
     let pos = 2;
-    for (const name of ['schema', 'completions', 'update']) {
+    for (const name of ['schema', 'completions', 'update', 'accessibility']) {
       const help = parseHelp(await run([name, '--help'], l.code), l.code);
       const own = (help.sections[t.options] ?? []).filter((o) => !globalNames.has(o.name.split(/\s+/).find((w) => w.startsWith('--'))));
       const args = help.sections[t.arguments] ?? [];
@@ -579,7 +579,7 @@ await main();
 // ---------------------------------------------------------------- write
 
 sidebar.labels = sidebarLabels;
-sidebar.commands = ['global-options', 'schema', 'completions', 'update'];
+sidebar.commands = ['global-options', 'schema', 'completions', 'update', 'accessibility'];
 out.pt.set('__sidebar__', JSON.stringify(sidebar, null, 2) + '\n');
 
 let stale = 0;

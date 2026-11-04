@@ -8,11 +8,13 @@ mod credential_store;
 mod executor;
 mod formatter;
 mod helpers;
+mod jq;
 mod logging;
 mod oauth;
 mod pagination;
 mod product;
 mod schema;
+mod ui;
 mod update;
 mod validate;
 
@@ -29,40 +31,33 @@ async fn main() {
     if let Some(lang) = clap_i18n::lang_from_args(&args) {
         kobana::i18n::set_lang(lang);
     }
+    // Colors and the accessibility settings, before anything is printed
+    ui::init(&args);
 
     for var in project_dotenv.ignored {
-        eprintln!(
-            "{}",
-            trf!(
-                pt: "Aviso: {var} no .env do diretório atual foi ignorada; defina-a no ambiente ou no .env da pasta de configuração",
-                en: "Warning: {var} in the current directory's .env was ignored; set it in the environment or in the config folder's .env",
-                es: "Aviso: {var} en el .env del directorio actual se ignoró; defínela en el entorno o en el .env de la carpeta de configuración",
-            )
-        );
+        ui::warn(&trf!(
+            pt: "{var} no .env do diretório atual foi ignorada; defina-a no ambiente ou no .env da pasta de configuração",
+            en: "{var} in the current directory's .env was ignored; set it in the environment or in the config folder's .env",
+            es: "{var} en el .env del directorio actual se ignoró; defínela en el entorno o en el .env de la carpeta de configuración",
+        ));
     }
     // What a checked-out `.env` did set is never silent either
     if !project_dotenv.applied.is_empty() {
         let vars = project_dotenv.applied.join(", ");
-        eprintln!(
-            "{}",
-            trf!(
-                pt: "Aviso: o .env do diretório atual definiu {vars}",
-                en: "Warning: the current directory's .env set {vars}",
-                es: "Aviso: el .env del directorio actual definió {vars}",
-            )
-        );
+        ui::warn(&trf!(
+            pt: "o .env do diretório atual definiu {vars}",
+            en: "the current directory's .env set {vars}",
+            es: "el .env del directorio actual definió {vars}",
+        ));
     }
 
     // Initialize structured logging
     if let Err(e) = logging::init_logging() {
-        eprintln!(
-            "{}",
-            trf!(
-                pt: "Aviso: não foi possível iniciar os logs: {e}",
-                en: "Warning: failed to initialize logging: {e}",
-                es: "Aviso: no se pudieron iniciar los logs: {e}",
-            )
-        );
+        ui::warn(&trf!(
+            pt: "não foi possível iniciar os logs: {e}",
+            en: "failed to initialize logging: {e}",
+            es: "no se pudieron iniciar los logs: {e}",
+        ));
     }
 
     if let Err(e) = run().await {
@@ -79,12 +74,24 @@ async fn run() -> Result<(), KobanaError> {
     let matches = root_cmd
         .try_get_matches()
         .unwrap_or_else(|e| clap_i18n::exit_with(e));
+    ui::set_no_color_flag(matches.get_flag("no-color"));
+
+    // `--jq` is checked before anything runs: a typo never costs a request
+    if let Some(expr) = matches.get_one::<String>("jq") {
+        jq::set(expr)?;
+    }
 
     // Warn on stderr when a newer version is out, checking the network at most
     // once a day (best effort, swallows errors). `update` reports it itself and
-    // `completions` is sourced by shells at start-up, so both skip it.
-    if !matches!(matches.subcommand_name(), Some("update" | "completions")) {
+    // `completions` is sourced by shells at start-up, so both skip it; so does
+    // a run without a person at a terminal (see `should_auto_check`).
+    if !matches!(matches.subcommand_name(), Some("update" | "completions")) && update::should_auto_check() {
         update::auto_check().await;
+    }
+
+    if matches.subcommand_name() == Some("accessibility") {
+        print!("{}", ui::accessibility_text());
+        return Ok(());
     }
 
     if let Some(("help", help_matches)) = matches.subcommand() {
@@ -102,7 +109,8 @@ async fn run() -> Result<(), KobanaError> {
 
     if let Some(("update", update_matches)) = matches.subcommand() {
         let check_only = update_matches.get_flag("check");
-        let as_json = commands::update_json_flag(update_matches)?;
+        // `--jq` filters the JSON report, so it implies `--json` (which only reports)
+        let as_json = commands::update_json_flag(update_matches)? || jq::expr().is_some();
         return update::handle_update(check_only, as_json).await;
     }
 

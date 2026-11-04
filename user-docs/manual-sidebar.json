@@ -238,7 +238,8 @@
     "global-options",
     "schema",
     "completions",
-    "update"
+    "update",
+    "accessibility"
   ],
   "labels": {
     "pt-BR": {

@@ -210,19 +210,15 @@ pub async fn handle_update(check_only: bool, as_json: bool) -> Result<(), Kobana
     update_last_check(&latest);
 
     if as_json {
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&serde_json::json!({
-                "current": current,
-                "latest": latest,
-                "update_available": update_available,
-                "release_url": release_url,
-                "install_method": method.as_str(),
-                "install_command": command,
-            }))
-            .unwrap_or_default()
-        );
-        return Ok(());
+        let report = serde_json::json!({
+            "current": current,
+            "latest": latest,
+            "update_available": update_available,
+            "release_url": release_url,
+            "install_method": method.as_str(),
+            "install_command": command,
+        });
+        return crate::formatter::print_json(&report, true, false);
     }
 
     if !update_available {
@@ -278,14 +274,20 @@ pub async fn handle_update(check_only: bool, as_json: bool) -> Result<(), Kobana
         }
     };
 
-    // Only prompt when stdin is a terminal; otherwise fall back to printing
-    // the command and exiting, so scripts don't hang.
-    if !std::io::IsTerminal::is_terminal(&std::io::stdin()) {
+    // Only ask a person at a terminal (and never with KOBANA_PROMPT_DISABLED);
+    // otherwise print the command and exit, so scripts don't hang.
+    if !crate::ui::can_prompt() {
         println!("{}", run_message(command));
         return Ok(());
     }
 
-    let confirm = confirm(&prompt)?;
+    let confirm = crate::ui::confirm(&prompt, true).map_err(|e| {
+        KobanaError::Internal(trf!(
+            pt: "erro na pergunta: {e}",
+            en: "prompt error: {e}",
+            es: "error en la pregunta: {e}",
+        ))
+    })?;
 
     if !confirm {
         println!(
@@ -319,41 +321,6 @@ pub async fn handle_update(check_only: bool, as_json: bool) -> Result<(), Kobana
 
 fn run_message(command: &str) -> String {
     trf!(pt: "Rode: {command}", en: "Run: {command}", es: "Ejecuta: {command}")
-}
-
-/// A yes/no question that accepts the answer in the user's language
-/// (s/sim, y/yes, n/não). Enter takes the default, yes.
-fn confirm(prompt: &str) -> Result<bool, KobanaError> {
-    let (yes, no, hint) = (
-        tr!(pt: "Sim", en: "Yes", es: "Sí"),
-        tr!(pt: "Não", en: "No", es: "No"),
-        tr!(pt: "(S/n)", en: "(Y/n)", es: "(S/n)"),
-    );
-    let parser = |answer: &str| -> Result<bool, ()> {
-        match answer.trim().to_lowercase().as_str() {
-            "s" | "sim" | "si" | "sí" | "y" | "yes" => Ok(true),
-            "n" | "nao" | "não" | "no" => Ok(false),
-            _ => Err(()),
-        }
-    };
-    inquire::Confirm::new(prompt)
-        .with_default(true)
-        .with_default_value_formatter(&|_| hint.to_string())
-        .with_formatter(&|answer| if answer { yes } else { no }.to_string())
-        .with_parser(&parser)
-        .with_error_message(tr!(
-            pt: "Responda s ou n",
-            en: "Answer y or n",
-            es: "Responde s o n",
-        ))
-        .prompt()
-        .map_err(|e| {
-            KobanaError::Internal(trf!(
-                pt: "erro na pergunta: {e}",
-                en: "prompt error: {e}",
-                es: "error en la pregunta: {e}",
-            ))
-        })
 }
 
 /// Run an external command inline, inheriting stdin/stdout/stderr so the user
@@ -479,12 +446,13 @@ async fn perform_self_update(version: &str) -> Result<(), KobanaError> {
         ))
     })?;
 
+    let done = crate::ui::decoration("✓ ");
     eprintln!(
         "{}",
         trf!(
-            pt: "✓ Atualizado para a v{version}",
-            en: "✓ Updated to v{version}",
-            es: "✓ Actualizado a la v{version}",
+            pt: "{done}Atualizado para a v{version}",
+            en: "{done}Updated to v{version}",
+            es: "{done}Actualizado a la v{version}",
         )
     );
     Ok(())
@@ -572,6 +540,18 @@ fn update_last_check(latest: &str) {
     let _ = std::fs::write(&path, content);
 }
 
+/// Whether this run checks for a new version: as in gh, only with a person
+/// at a terminal (stdout and stderr), outside CI, and never with
+/// `KOBANA_NO_UPDATE_NOTIFIER` set. A script or an agent neither waits on
+/// the network for it nor gets the notice mixed into its stderr.
+pub fn should_auto_check() -> bool {
+    let set = |name: &str| crate::ui::truthy(std::env::var(name).ok().as_deref());
+    !set("KOBANA_NO_UPDATE_NOTIFIER")
+        && !set("CI")
+        && std::io::IsTerminal::is_terminal(&std::io::stdout())
+        && std::io::IsTerminal::is_terminal(&std::io::stderr())
+}
+
 /// Silently check for a new version at most once per day. Prints a short
 /// notice to stderr if an update is available. Never fails — any network
 /// error is swallowed so normal commands are not affected.
@@ -605,16 +585,11 @@ fn notify_if_outdated(latest: &str) {
     if compare_versions(latest, current) != std::cmp::Ordering::Greater {
         return;
     }
-    let msg = trf!(
-        pt: "⚠ Nova versão disponível: {current} → {latest}. Rode `kobana update` para instalar.",
-        en: "⚠ New version available: {current} → {latest}. Run `kobana update` to install it.",
-        es: "⚠ Nueva versión disponible: {current} → {latest}. Ejecuta `kobana update` para instalarla.",
-    );
-    if std::io::IsTerminal::is_terminal(&std::io::stderr()) {
-        eprintln!("\x1b[33m{msg}\x1b[0m");
-    } else {
-        eprintln!("{msg}");
-    }
+    crate::ui::warn(&trf!(
+        pt: "Nova versão disponível: {current} → {latest}. Rode `kobana update` para instalar.",
+        en: "New version available: {current} → {latest}. Run `kobana update` to install it.",
+        es: "Nueva versión disponible: {current} → {latest}. Ejecuta `kobana update` para instalarla.",
+    ));
 }
 
 #[cfg(test)]
