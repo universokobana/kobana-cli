@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-11-03
+
 ### Changed
 
 - **`--output` validado (incompatível)** — o caminho de `--output` não pode mais ter `..`, caracteres de controle, nem apontar para um link simbólico, uma pasta ou um dispositivo: gravar através de um link sobrescrevia o arquivo para onde ele aponta. A checagem roda antes de qualquer requisição, inclusive no `--dry-run` e nos helpers. Caminhos absolutos e dentro do diretório atual continuam aceitos. Na hora de gravar, o arquivo é aberto sem seguir links (`O_NOFOLLOW`) e só é truncado depois de confirmado como arquivo comum, então um link posto no lugar depois da checagem também é recusado
