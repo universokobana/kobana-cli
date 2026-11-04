@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-11-04
+
 ### Added
 
 - **Acessibilidade no modelo do GitHub CLI** — `kobana accessibility` (ou `kobana a11y`) mostra as opções e o que está ligado no terminal. `--no-color` (e `NO_COLOR`, `CLICOLOR=0`, `CLICOLOR_FORCE`, na ordem do `gh`) desliga ou força as cores, que agora só reforçam uma palavra (`erro:`, `Aviso:`, `dica:`) e ficam nas 16 cores ANSI do terminal; `KOBANA_ACCESSIBLE_COLORS` troca a paleta por alto contraste (negrito e sublinhado, sem matizes). `KOBANA_SCREEN_READER` deixa só texto estático: sem símbolos decorativos, tabelas sem bordas com uma linha por registro e perguntas simples. `KOBANA_ACCESSIBLE_PROMPTER` troca as listas interativas do `auth login` e do `update` por uma lista numerada respondida numa linha (`1, 3, 5-7`, `todos`), e `KOBANA_PROMPT_DISABLED` nunca pergunta. O `install.sh` segue as mesmas variáveis (sem banner, emojis nem barra de progresso no modo leitor de tela)
