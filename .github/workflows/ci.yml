@@ -47,6 +47,10 @@ jobs:
     name: Build (${{ matrix.target }})
     needs: test
     runs-on: ${{ matrix.os }}
+    env:
+      # Signing (and notarizing) only on release commits; every other run
+      # builds the same artifacts unsigned.
+      SIGN: ${{ github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'release:') }}
     strategy:
       fail-fast: false
       matrix:
@@ -94,6 +98,75 @@ jobs:
       - name: Rename binary (Windows)
         if: runner.os == 'Windows'
         run: cp target/${{ matrix.target }}/release/kobana.exe ${{ matrix.artifact }}
+
+      - name: Sign and notarize (macOS)
+        if: runner.os == 'macOS' && env.SIGN == 'true'
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ -z "$APPLE_CERTIFICATE" ]; then
+            echo "::warning::Apple signing not configured - macOS binary is unsigned"
+            exit 0
+          fi
+          KEYCHAIN="$RUNNER_TEMP/build.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+          echo "$APPLE_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/cert.p12" -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" >/dev/null
+          security list-keychains -d user -s "$KEYCHAIN" login.keychain-db
+          rm -f "$RUNNER_TEMP/cert.p12"
+
+          # Hardened runtime + secure timestamp are what notarization requires.
+          codesign --force --options runtime --timestamp --sign "$APPLE_SIGNING_IDENTITY" "${{ matrix.artifact }}"
+          codesign --verify --strict --verbose=2 "${{ matrix.artifact }}"
+
+          # A bare executable cannot be stapled: Gatekeeper checks the ticket online.
+          ditto -c -k --keepParent "${{ matrix.artifact }}" "$RUNNER_TEMP/notarize.zip"
+          OUT="$(xcrun notarytool submit "$RUNNER_TEMP/notarize.zip" \
+            --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" \
+            --wait --output-format json)"
+          echo "$OUT"
+          echo "$OUT" | grep -q '"status" *: *"Accepted"' || { echo "::error::notarization was not accepted"; exit 1; }
+
+      - name: Remove signing keychain (macOS)
+        if: always() && runner.os == 'macOS' && env.SIGN == 'true'
+        run: security delete-keychain "$RUNNER_TEMP/build.keychain-db" || true
+
+      - name: Install AzureSignTool (Windows)
+        if: runner.os == 'Windows' && env.SIGN == 'true'
+        shell: bash
+        run: |
+          dotnet tool install --global AzureSignTool
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      # EV code-signing certificate in Azure Key Vault, same setup as kia-desktop.
+      - name: Sign (Windows)
+        if: runner.os == 'Windows' && env.SIGN == 'true'
+        shell: pwsh
+        env:
+          AZURE_KV_URL: ${{ secrets.AZURE_KV_URL }}
+          AZURE_KV_CERT_NAME: ${{ secrets.AZURE_KV_CERT_NAME }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SIGN_TS_URL: ${{ secrets.AZURE_SIGN_TS_URL }}
+        run: |
+          if (-not $env:AZURE_CLIENT_ID -or -not $env:AZURE_KV_CERT_NAME) {
+            Write-Host "::warning::Windows signing not configured - binary is unsigned"
+            exit 0
+          }
+          ./scripts/azure-sign.ps1 -File "${{ matrix.artifact }}"
+          $sig = Get-AuthenticodeSignature "${{ matrix.artifact }}"
+          if ($sig.Status -ne 'Valid') { throw "signature is $($sig.Status)" }
 
       - name: Upload artifact
         uses: actions/upload-artifact@v5
