@@ -1414,8 +1414,10 @@ fn open_browser(url: &str) -> Result<(), KobanaError> {
     }
     #[cfg(target_os = "windows")]
     {
-        std::process::Command::new("cmd")
-            .args(["/c", "start", url])
+        // Not `cmd /c start <url>`: cmd reads the `&` between the query
+        // parameters as command separators and opens a truncated URL
+        std::process::Command::new("rundll32")
+            .args(["url.dll,FileProtocolHandler", url])
             .spawn()
             .map_err(|e| KobanaError::Internal(trf!(
                 pt: "não foi possível abrir o navegador: {e}",

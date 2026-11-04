@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- **`.env` do projeto podia mover o cofre de credenciais para dentro do repositório (Linux)** — `KOBANA_CONFIG_DIR` já era ignorado, mas `XDG_CONFIG_HOME` não, e é por ele que o CLI acha `~/.config/kobana` no Linux. Um repositório com `XDG_CONFIG_HOME=/workspaces/<repo>/...` fazia um login feito ali dentro gravar `.key` e `credentials-*.enc` no checkout, prontos para um `git add -A`. A pasta de configuração agora é fixada antes de ler o `.env` do projeto, e `HOME`, `XDG_*`, `USERPROFILE`, `APPDATA` e `LOCALAPPDATA` também são ignorados vindos dele
+- **`--output-format table` e `csv` não repassam sequências de escape nem fórmulas** — uma string vinda da API (nome de pagador, assunto de e-mail) com `ESC]8;;…` chegava crua ao terminal e podia esconder linhas ou plantar um link falso; em CSV, uma célula começando com `=`, `+`, `-` ou `@` virava fórmula na planilha. Caracteres de controle agora viram U+FFFD nos dois formatos, e no CSV essas células ganham um `'` inicial. O JSON (padrão) não muda: já escapava tudo
+
+### Fixed
+
+- **Login no Windows abria uma URL truncada** — `cmd /c start <url>` lia os `&` da query como separadores de comando. O navegador agora é aberto por `rundll32 url.dll,FileProtocolHandler`
+- **Documentação dizia que o Linux usa o Secret Service** — nenhum backend de keyring é compilado no Linux; a chave fica sempre no `.key` (0600) da pasta de configuração
+
 - **No Windows, o `.env` do projeto driblava a lista de bloqueio pela caixa das letras** — `kobana_account_url=`, `kobana_credentials_file=`, `kobana_banking_token=`, `kadu_token=` ou `kobana_environment=` em minúsculas não batiam com a lista, eram aplicados e, como o Windows lê variáveis de ambiente sem distinguir caixa, valiam como as maiúsculas: um repositório podia mandar o login (e o client secret) para outro servidor ou fazer o CLI agir com o token dele. A comparação agora ignora a caixa. Linux e macOS não eram afetados
 
 ## [0.12.1] - 2026-11-04

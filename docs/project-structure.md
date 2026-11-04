@@ -199,7 +199,7 @@ Regras de inferencia de metodo (detalhes no AGENTS.md):
 └── .env                                  # variaveis de ambiente (opcional)
 ```
 
-Chave de encriptacao no OS keyring (macOS Keychain, Windows Credential Manager, Linux Secret Service), uma entrada por diretorio de configuracao, com fallback para o arquivo `.key`.
+Chave de encriptacao no OS keyring (macOS Keychain, Windows Credential Manager), uma entrada por diretorio de configuracao, com fallback para o arquivo `.key` (0600). No Linux nenhum backend de keyring e compilado, entao a chave fica sempre no `.key`.
 
 ---
 

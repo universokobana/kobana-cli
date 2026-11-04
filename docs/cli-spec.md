@@ -273,7 +273,7 @@ kobana billing auth logout
 
 ### Armazenamento Seguro
 
-Credenciais sao criptografadas em repouso (AES-256-GCM) com chave armazenada no keyring do OS (ou arquivo fallback para CI/Docker).
+Credenciais sao criptografadas em repouso (AES-256-GCM) com chave armazenada no keyring do OS no macOS e no Windows (no Linux, e em CI/Docker, no arquivo `.key`, 0600).
 
 ```
 ~/.config/kobana/credentials-<produto>-<ambiente>.enc    # credenciais criptografadas, uma por produto e ambiente

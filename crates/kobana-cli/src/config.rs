@@ -21,8 +21,17 @@ impl Environment {
 }
 
 
+/// The config directory, fixed by [`load_dotenv`] before the project's
+/// `.env` is read: whatever `dirs` consults to find it (`XDG_CONFIG_HOME` on
+/// Linux) must not be able to move the credential store into a checkout.
+static CONFIG_DIR: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+
 /// Resolve the config directory
 pub fn config_dir() -> PathBuf {
+    CONFIG_DIR.get_or_init(resolve_config_dir).clone()
+}
+
+fn resolve_config_dir() -> PathBuf {
     if let Ok(dir) = std::env::var("KOBANA_CONFIG_DIR") {
         PathBuf::from(dir)
     } else {
@@ -48,6 +57,11 @@ const PROJECT_DOTENV_BLOCKED: &[&str] = &[
     "KOBANA_CLIENT_ID",
     "KOBANA_CLIENT_SECRET",
     "KOBANA_ENVIRONMENT",
+    // Where the config directory (and so the credential store) is looked up
+    "HOME",
+    "USERPROFILE",
+    "APPDATA",
+    "LOCALAPPDATA",
 ];
 
 const PROXY_VARS: &[&str] = &["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY"];
@@ -58,6 +72,7 @@ const PROXY_VARS: &[&str] = &["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROX
 fn is_blocked_var(key: &str) -> bool {
     let key = key.to_ascii_uppercase();
     PROJECT_DOTENV_BLOCKED.contains(&key.as_str())
+        || key.starts_with("XDG_")
         || is_credential_var(&key)
         || PROXY_VARS.contains(&key.as_str())
 }
@@ -84,6 +99,8 @@ pub struct ProjectDotenv {
 /// parents'). Variables already set win over both, so the user's own file
 /// wins over the checked-out one.
 pub fn load_dotenv() -> ProjectDotenv {
+    // Also fixes `CONFIG_DIR` before the project's `.env` can touch the
+    // environment it is resolved from
     let _ = dotenvy::from_path(config_dir().join(".env"));
     apply_project_dotenv(std::path::Path::new(".env"))
 }
@@ -143,7 +160,8 @@ mod tests {
                  KOBANA_CLIENT_SECRET=s\nKOBANA_ENVIRONMENT=development\n\
                  http_proxy=http://evil.example:8080\nALL_PROXY=http://evil.example:8080\n\
                  NO_PROXY=\nkobana_account_url=https://evil.example\nkobana_banking_token=t\n\
-                 kadu_token=t\nKobana_Environment=development\n{var}=ok\n"
+                 kadu_token=t\nKobana_Environment=development\nXDG_CONFIG_HOME=/tmp/evil\n\
+                 HOME=/tmp/evil\n{var}=ok\n"
             ),
         )
         .unwrap();
@@ -163,6 +181,8 @@ mod tests {
             "kobana_banking_token",
             "kadu_token",
             "Kobana_Environment",
+            "XDG_CONFIG_HOME",
+            "HOME",
         ];
         let before: Vec<_> = blocked.iter().map(|k| std::env::var(k).ok()).collect();
 
@@ -173,6 +193,17 @@ mod tests {
         let after: Vec<_> = blocked.iter().map(|k| std::env::var(k).ok()).collect();
         assert_eq!(after, before);
         std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn the_config_dir_is_fixed_once_and_stays_put() {
+        let first = config_dir();
+        // Whatever the environment says afterwards, the store does not move
+        std::env::set_var("XDG_CONFIG_HOME", "/tmp/kobana-moved");
+        std::env::set_var("KOBANA_CONFIG_DIR", "/tmp/kobana-moved");
+        assert_eq!(config_dir(), first);
+        std::env::remove_var("XDG_CONFIG_HOME");
+        std::env::remove_var("KOBANA_CONFIG_DIR");
     }
 
     #[test]

@@ -279,8 +279,9 @@ kobana billing auth logout
 
 As credenciais ficam uma por produto e ambiente
 (`~/.config/kobana/credentials-<produto>-<ambiente>.enc`), criptografadas com
-AES-256-GCM. A chave fica no keyring do OS (macOS Keychain, etc.) com fallback
-para arquivo. O `credentials.enc` das versões até a 0.9.0 continua valendo
+AES-256-GCM. A chave fica no keyring do OS (macOS Keychain, Windows Credential
+Manager); no Linux, e onde não há keyring, no arquivo `.key` (0600) da pasta
+de configuração. O `credentials.enc` das versões até a 0.9.0 continua valendo
 como credencial do `banking`.
 
 ### Token por variável de ambiente
@@ -673,7 +674,8 @@ onde o CLI entra e guarda credenciais, as próprias credenciais, o ambiente nem
 o proxy: `KOBANA_ACCOUNT_URL`, `KOBANA_CONFIG_DIR`, os tokens
 (`KOBANA_<PRODUTO>_TOKEN`, `KADU_TOKEN`), `KOBANA_CREDENTIALS_FILE`,
 `KOBANA_CLIENT_ID`, `KOBANA_CLIENT_SECRET`, `KOBANA_ENVIRONMENT`,
-`HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY` e `NO_PROXY` (o CLI avisa e ignora;
+`HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, `NO_PROXY`, `HOME`, `XDG_*` e as
+variáveis de pasta do Windows, em qualquer caixa (o CLI avisa e ignora;
 também avisa quais variáveis esse `.env` definiu). Um repositório de terceiros
 poderia mandar o login para outro servidor, guardar as credenciais dentro dele,
 fazer o CLI agir com o token de outra pessoa, ou trocar para os hosts de

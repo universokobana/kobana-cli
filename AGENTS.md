@@ -525,11 +525,17 @@ credentials, the credentials themselves, the environment or the proxy:
 `KOBANA_ACCOUNT_URL`, `KOBANA_CONFIG_DIR`, `KOBANA_CREDENTIALS_FILE`,
 `KOBANA_CLIENT_ID`, `KOBANA_CLIENT_SECRET`, `KOBANA_ENVIRONMENT`, the proxy
 variables reqwest reads (`HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, `NO_PROXY`,
-any case) and every product token (`KOBANA_*_TOKEN` and
+any case), the variables the config directory is looked up through (`HOME`,
+`XDG_*`, `USERPROFILE`, `APPDATA`, `LOCALAPPDATA`) and every product token (`KOBANA_*_TOKEN` and
 `Product::token_env_aliases`) — `is_blocked_var` in `config.rs`, matched
 without regard to case because Windows looks variables up case-insensitively
 (`kobana_account_url=` would be read back as `KOBANA_ACCOUNT_URL`); the CLI
 warns and ignores them, and names the variables that file did set. The
+config directory is also resolved once, in `load_dotenv()` before the project
+`.env` is applied (`config::CONFIG_DIR`), so nothing that file sets can move
+the credential store. On Linux no keyring backend is compiled in (only
+`apple-native`/`windows-native`), so the encryption key always lives in
+`<config dir>/.key`. The
 attack this closes: `KOBANA_ENVIRONMENT=development` switches banking, inbox
 and kadu to plain-HTTP localhost hosts and `http_proxy` makes reqwest send
 the whole request, bearer token included, to the proxy. As a second wall,

@@ -98,19 +98,39 @@ fn format_table(value: &serde_json::Value) -> Result<String, KobanaError> {
         let row: Vec<String> = columns
             .iter()
             .map(|col| {
-                item.get(col)
-                    .map(|v| match v {
-                        serde_json::Value::String(s) => s.clone(),
-                        serde_json::Value::Null => "".to_string(),
-                        other => other.to_string(),
-                    })
-                    .unwrap_or_default()
+                item.get(col).map(|v| cell_text(v, false)).unwrap_or_default()
             })
             .collect();
         table.add_row(row);
     }
 
     Ok(table.to_string())
+}
+
+/// A value as one cell of a table or CSV. API strings are not trusted: a
+/// payer's name or an e-mail subject is written by whoever sent it. Control
+/// characters (an escape sequence that would move the cursor, recolour the
+/// screen or plant an OSC hyperlink) become U+FFFD; in a CSV, a cell that a
+/// spreadsheet would read as a formula (`=`, `+`, `-`, `@`) gets a leading
+/// `'`, so it stays text. JSON output needs none of this: serde escapes
+/// controls and nothing evaluates it.
+fn cell_text(value: &serde_json::Value, csv: bool) -> String {
+    let text = match value {
+        serde_json::Value::String(s) => s
+            .chars()
+            .map(|c| if c.is_control() || ('\u{80}'..='\u{9f}').contains(&c) { '\u{FFFD}' } else { c })
+            .collect::<String>(),
+        serde_json::Value::Null => String::new(),
+        other => other.to_string(),
+    };
+    let formula = csv
+        && matches!(value, serde_json::Value::String(_))
+        && text.starts_with(['=', '+', '-', '@']);
+    if formula {
+        format!("'{text}")
+    } else {
+        text
+    }
 }
 
 fn format_csv(value: &serde_json::Value) -> Result<String, KobanaError> {
@@ -138,13 +158,7 @@ fn format_csv(value: &serde_json::Value) -> Result<String, KobanaError> {
         let row: Vec<String> = columns
             .iter()
             .map(|col| {
-                item.get(col)
-                    .map(|v| match v {
-                        serde_json::Value::String(s) => s.clone(),
-                        serde_json::Value::Null => String::new(),
-                        other => other.to_string(),
-                    })
-                    .unwrap_or_default()
+                item.get(col).map(|v| cell_text(v, true)).unwrap_or_default()
             })
             .collect();
         wtr.write_record(&row)
@@ -180,4 +194,37 @@ fn extract_items(value: &serde_json::Value) -> Vec<&serde_json::Value> {
     }
 
     vec![]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cells_keep_escape_sequences_and_formulas_out_of_the_terminal_and_the_spreadsheet() {
+        let hostile = serde_json::json!("\u{1b}]8;;https://evil\u{1b}\\Pay here\u{1b}]8;;\u{1b}\\ \u{85}x");
+        let table = cell_text(&hostile, false);
+        assert!(!table.contains('\u{1b}') && !table.contains('\u{85}'), "{table:?}");
+        assert!(table.contains("Pay here"));
+
+        assert_eq!(cell_text(&serde_json::json!("=HYPERLINK(\"https://evil\")"), true), "'=HYPERLINK(\"https://evil\")");
+        assert_eq!(cell_text(&serde_json::json!("+55 11 99999"), true), "'+55 11 99999");
+        assert_eq!(cell_text(&serde_json::json!("-10"), true), "'-10");
+        // A table is not a spreadsheet, and a JSON number is not a formula
+        assert_eq!(cell_text(&serde_json::json!("=x"), false), "=x");
+        assert_eq!(cell_text(&serde_json::json!(-10.5), true), "-10.5");
+        assert_eq!(cell_text(&serde_json::Value::Null, true), "");
+    }
+
+    #[test]
+    fn csv_and_table_go_through_the_same_cell_filter() {
+        let value = serde_json::json!({"data": [{"name": "=cmd", "note": "a\u{1b}[31mb"}]});
+        let csv = format_output(&value, "csv").unwrap();
+        assert!(csv.contains("'=cmd") && !csv.contains('\u{1b}'), "{csv:?}");
+        let table = format_output(&value, "table").unwrap();
+        assert!(table.contains("=cmd") && !table.contains("'=cmd") && !table.contains('\u{1b}'), "{table:?}");
+        // JSON is untouched: serde escapes the control and nothing evaluates it
+        let json = format_output(&value, "json").unwrap();
+        assert!(json.contains("\\u001b") && json.contains("\"=cmd\""));
+    }
 }
