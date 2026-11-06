@@ -67,6 +67,18 @@ const config: Config = {
   url: 'https://cli.kobana.com.br',
   baseUrl: BASE_URL,
 
+  // Each locale is its own build with its own baseUrl, and the default
+  // namespace is a hash of it: the inline theme script read `theme-216` (pt)
+  // while the client wrote `theme-05f` (en), so the stored choice never applied.
+  // One fixed key also shares the theme across languages.
+  storage: {namespace: 'kobana-cli'},
+
+  // Each locale is its own build with its own baseUrl, and the default
+  // namespace is a hash of it: the inline theme script read `theme-216` (pt)
+  // while the client wrote `theme-05f` (en), so the stored choice never applied.
+  // One fixed key also shares the theme across languages.
+  storage: {namespace: 'kobana-cli'},
+
   organizationName: 'universokobana',
   projectName: 'kobana-cli',
 
