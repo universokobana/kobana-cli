@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-11-12
+
 ### Added
 
 - **O Kadu, o logo e a cegonha no terminal** — `kobana art` mostra a cegonha, e `kobana art kadu|anim|logo|cegonha` as outras artes (`anim` balança, sorri e pisca por cerca de 6 s). `kobana oi` (ou `hi`, `hola`) é o Kadu dando oi, animado quando a janela comporta. `kobana kadu "Boleto pago!"` mostra o Kadu com o texto num balão ao lado; os comandos do produto não mudam, e fora de um terminal, ou com uma palavra parecida com um comando, o erro de comando desconhecido continua. Nenhum deles pede credenciais ou usa a rede. As imagens saem em cor real quando o terminal a anuncia em `COLORTERM` e em 256 cores nos demais; com `--no-color`, `NO_COLOR`, `KOBANA_ACCESSIBLE_COLORS` ou fora de um terminal, em silhueta; com `KOBANA_SCREEN_READER`, numa frase, sem movimento.
