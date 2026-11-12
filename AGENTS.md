@@ -138,6 +138,26 @@ every route), `dashboards` and `dunning` (optional while the organization has a
 single workspace) map it to `KOBANA_WORKSPACE_ID`.
 `header_env_names_a_header_parameter_of_the_spec` keeps the mapping honest.
 
+`Product::confirm` lists, as `(METHOD, path)` with the path as the spec writes
+it, the operations that move money or undo something — today finance's card
+ones, the same its MCP marks destructive. `load()` flags them
+(`Operation::confirm`) and the executor asks before sending: at a terminal a
+yes/no question (no → exit 0, nothing sent), elsewhere (pipe, CI, agent,
+`KOBANA_PROMPT_DISABLED`) a refusal with exit 3. `--yes` confirms up front and
+`--dry-run` never asks. The specs carry no marker for this, so a new
+destructive route of an API means a new entry here;
+`every_confirm_entry_names_an_operation_and_flags_only_it` fails when an entry
+stops matching a route.
+
+Every request carries `X-Request-Source: cli` (`kobana::client::REQUEST_SOURCE`),
+which finance, billing and dashboards stamp as the channel of what it writes
+(`created_via`/`updated_via`); the other APIs ignore it. A value in `--params`
+wins, so `other` with `X-Request-Source-Other` still works.
+
+A write answering `warnings` next to `data` (finance's card routes) has them
+repeated on stderr as `Aviso:` lines when stdout would not show them as they
+came — `--fields`, `--jq`, `table`/`csv` or `--output`.
+
 #### Command names (`spec.rs`)
 
 Each path segment is a resource (`_` → `-`), path parameters go in `--params`,
@@ -182,7 +202,7 @@ hold someone's uncommitted edits):
 |------|--------|
 | `banking-v1.json`, `banking-v2.json` | `kobana-api-specs`: `swagger/v{1,2}_0/kobana-api-v{1,2}_0-openapi-3_1.json` (already JSON) |
 | `billing`, `inbox`, `dunning`, `dashboards` | `<app>/user-docs/openapi/openapi-v1-pt.yaml` |
-| `finance` | `kobana-finance/user-docs/static/openapi/openapi-v1-pt.yaml` (then normalize, see above) |
+| `finance` | `kobana-finance/user-docs/static/openapi/openapi-v1-pt.yaml` (then normalize, see above). **Temporarily from the `mika` branch** (kobana-finance PR #78, the card module), not `main`: re-convert from `main` once it merges, before a release |
 | `kadu` | `kobana-agent-kadu/user-docs/openapi/openapi-v1.yaml` (Portuguese; the translations are `openapi-v1-{en,es}.yaml`) |
 
 The same specs are published at `docs.<product>.kobana.com.br/pt/api/overview/openapi.md`.

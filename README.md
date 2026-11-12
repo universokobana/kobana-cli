@@ -599,7 +599,15 @@ kobana finance payables send-to-bank --dry-run --params '{"id": "PAYABLE_ID"}'
 # Fluxo de caixa do mês
 kobana finance cash-flow \
   --params '{"start_date": "2026-01-01", "end_date": "2026-01-31"}'
+
+# Faturas de um cartão e pagamento integral (pergunta antes; --yes num script)
+kobana finance credit-cards statements CARD_ID --params '{"status": "closed"}'
+kobana finance card-statements payments create STATEMENT_ID
 ```
+
+Pagar fatura, desfazer o pagamento, reabrir fatura, recarregar e excluir
+lançamento ou recorrência do cartão pedem confirmação. Fora de um terminal são
+recusadas com código `3`, a menos que venha `--yes`.
 
 #### Faturamento Automático
 
