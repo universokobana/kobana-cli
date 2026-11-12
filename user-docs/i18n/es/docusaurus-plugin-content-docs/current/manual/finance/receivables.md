@@ -273,7 +273,7 @@ Otros campos y objetos anidados: `kobana schema finance.receivables.create`.
 | `201` | Receivable created. The `Location` header points at the new row; the body is the full detail shape. `X-Idempotent-Replay: true` marks a replayed response. |
 | `400` | Malformed JSON, or `id` and `name` sent together inside the same nested entity reference. |
 | `409` | `X-Idempotency-Key` reused with a different body. |
-| `422` | Schema validation failure, or domain violation: missing person, company / account not in tenant, account does not match company, or rateio Σ ≠ amount. |
+| `422` | Schema validation failure, or domain violation: missing person, company / account not in tenant, account does not match company, a credit card's account (`reason: card_account_not_allowed`), or rateio Σ ≠ amount. |
 
 ## receivables get
 
@@ -372,7 +372,7 @@ Otros campos y objetos anidados: `kobana schema finance.receivables.update`.
 | `400` | Malformed JSON, or `id` and `name` sent together inside the same nested entity reference. |
 | `404` | Receivable not found within the tenant. |
 | `409` | `X-Idempotency-Key` reused with a different body. |
-| `422` | Schema validation failure, or domain violation: receiving without an account, FK out of scope, or rateio Σ ≠ amount. |
+| `422` | Schema validation failure, or domain violation: receiving without an account, FK out of scope, a credit card's account (`reason: card_account_not_allowed`), or rateio Σ ≠ amount. |
 
 ## receivables delete
 

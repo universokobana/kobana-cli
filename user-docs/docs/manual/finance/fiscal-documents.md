@@ -26,7 +26,7 @@ kobana finance fiscal-documents list [OPÇÕES]
 
 Returns a cursor-paginated page of the fiscal documents (NF-e / NFS-e) **received** against the workspace's companies, for the workspace tied to the token's `sub` claim. These notes are parked read-only — the app never emits them, so there is no create/cancel here. Default sort is `-issued_at`. Requires scope `finance/fiscal_documents` with access level `read`.
 
-⚠️ `xml_download_url` points at the **attachments** resource, so fetching the XML bytes needs a token that also reaches `finance/attachments` (or a `read` access level alone). A note can legitimately keep no XML (a `summary`-completeness note), in which case `xml_attachment_id` and `xml_download_url` are both `null`.
+⚠️ `xml_download_url` points at the **attachments** resource, so fetching the XML bytes needs a token that also reaches `finance/attachments` (or `finance/all` / `all`). A note can legitimately keep no XML (a `summary`-completeness note), in which case `xml_attachment_id` and `xml_download_url` are both `null`.
 
 **Parâmetros de consulta**
 

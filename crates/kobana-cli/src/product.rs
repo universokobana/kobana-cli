@@ -51,6 +51,10 @@ pub struct Product {
     pub oauth: OauthHosts,
     /// Env vars read as this product's token besides `KOBANA_<SLUG>_TOKEN`
     pub token_env_aliases: &'static [&'static str],
+    /// Operations asked before they run, as `(METHOD, path)` with the path as
+    /// the spec writes it: those that move money or undo something. `--yes`
+    /// skips the question.
+    pub confirm: &'static [(&'static str, &'static str)],
 }
 
 /// A product's surfaces as the Conta Kobana knows them, per environment.
@@ -259,6 +263,7 @@ Product {
         development: Some(OauthResource { api: "http://localhost:5005", mcp: "http://localhost:5005/mcp" }),
     },
     token_env_aliases: &[],
+    confirm: &[],
 },
 Product {
     slug: "inbox",
@@ -282,6 +287,7 @@ Product {
         development: Some(OauthResource { api: "http://localhost:3011", mcp: "http://localhost:3012" }),
     },
     token_env_aliases: &[],
+    confirm: &[],
 },
 Product {
     slug: "billing",
@@ -304,6 +310,7 @@ Product {
         development: Some(OauthResource { api: "http://localhost:3031", mcp: "http://localhost:3032" }),
     },
     token_env_aliases: &[],
+    confirm: &[],
 },
 Product {
     slug: "finance",
@@ -327,6 +334,15 @@ Product {
         development: Some(OauthResource { api: "http://localhost:3021", mcp: "http://localhost:3022" }),
     },
     token_env_aliases: &[],
+    // The ones finance's MCP marks destructive
+    confirm: &[
+        ("POST", "/v1/card-statements/{id}/payments"),
+        ("DELETE", "/v1/card-statements/{id}/payments"),
+        ("POST", "/v1/card-statements/{id}/reopen"),
+        ("POST", "/v1/credit-cards/{id}/top-ups"),
+        ("DELETE", "/v1/card-transactions/{id}"),
+        ("DELETE", "/v1/card-recurrences/{id}"),
+    ],
 },
 Product {
     slug: "dunning",
@@ -349,6 +365,7 @@ Product {
         development: Some(OauthResource { api: "http://localhost:3041", mcp: "http://localhost:3042" }),
     },
     token_env_aliases: &[],
+    confirm: &[],
 },
 Product {
     slug: "dashboards",
@@ -372,6 +389,7 @@ Product {
         development: Some(OauthResource { api: "http://localhost:3071", mcp: "http://localhost:3072" }),
     },
     token_env_aliases: &[],
+    confirm: &[],
 },
 Product {
     slug: "kadu",
@@ -397,6 +415,7 @@ Product {
         development: Some(OauthResource { api: "http://localhost:3051", mcp: "http://localhost:3052" }),
     },
     token_env_aliases: &["KADU_TOKEN"],
+    confirm: &[],
 },
 ];
 
@@ -419,8 +438,21 @@ fn load(product: &'static Product) -> Result<LoadedProduct, KobanaError> {
         let spec = ApiSpec::from_value(&entry.document(i18n::lang())?)?;
         merge(&mut tree, spec.build_command_tree(entry.version_prefix));
     }
+    mark_confirm(&mut tree, product.confirm);
 
     Ok(LoadedProduct { product, tree })
+}
+
+/// Flag the operations of [`Product::confirm`] in the tree
+fn mark_confirm(node: &mut CommandNode, confirm: &[(&str, &str)]) {
+    for endpoint in &mut node.endpoints {
+        endpoint.operation.confirm = confirm
+            .iter()
+            .any(|(method, path)| endpoint.http_method.as_str() == *method && endpoint.path_template == *path);
+    }
+    for child in node.children.values_mut() {
+        mark_confirm(child, confirm);
+    }
 }
 
 /// Merge one spec's tree into a product's tree.
@@ -626,6 +658,32 @@ mod tests {
         assert!(templates.len() > 200, "expected a full command surface, got {}", templates.len());
         for t in &templates {
             assert!(spec_paths.contains(t), "path_template {t} is not in any spec");
+        }
+    }
+
+    /// A `confirm` entry that matches no operation would let a payment run
+    /// without the question, silently: a renamed path must fail here.
+    #[test]
+    fn every_confirm_entry_names_an_operation_and_flags_only_it() {
+        fn walk<'a>(node: &'a CommandNode, out: &mut Vec<&'a kobana::spec::ResolvedEndpoint>) {
+            out.extend(node.endpoints.iter());
+            for child in node.children.values() {
+                walk(child, out);
+            }
+        }
+
+        for loaded in load_all().unwrap() {
+            let mut endpoints = Vec::new();
+            walk(&loaded.tree, &mut endpoints);
+            for (method, path) in loaded.product.confirm {
+                assert!(
+                    endpoints.iter().any(|e| e.http_method.as_str() == *method && e.path_template == *path),
+                    "{} confirm entry {method} {path} is not an operation of its specs",
+                    loaded.product.slug
+                );
+            }
+            let flagged = endpoints.iter().filter(|e| e.operation.confirm).count();
+            assert_eq!(flagged, loaded.product.confirm.len(), "{}", loaded.product.slug);
         }
     }
 
@@ -1012,6 +1070,7 @@ mod tests {
                 development: None,
             },
             token_env_aliases: &[],
+            confirm: &[],
         };
         assert_eq!(no_dev.base_url(&Environment::Development).unwrap(), "https://prod");
         assert!(no_dev.base_url(&Environment::Sandbox).is_err());

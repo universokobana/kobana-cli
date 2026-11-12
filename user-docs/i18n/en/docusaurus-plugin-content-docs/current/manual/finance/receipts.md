@@ -26,7 +26,7 @@ kobana finance receipts list [OPTIONS]
 
 Returns a cursor-paginated page of payment receipts (comprovantes) for the workspace tied to the token's `sub` claim — the proof that a payment left. A receipt is either **captured** (`source: "kobana"`, produced in the background when a payment dispatched to the bank was confirmed) or **uploaded** (`source: "upload"`, a file someone attached for a payment made outside the system). Only an uploaded one can be missing a `payable_id`. Default sort is `-paid_at`. Requires scope `finance/receipts` with access level `read`.
 
-⚠️ `download_url` points at the **attachments** resource, so fetching the bytes needs a token that also reaches `finance/attachments` (or a `read` access level alone). And a row can legitimately have no binary at all: when the origin offered only a format we do not store, the receipt is `available` and reachable through `document_url` instead.
+⚠️ `download_url` points at the **attachments** resource, so fetching the bytes needs a token that also reaches `finance/attachments` (or `finance/all` / `all`). And a row can legitimately have no binary at all: when the origin offered only a format we do not store, the receipt is `available` and reachable through `document_url` instead.
 
 **Query parameters**
 

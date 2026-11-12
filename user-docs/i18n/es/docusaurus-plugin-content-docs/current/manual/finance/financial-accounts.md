@@ -365,7 +365,7 @@ Deletes an account. Requires scope `finance/accounts` with access level `delete`
 |---|---|
 | `200` | Account deleted. |
 | `404` | Account not found within the tenant. |
-| `422` | The account is in use (`reason: in_use`). |
+| `422` | The account is in use (`reason: in_use`), is a credit card's own account (`reason: account_has_credit_card`) or pays a credit card (`reason: account_pays_credit_card`). |
 
 ## financial-accounts adjust-balance
 

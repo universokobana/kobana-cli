@@ -21,7 +21,9 @@ kobana billing invoices finalize INVOICE_ID --dry-run
   "dry_run": true,
   "method": "POST",
   "url": "https://api.billing.kobana.com.br/v1/invoices/INVOICE_ID/finalize",
-  "headers": {},
+  "headers": {
+    "X-Request-Source": "cli"
+  },
   "query_params": {},
   "body": null,
   "files": [],
@@ -31,6 +33,20 @@ kobana billing invoices finalize INVOICE_ID --dry-run
 ```
 
 O token nunca aparece. Com `--file`, o relatório lista os arquivos e o `content_type` do formulário. Use `--dry-run` em qualquer comando que cria, altera ou exclui — e sempre que um agente de IA estiver montando o comando.
+
+## Confirmação (`--yes`)
+
+As operações que movem dinheiro ou desfazem algo perguntam antes de enviar. Hoje são as de cartão do `finance`: pagar fatura (`card-statements payments create`), desfazer o pagamento (`card-statements payments delete`), reabrir fatura (`card-statements reopen`), recarregar (`credit-cards top-ups`) e excluir lançamento ou recorrência (`card-transactions delete`, `card-recurrences delete`).
+
+```bash
+kobana finance card-statements payments create STATEMENT_ID --json '{"amount": 1500}'
+```
+
+```
+Pagar uma fatura (POST /v1/card-statements/STATEMENT_ID/payments). Confirma? (s/N)
+```
+
+Responder não encerra com código `0`, sem enviar nada. Fora de um terminal — script, CI, agente de IA ou `KOBANA_PROMPT_DISABLED` — não há quem responda, então o CLI recusa com o [código de saída](/reference/exit-codes) `3`. Passe `--yes` para confirmar de antemão. O `--dry-run` nunca pergunta.
 
 ## Idempotência
 

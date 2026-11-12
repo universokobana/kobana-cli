@@ -8,6 +8,11 @@ use std::time::Duration;
 
 const USER_AGENT_VALUE: &str = concat!("kobana-cli/", env!("CARGO_PKG_VERSION"));
 
+/// The channel the APIs stamp on what a request writes (`created_via`,
+/// `updated_via`). Finance, billing and dashboards read it; the others ignore
+/// it. `--params` may still set its own (`other` with `X-Request-Source-Other`).
+pub const REQUEST_SOURCE: (&str, &str) = ("X-Request-Source", "cli");
+
 fn accept_language() -> &'static str {
     match i18n::lang() {
         Lang::Pt => "pt-BR,pt;q=0.9",
@@ -195,10 +200,12 @@ impl KobanaClient {
     }
 
     /// The headers a request will carry besides auth, content type and user
-    /// agent: its own header parameters, then any default it does not override.
+    /// agent: its own header parameters, then any default it does not override,
+    /// then [`REQUEST_SOURCE`].
     pub fn request_headers(&self, req: &ApiRequest) -> Vec<(String, String)> {
         let mut headers = req.headers.clone();
-        for (name, value) in &self.default_headers {
+        let source = (REQUEST_SOURCE.0.to_string(), REQUEST_SOURCE.1.to_string());
+        for (name, value) in self.default_headers.iter().chain(std::iter::once(&source)) {
             if !headers.iter().any(|(n, _)| n.eq_ignore_ascii_case(name)) {
                 headers.push((name.clone(), value.clone()));
             }

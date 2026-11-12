@@ -268,6 +268,23 @@ pub fn build_root_command(products: &[LoadedProduct]) -> Command {
                 )),
         )
         .arg(
+            Arg::new("yes")
+                .long("yes")
+                .global(true)
+                .action(clap::ArgAction::SetTrue)
+                .help(tr!(
+                    pt: "Confirma de antemão as operações que movem dinheiro ou desfazem algo \
+                         (pagar fatura, recarregar, reabrir, excluir lançamento); sem ela, \
+                         o kobana pergunta no terminal e recusa fora dele",
+                    en: "Confirm up front the operations that move money or undo something \
+                         (pay a statement, top up, reopen, delete a launch); without it, \
+                         kobana asks at a terminal and refuses elsewhere",
+                    es: "Confirma de antemano las operaciones que mueven dinero o deshacen algo \
+                         (pagar factura, recargar, reabrir, eliminar un movimiento); sin ella, \
+                         kobana pregunta en la terminal y se niega fuera de ella",
+                )),
+        )
+        .arg(
             Arg::new("env")
                 .long("env")
                 .global(true)

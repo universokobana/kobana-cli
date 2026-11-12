@@ -21,14 +21,19 @@ Recursos do produto `finance`. A credencial é a `KOBANA_FINANCE_TOKEN` — veja
 | [`attachments`](/manual/finance/attachments) |  |
 | [`automatic-rules`](/manual/finance/automatic-rules) |  |
 | [`banks`](/manual/finance/banks) | Listar bancos |
+| [`card-recurrences`](/manual/finance/card-recurrences) |  |
+| [`card-statements`](/manual/finance/card-statements) |  |
+| [`card-transactions`](/manual/finance/card-transactions) |  |
 | [`cash-flow`](/manual/finance/cash-flow) | Obter a projeção de fluxo de caixa |
 | [`categories`](/manual/finance/categories) |  |
 | [`classification-centers`](/manual/finance/classification-centers) |  |
 | [`companies`](/manual/finance/companies) |  |
+| [`credit-cards`](/manual/finance/credit-cards) |  |
 | [`custom-classifiers`](/manual/finance/custom-classifiers) |  |
 | [`financial-accounts`](/manual/finance/financial-accounts) |  |
 | [`financial-transactions`](/manual/finance/financial-transactions) |  |
 | [`fiscal-documents`](/manual/finance/fiscal-documents) |  |
+| [`iof-rates`](/manual/finance/iof-rates) | Listar alíquotas de IOF |
 | [`me`](/manual/finance/me) | Obter a identidade do token |
 | [`organization`](/manual/finance/organization) | Obter a organização do token |
 | [`payables`](/manual/finance/payables) |  |

@@ -16,6 +16,7 @@ Valem para todos os comandos, antes ou depois do nome do recurso.
 | `--file <CAMPO=CAMINHO>` | Arquivo enviado como parte de um formulário multipart, campo=caminho (repetível; os campos de --json viram partes de texto) |
 | `--fields <CAMPOS>` | Campos a incluir na resposta, separados por vírgula |
 | `--dry-run` | Mostra a requisição sem executar |
+| `--yes` | Confirma de antemão as operações que movem dinheiro ou desfazem algo (pagar fatura, recarregar, reabrir, excluir lançamento); sem ela, o kobana pergunta no terminal e recusa fora dele |
 | `--env <AMBIENTE>` | Ambiente da API: production, sandbox ou development (cada produto tem os seus hosts). Também pode vir de KOBANA_ENVIRONMENT. |
 | `--verbose` | Mostra os detalhes da requisição e da resposta no stderr |
 | `--output <CAMINHO>` | Salva a resposta em um arquivo |

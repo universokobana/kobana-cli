@@ -25,7 +25,7 @@ kobana finance cash-flow [OPTIONS]
 
 `GET /v1/cash-flow`
 
-Returns the cash-flow projection for the workspace tied to the token: a series of time buckets (realised + projected income/expenses, running balance) plus `current_balance`, the `today_bucket` seam and `retroactive_overdue`. Requires scope `finance/cash_flow` with access level `read`. Read-only.
+Returns the cash-flow projection for the workspace tied to the token: a series of time buckets (realised + projected income/expenses, running balance) plus `current_balance`, the `today_bucket` seam and `retroactive_overdue`. A credit card's account (see `/credit-cards`) stays out of the cash: its purchases never enter, the realised cash is the statement payment leaving the paying account on the payment date, and an open or future statement with no payable yet is projected by its expected total on its due date (once closed, its payable takes over). Requires scope `finance/cash_flow` with access level `read`. Read-only.
 
 **Query parameters**
 
@@ -35,7 +35,7 @@ Returns the cash-flow projection for the workspace tied to the token: a series o
 | `to` | `string` | yes | Window end (ISO 8601). Required. |
 | `granularity` | `string` | no | Bucket size. Default `month`. A range over the per-granularity cap is clipped (`truncated: true`). Values: `day`, `week`, `month`, `year`. |
 | `company_id` | `string` | no | Scope to one company. Omit for the consolidated (all-company) projection. |
-| `account_id` | `string` | no | Scope to one financial account. Omit for all accounts. |
+| `account_id` | `string` | no | Scope to one financial account. Omit for all accounts. A credit card's account is not cash, so scoped to it every bucket and `current_balance` are zero — its statements count on the paying account. |
 | `tz` | `string` | no | IANA time zone that anchors the `today` seam (e.g. `America/Sao_Paulo`, the default). Only the seam is tz-aware; bucketing stays UTC. An unrecognized value falls back to the default. |
 
 **Headers**

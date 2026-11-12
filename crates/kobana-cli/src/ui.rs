@@ -258,7 +258,8 @@ pub fn confirm(question: &str, default: bool) -> Result<bool, String> {
     let parser = |answer: &str| parse_yes_no(answer).ok_or(());
     inquire::Confirm::new(question)
         .with_default(default)
-        .with_default_value_formatter(&|_| hint.to_string())
+        // inquire puts the default in parentheses itself
+        .with_default_value_formatter(&|_| hint.trim_matches(['(', ')']).to_string())
         .with_formatter(&|answer| if answer { yes } else { no }.to_string())
         .with_parser(&parser)
         .with_error_message(answer_yes_or_no())

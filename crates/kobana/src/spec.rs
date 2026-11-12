@@ -57,6 +57,9 @@ pub struct Operation {
     /// `deprecated: true` in the spec: the command still runs (a script may
     /// call it) but leaves the help, which shows the replacement instead.
     pub deprecated: bool,
+    /// Moves money or undoes something: asked before it runs, unless
+    /// `--yes`. Not in the specs — set from the product's registry entry.
+    pub confirm: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -581,6 +584,7 @@ fn parse_operation(value: &serde_json::Value) -> Result<Operation, KobanaError> 
         tags,
         single_record: false,
         deprecated,
+        confirm: false,
     })
 }
 

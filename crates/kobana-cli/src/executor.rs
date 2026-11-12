@@ -276,8 +276,70 @@ pub async fn execute(
         return crate::formatter::print_json(&dry_run_report(client, &api_request), true, false);
     }
 
+    if endpoint.operation.confirm && !root_matches.get_flag("yes") && !confirmed(endpoint, &api_request)? {
+        eprintln!("{}", tr!(
+            pt: "Operação cancelada; nada foi enviado.",
+            en: "Operation cancelled; nothing was sent.",
+            es: "Operación cancelada; no se envió nada.",
+        ));
+        return Ok(());
+    }
+
     let body = send(client, &api_request, output.verbose).await?;
+    show_warnings(&body, &output);
     output.print(&body)
+}
+
+/// Ask before an operation that moves money or undoes something
+/// (`Operation::confirm`). Where nobody can answer — a pipe, CI, an agent,
+/// `KOBANA_PROMPT_DISABLED` — it refuses instead of running: `--yes` is how a
+/// script says it means it. A question left unanswered (Esc, Ctrl-C, end of
+/// input) is a no.
+fn confirmed(endpoint: &ResolvedEndpoint, request: &ApiRequest) -> Result<bool, KobanaError> {
+    let target = format!("{} {}", request.method, request.path);
+    let what = endpoint.operation.summary.as_deref().unwrap_or(&target);
+    if !crate::ui::can_prompt() {
+        return Err(KobanaError::Validation(trf!(
+            pt: "{what} ({target}) pede confirmação; repita com --yes para executar",
+            en: "{what} ({target}) needs confirmation; run it again with --yes",
+            es: "{what} ({target}) requiere confirmación; repítelo con --yes para ejecutarlo",
+        )));
+    }
+    let question = trf!(
+        pt: "{what} ({target}). Confirma?",
+        en: "{what} ({target}). Go ahead?",
+        es: "{what} ({target}). ¿Confirmas?",
+    );
+    Ok(crate::ui::confirm(&question, false).unwrap_or(false))
+}
+
+/// The `warnings` a write answers next to `data` (finance: the statement was
+/// closed so the launch went to the open one, no PTAX rate…), on stderr when
+/// stdout would not carry them as they came: `--fields`, `--jq`, a table or
+/// CSV, or `--output`.
+fn show_warnings(body: &serde_json::Value, output: &Output) {
+    let as_is = output.format == "json" && output.fields.is_none() && output.path.is_none() && crate::jq::expr().is_none();
+    if !as_is {
+        warning_lines(body).iter().for_each(|line| crate::ui::warn(line));
+    }
+}
+
+/// One line per entry of a response's `warnings`: `message (code)`
+fn warning_lines(body: &serde_json::Value) -> Vec<String> {
+    let Some(warnings) = body.get("warnings").and_then(|w| w.as_array()) else {
+        return Vec::new();
+    };
+    warnings
+        .iter()
+        .map(|warning| match warning {
+            serde_json::Value::String(text) => text.clone(),
+            other => match (other["message"].as_str(), other["code"].as_str()) {
+                (Some(message), Some(code)) => format!("{message} ({code})"),
+                (Some(message), None) => message.to_string(),
+                _ => other.to_string(),
+            },
+        })
+        .collect()
 }
 
 /// The path ids given as positional arguments, put in `--params` under the
@@ -617,8 +679,55 @@ mod tests {
             vec![
                 ("x-workspace-id".to_string(), "from-params".to_string()),
                 ("X-Other".to_string(), "kept".to_string()),
+                ("X-Request-Source".to_string(), "cli".to_string()),
             ]
         );
+    }
+
+    #[test]
+    fn warnings_read_as_message_and_code() {
+        let body = serde_json::json!({
+            "data": {"id": "t1"},
+            "warnings": [
+                {"code": "STATEMENT_CLOSED", "message": "A fatura de 10/2026 está fechada; o lançamento foi para a aberta."},
+                {"message": "Sem código"},
+                "texto solto",
+            ],
+        });
+        assert_eq!(
+            warning_lines(&body),
+            [
+                "A fatura de 10/2026 está fechada; o lançamento foi para a aberta. (STATEMENT_CLOSED)",
+                "Sem código",
+                "texto solto",
+            ]
+        );
+        assert!(warning_lines(&serde_json::json!({"data": {}})).is_empty());
+    }
+
+    #[test]
+    fn requests_say_they_come_from_the_cli_unless_params_say_otherwise() {
+        let client = KobanaClient::new("https://api.example", "t").unwrap();
+        let request = |headers: Vec<(String, String)>| ApiRequest {
+            method: HttpMethod::Post,
+            path: "/v1/payables".to_string(),
+            query_params: None,
+            body: None,
+            idempotency_key: None,
+            headers,
+            multipart: false,
+            files: Vec::new(),
+        };
+
+        assert_eq!(
+            client.request_headers(&request(Vec::new())),
+            vec![("X-Request-Source".to_string(), "cli".to_string())]
+        );
+        let other = vec![
+            ("x-request-source".to_string(), "other".to_string()),
+            ("X-Request-Source-Other".to_string(), "n8n".to_string()),
+        ];
+        assert_eq!(client.request_headers(&request(other.clone())), other);
     }
 
     fn post_endpoint(content: serde_json::Value) -> ResolvedEndpoint {

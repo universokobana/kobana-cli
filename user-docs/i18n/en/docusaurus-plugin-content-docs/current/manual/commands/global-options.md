@@ -16,6 +16,7 @@ They apply to every command, before or after the resource name.
 | `--file <FIELD=PATH>` | File sent as a part of a multipart form, field=path (repeatable; --json fields become text parts) |
 | `--fields <FIELDS>` | Comma-separated list of fields to include in response |
 | `--dry-run` | Show the request without executing |
+| `--yes` | Confirm up front the operations that move money or undo something (pay a statement, top up, reopen, delete a launch); without it, kobana asks at a terminal and refuses elsewhere |
 | `--env <ENV>` | API environment: production, sandbox or development (each product has its own hosts). Can also be set via KOBANA_ENVIRONMENT. |
 | `--verbose` | Show request/response details on stderr |
 | `--output <PATH>` | Save response to file |

@@ -209,7 +209,7 @@ Outros campos e objetos aninhados: `kobana schema finance.payables.create`.
 | `201` | Payable created. The `Location` header points at the new row. The body is the full detail shape (arrays + reconciliation). `X-Idempotent-Replay: true` marks a replayed response. |
 | `400` | Malformed JSON, or `id` and `name` sent together inside the same nested entity reference. |
 | `409` | `X-Idempotency-Key` reused with a different body. |
-| `422` | Schema validation failure, or domain violation: missing person, company / account not in tenant, account does not match company, or rateio Σ ≠ amount. |
+| `422` | Schema validation failure, or domain violation: missing person, company / account not in tenant, account does not match company, a credit card's account (`reason: card_account_not_allowed` — launch it on the card), a Pix transfer whose `beneficiary.document` is not the `person`'s (`reason: pix_beneficiary_not_person`), or rateio Σ ≠ amount. |
 
 ## payables get
 
@@ -320,7 +320,7 @@ Outros campos e objetos aninhados: `kobana schema finance.payables.update`.
 | `400` | Malformed JSON, or `id` and `name` sent together inside the same nested entity reference. |
 | `404` | Payable not found within the tenant. |
 | `409` | `X-Idempotency-Key` reused with a different body. |
-| `422` | Schema validation failure, or domain violation: settling without an account, FK out of scope, or rateio Σ ≠ amount. |
+| `422` | Schema validation failure, or domain violation: settling without an account, FK out of scope, rateio Σ ≠ amount, a credit card's account (`reason: card_account_not_allowed`), a Pix transfer whose `beneficiary.document` is not the `person`'s (`reason: pix_beneficiary_not_person`), or a new `amount` or `status: cancelled` on the payable of a card statement (`reason: card_statement_managed` — it follows the statement's review and payment). |
 
 ## payables delete
 
@@ -348,7 +348,7 @@ Hard-deletes the payable. Requires scope `finance/payables` with access level `d
 |---|---|
 | `200` | Payable deleted. |
 | `404` | Payable not found within the tenant. |
-| `422` | The payable was already sent to the bank (payment in flight or paid) and cannot be deleted. |
+| `422` | The payable was already sent to the bank (payment in flight or paid), or it is the payable of a card statement (`reason: card_statement_managed`), and cannot be deleted. |
 
 ## payables cancel-dispatch
 
@@ -390,7 +390,7 @@ kobana finance payables send-to-bank [ID] [OPÇÕES]
 
 `POST /v1/payables/{id}/send-to-bank`
 
-Dispatches an approved payable to the bank through the Kobana gateway (creates the payment, then envelopes and approves it on the gateway side). Requires scope `finance/payable_dispatches` with access level `write` — the money resource is deliberately **separate** from `finance/payables` (dispatching money is not editing a bill), while a token with no `finance/…` scope needs just the `write` (or `all`) access level. `X-Idempotency-Key` is **required**. Only an **official** bill dispatches — one whose `payment_approval` is `null` or `creation_approved`; a bill still awaiting approval (`pending_approval` / `partially_approved`) or `creation_rejected` returns 422. The payable must also carry the payment coordinates for its method and a Kobana-mirrored source account. Returns the refreshed payable detail with the execution mirror (`kobana_status`, `kobana_payment_uid`) populated. **Note:** the Kobana sandbox `example_bank` does not execute outbound payments, so the full `confirmed` cycle is only observable against an environment that actually settles.
+Dispatches an approved payable to the bank through the Kobana gateway (creates the payment, then envelopes and approves it on the gateway side). Requires scope `finance/payable_dispatches` with access level `write` — the money resource is deliberately **separate** from `finance/payables` (dispatching money is not editing a bill), while a token with no `finance/…` scope needs just the `write` access level. `X-Idempotency-Key` is **required**. Only an **official** bill dispatches — one whose `payment_approval` is `null` or `creation_approved`; a bill still awaiting approval (`pending_approval` / `partially_approved`) or `creation_rejected` returns 422. The payable must also carry the payment coordinates for its method and a Kobana-mirrored source account. Returns the refreshed payable detail with the execution mirror (`kobana_status`, `kobana_payment_uid`) populated. **Note:** the Kobana sandbox `example_bank` does not execute outbound payments, so the full `confirmed` cycle is only observable against an environment that actually settles.
 
 **Argumentos do caminho:** `id`
 

@@ -16,6 +16,7 @@ Valen para todos los comandos, antes o después del nombre del recurso.
 | `--file <CAMPO=RUTA>` | Archivo enviado como parte de un formulario multipart, campo=ruta (repetible; los campos de --json se vuelven partes de texto) |
 | `--fields <CAMPOS>` | Campos a incluir en la respuesta, separados por comas |
 | `--dry-run` | Muestra la solicitud sin ejecutarla |
+| `--yes` | Confirma de antemano las operaciones que mueven dinero o deshacen algo (pagar factura, recargar, reabrir, eliminar un movimiento); sin ella, kobana pregunta en la terminal y se niega fuera de ella |
 | `--env <ENTORNO>` | Entorno de la API: production, sandbox o development (cada producto tiene sus hosts). También puede venir de KOBANA_ENVIRONMENT. |
 | `--verbose` | Muestra los detalles de la solicitud y la respuesta en stderr |
 | `--output <RUTA>` | Guarda la respuesta en un archivo |
