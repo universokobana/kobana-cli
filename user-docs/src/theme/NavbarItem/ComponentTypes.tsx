@@ -6,6 +6,8 @@ import AskAiNavbarItem from '../../components/Assistant/AskButton';
 import AppSwitcherNavbarItem from './AppSwitcher';
 import MobileActions from '../../components/MobileActions';
 
+import useIsLanding from './useIsLanding';
+
 import styles from './ComponentTypes.module.css';
 
 // The right side of the navbar is declared item by item, so the order is
@@ -15,6 +17,8 @@ import styles from './ComponentTypes.module.css';
 
 function ColorModeNavbarItem({mobile}: {mobile?: boolean}): ReactNode {
   const {colorMode, setColorMode} = useColorMode();
+  const isLanding = useIsLanding();
+  if (isLanding) return null;
   return (
     <ColorModeToggle
       className={mobile ? 'menu__list-item' : styles.desktopOnly}

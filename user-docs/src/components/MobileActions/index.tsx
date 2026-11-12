@@ -5,6 +5,8 @@ import {useColorMode} from '@docusaurus/theme-common';
 import {Check, EllipsisVertical, Moon, Sparkles, Sun} from 'lucide-react';
 import {ACTIONS, APPS, CURRENT_APP, type Locale} from '../../theme/NavbarItem/AppSwitcher/apps';
 
+import useIsLanding from '../../theme/NavbarItem/useIsLanding';
+
 import styles from './styles.module.css';
 
 // Below 997px the header icons (Ask AI, language, theme, apps) don't fit next
@@ -38,6 +40,7 @@ export default function MobileActions(): ReactNode {
   const apps = ACTIONS[locale];
   const {pathname, search, hash} = useLocation();
   const {colorMode, setColorMode} = useColorMode();
+  const isLanding = useIsLanding();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const localePath = LOCALES.find((l) => l.locale === locale)?.path ?? 'pt';
@@ -84,14 +87,16 @@ export default function MobileActions(): ReactNode {
             <Sparkles size={16} aria-hidden />
             <span>{t.askAi}</span>
           </button>
-          <button
-            type="button"
-            role="menuitem"
-            className={styles.item}
-            onClick={() => setColorMode(colorMode === 'dark' ? 'light' : 'dark')}>
-            {colorMode === 'dark' ? <Sun size={16} aria-hidden /> : <Moon size={16} aria-hidden />}
-            <span>{colorMode === 'dark' ? t.toLight : t.toDark}</span>
-          </button>
+          {!isLanding && (
+            <button
+              type="button"
+              role="menuitem"
+              className={styles.item}
+              onClick={() => setColorMode(colorMode === 'dark' ? 'light' : 'dark')}>
+              {colorMode === 'dark' ? <Sun size={16} aria-hidden /> : <Moon size={16} aria-hidden />}
+              <span>{colorMode === 'dark' ? t.toLight : t.toDark}</span>
+            </button>
+          )}
 
           <div className={styles.label}>{t.language}</div>
           {LOCALES.map((l) => (
