@@ -1,0 +1,2 @@
+# Art made of escape sequences: no line-ending conversion, no walls of escapes in a diff
+crates/kobana-cli/assets/art/*.ans binary

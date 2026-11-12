@@ -2,6 +2,7 @@ use clap::{Arg, Command};
 use kobana::spec::{CommandNode, ResolvedEndpoint};
 use kobana::tr;
 
+use crate::art;
 use crate::clap_i18n;
 use crate::helpers;
 use crate::product::{self, LoadedProduct};
@@ -185,6 +186,15 @@ fn build_product_command(loaded: &LoadedProduct) -> Command {
     // Helpers (`kobana banking +emitir`, …)
     for helper in helpers::for_product(loaded.product.slug) {
         cmd = cmd.subcommand(helper.command());
+    }
+
+    // `kobana kadu "Boleto pago!"` is no node of the tree: see `art::speech_in`
+    if loaded.product.slug == art::SPEAKER {
+        cmd = cmd.after_help(tr!(
+            pt: "O Kadu também fala num balão: kobana kadu \"Boleto pago!\"",
+            en: "Kadu also speaks in a bubble: kobana kadu \"Boleto pago!\"",
+            es: "Kadu también habla en un globo: kobana kadu \"Boleto pago!\"",
+        ));
     }
 
     cmd.subcommand(auth_command(&format!("{path} auth")))
@@ -509,6 +519,53 @@ pub fn build_root_command(products: &[LoadedProduct]) -> Command {
             )),
     );
 
+    // `kobana art` and `oi`: Kadu, the logo and the stork (art.rs). `kobana
+    // kadu` is the Agente Kadu product, so they live outside it.
+    root = root.subcommand(
+        clap_i18n::command(
+            "art",
+            format!(
+                "kobana art {} [{}]",
+                clap_i18n::options_placeholder(),
+                clap_i18n::command_placeholder().trim_matches(['<', '>'])
+            ),
+        )
+        .about(tr!(
+            pt: "Mostra a arte da Kobana no terminal; sem comando, a cegonha",
+            en: "Show the Kobana art in the terminal; with no command, the stork",
+            es: "Muestra el arte de Kobana en el terminal; sin comando, la cigüeña",
+        ))
+        .subcommand(clap_i18n::command("kadu", leaf_usage("kobana art kadu")).about(tr!(
+            pt: "O Kadu, fiel à foto (55 × 44)",
+            en: "Kadu, true to the photo (55 × 44)",
+            es: "Kadu, fiel a la foto (55 × 44)",
+        )))
+        .subcommand(clap_i18n::command("anim", leaf_usage("kobana art anim")).about(tr!(
+            pt: "O Kadu balança, sorri e pisca, em cerca de 6 s (48 × 37)",
+            en: "Kadu sways, smiles and blinks, for about 6 s (48 × 37)",
+            es: "Kadu se balancea, sonríe y parpadea, durante unos 6 s (48 × 37)",
+        )))
+        .subcommand(clap_i18n::command("logo", leaf_usage("kobana art logo")).about(tr!(
+            pt: "Logo da Kobana (64 × 6)",
+            en: "The Kobana logo (64 × 6)",
+            es: "Logo de Kobana (64 × 6)",
+        )))
+        .subcommand(clap_i18n::command("cegonha", leaf_usage("kobana art cegonha")).about(tr!(
+            pt: "A cegonha da Kobana (96 × 32)",
+            en: "The Kobana stork (96 × 32)",
+            es: "La cigüeña de Kobana (96 × 32)",
+        ))),
+    );
+    root = root.subcommand(
+        clap_i18n::command("oi", leaf_usage("kobana oi"))
+            .aliases(["hi", "hola"])
+            .about(tr!(
+                pt: "O Kadu dá oi (também: hi, hola)",
+                en: "Kadu says hi (also: hi, hola)",
+                es: "Kadu saluda (también: hi, hola)",
+            )),
+    );
+
     root.subcommand(clap_i18n::help_subcommand())
 }
 
@@ -642,6 +699,20 @@ mod tests {
             assert!(parse(ok).is_ok(), "{ok}");
         }
         assert_eq!(parse("fr").unwrap_err().kind(), clap::error::ErrorKind::InvalidValue);
+    }
+
+    #[test]
+    fn the_art_commands_answer_to_their_aliases_and_stay_apart_from_the_kadu_product() {
+        let products = product::load_all().unwrap();
+        let command = |args: &[&str]| {
+            let matches = build_root_command(&products).try_get_matches_from(args).unwrap();
+            matches.subcommand_name().unwrap().to_string()
+        };
+        assert_eq!(command(&["kobana", "art"]), "art");
+        assert_eq!(command(&["kobana", "art", "anim"]), "art");
+        assert_eq!(command(&["kobana", "hi"]), "oi");
+        assert_eq!(command(&["kobana", "hola"]), "oi");
+        assert_eq!(command(&["kobana", "kadu", "tasks", "list"]), "kadu");
     }
 
     #[test]

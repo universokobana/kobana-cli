@@ -234,6 +234,7 @@ ruby scripts/build-spec-translations.rb
 | `schema.rs`          | `kobana schema` command — introspect API endpoint schemas      |
 | `formatter.rs`       | Output formatting: JSON (default), table, CSV; `print_json`/`json_text`, the one way JSON reaches stdout |
 | `jq.rs`              | `--jq`: jq expressions run in-process (jaq), without `env`/`$ENV`, modules or `input` |
+| `art.rs`             | `kobana art`, `oi` and `kadu <TEXTO>`: Kadu, the logo and the stork, embedded from `assets/art/`, and how each steps down to what the terminal takes |
 | `ui.rs`              | Terminal presentation and accessibility: color decision and palette, `--no-color`, screen-reader mode, prompts (`confirm`, `multi_select`, `can_prompt`), `kobana accessibility` |
 | `pagination.rs`      | Auto-pagination with NDJSON streaming output — `cursor`/`meta.next_cursor` when the endpoint declares a `cursor` query parameter, `page`/`per_page` otherwise |
 | `validate.rs`        | CLI-specific input validation for `--params` and `--json`      |
@@ -336,12 +337,17 @@ on push — no release needed. It downloads the release asset for the platform i
 picked from `KOBANA_LANG`, then `LC_ALL`, `LC_MESSAGES`, `LANG` (a bare `C`/`POSIX`
 falls back to macOS's `AppleLocale`; anything else is English). Every string
 lives in `load_messages` as an `M_*` printf format — add a new one to all three
-languages. The ASCII banner is in the brand lime (`#D3FD54`, 24-bit color).
+languages. The banner is the Kobana logo in the brand lime (`#D3FD54`, 24-bit
+color); `the_installer_shows_the_same_art` keeps it equal to
+`assets/art/kobana-logo.txt`. `stork()` shows the stork after the install by
+running the new binary's `kobana art cegonha`, so the script stays small; it
+needs a window of 96 columns (`stty size`, else nothing) and draws nothing with
+a release older than `kobana art`.
 Color follows `ui::color`'s rules (`use_color`: `NO_COLOR`, `CLICOLOR_FORCE`,
 `CLICOLOR=0`, then a TTY whose `TERM` takes color, or `CLICOLOR` on, or `CI`),
 decided apart for stdout and for `fail()`'s stderr. It follows the CLI's
 accessibility settings: `KOBANA_ACCESSIBLE_COLORS` swaps the hues for bold and
-underline, and `KOBANA_SCREEN_READER` drops the banner, the emojis and curl's
+underline, and `KOBANA_SCREEN_READER` drops the banner, the stork, the emojis and curl's
 progress bar (truthy parsing as in `ui::truthy`).
 
 `kobana update` checks the same `digest` before replacing the binary and refuses
@@ -592,6 +598,26 @@ The CLI follows the GitHub CLI's accessibility model (`gh accessibility`,
 - **No spinners or animations.** Progress is a new line on stderr, never a
   redrawn one. A decorative symbol (`✓`, `└─`) goes through
   `ui::decoration`, which drops it under `KOBANA_SCREEN_READER`.
+- **The art is the one exception to the two rules above** (`art.rs`, behind
+  `kobana art`, `oi` and `kadu <TEXTO>`): pictures in 256 and 24-bit color, escape
+  sequences written by hand and one animation. It is allowed because the person
+  asked for a picture, which carries no information; never draw art from a
+  command that does other work. Every picture steps down on its own: 256 colors
+  unless `COLORTERM` announces real color, a silhouette without color or under
+  `KOBANA_ACCESSIBLE_COLORS`, a sentence under `KOBANA_SCREEN_READER`, cropped
+  with a warning in a small window, and the animation stands still unless it
+  fits. These commands skip the update notice, since a greeting in `.zshrc` runs
+  them at every shell start. `assets/art/` is pre-rendered and may only set
+  colors (`the_art_can_only_set_colors`); the images and scripts that generate
+  it are not in this repository.
+- **`kobana kadu <TEXTO>` is not in the command tree.** `kadu` is a product, and
+  its tree stays what the spec makes it. `art::speech_in` looks only at a line
+  clap already refused as an unknown command, and takes it as speech only on a
+  terminal, on the first word after `kadu`, with no option but `--lang` and
+  `--no-color`, and unless that word is nearly a command (a quoted sentence is
+  not). So a valid line never changes, and a script or an agent always gets the
+  error. Keep it that way: a free positional on the product would turn every
+  typo in `kobana kadu` into exit 0.
 - **Prompts** go through `ui::confirm`/`ui::multi_select` (numbered list read
   on one line under `KOBANA_ACCESSIBLE_PROMPTER`/`KOBANA_SCREEN_READER`), and
   only when `ui::can_prompt()` — stdin, stdout and stderr a TTY and no

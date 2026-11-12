@@ -13,8 +13,10 @@
 //!
 //! Color never carries meaning alone: every colored piece of text sits next to
 //! a word saying the same (`erro:`, `Aviso:`, `dica:`). The CLI has no
-//! spinner or animation, so nothing ever redraws a line a screen reader is
-//! reading; keep it that way, or make it static under [`screen_reader`].
+//! spinner, and its one animation is a picture you ask for (`kobana art anim`,
+//! `kobana oi`, see [`crate::art`]), so nothing ever redraws a line a screen
+//! reader is reading; keep it that way, or make it static under
+//! [`screen_reader`].
 
 use std::io::{BufRead, IsTerminal, Write};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -490,13 +492,16 @@ pub fn accessibility_text() -> String {
     let reader = tr!(
         pt: "  KOBANA_SCREEN_READER=1 deixa só texto estático: sem símbolos decorativos, tabelas sem\n  \
              bordas (uma linha por registro) e perguntas simples, numeradas, que não redesenham a tela.\n  \
-             O kobana não usa spinners nem animações. Só as perguntas simples: KOBANA_ACCESSIBLE_PROMPTER=1",
+             O kobana não usa spinners; a única animação é a do Kadu (kobana art anim, kobana oi), que só\n  \
+             roda se você pedir e aqui vira texto. Só as perguntas simples: KOBANA_ACCESSIBLE_PROMPTER=1",
         en: "  KOBANA_SCREEN_READER=1 leaves static text only: no decorative symbols, tables without\n  \
              borders (one line per record) and simple numbered prompts that do not redraw the screen.\n  \
-             kobana has no spinners or animations. The simple prompts alone: KOBANA_ACCESSIBLE_PROMPTER=1",
+             kobana has no spinners; its one animation is Kadu's (kobana art anim, kobana oi), which only\n  \
+             runs if you ask and here becomes text. The simple prompts alone: KOBANA_ACCESSIBLE_PROMPTER=1",
         es: "  KOBANA_SCREEN_READER=1 deja solo texto estático: sin símbolos decorativos, tablas sin\n  \
              bordes (una línea por registro) y preguntas simples, numeradas, que no redibujan la pantalla.\n  \
-             kobana no usa spinners ni animaciones. Solo las preguntas simples: KOBANA_ACCESSIBLE_PROMPTER=1",
+             kobana no usa spinners; su única animación es la de Kadu (kobana art anim, kobana oi), que solo\n  \
+             corre si la pides y aquí se vuelve texto. Solo las preguntas simples: KOBANA_ACCESSIBLE_PROMPTER=1",
     );
     let scripts = tr!(
         pt: "  Sem terminal (pipe, CI, agente de IA) ou com KOBANA_PROMPT_DISABLED=1, o kobana não pergunta\n  \

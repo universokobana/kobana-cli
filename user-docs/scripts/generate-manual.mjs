@@ -260,7 +260,7 @@ function findOperation(product, method, path) {
 const flagOf = (name) => name.split(/\s+/).find((w) => w.startsWith('--'));
 let globalFlags = new Set();
 const COMMON_ERRORS = new Set(['401', '403', '429', '500']);
-const SKIP_ROOT = new Set(['schema', 'completions', 'update', 'accessibility', 'help']);
+const SKIP_ROOT = new Set(['schema', 'completions', 'update', 'accessibility', 'art', 'oi', 'help']);
 
 /** Walks `kobana <product> ...` in one language. */
 async function walk(lang, path) {
@@ -445,10 +445,11 @@ async function main() {
     const globalNames = new Set(globalOpts.map((o) => flagOf(o.name)));
     globalFlags = globalNames;
     let pos = 2;
-    for (const name of ['schema', 'completions', 'update', 'accessibility']) {
+    for (const name of ['schema', 'completions', 'update', 'accessibility', 'art', 'oi']) {
       const help = parseHelp(await run([name, '--help'], l.code), l.code);
       const own = (help.sections[t.options] ?? []).filter((o) => !globalNames.has(o.name.split(/\s+/).find((w) => w.startsWith('--'))));
       const args = help.sections[t.arguments] ?? [];
+      const kids = (help.sections[t.commands] ?? []).filter((k) => k.name !== 'help');
       dest.set(
         `manual/commands/${name}.md`,
         [
@@ -456,6 +457,7 @@ async function main() {
           `# kobana ${name}`,
           mdx(help.about),
           fence(help.usage, 'text'),
+          kids.length ? `**${t.commands}**\n\n| | ${t.description} |\n|---|---|\n${kids.map((k) => `| \`${k.name}\` | ${cell(k.about)} |`).join('\n')}\n` : '',
           args.length ? `**${t.arguments}**\n\n| | ${t.description} |\n|---|---|\n${args.map((a) => `| \`${a.name}\` | ${cell(a.about)} |`).join('\n')}\n` : '',
           own.length ? `**${t.options}**\n\n| | ${t.description} |\n|---|---|\n${own.map((o) => `| \`${o.name.replace(/\s+/g, ' ')}\` | ${cell(o.about)} |`).join('\n')}\n` : '',
         ].filter((x) => x !== '').join('\n\n'),
@@ -579,7 +581,7 @@ await main();
 // ---------------------------------------------------------------- write
 
 sidebar.labels = sidebarLabels;
-sidebar.commands = ['global-options', 'schema', 'completions', 'update', 'accessibility'];
+sidebar.commands = ['global-options', 'schema', 'completions', 'update', 'accessibility', 'art', 'oi'];
 out.pt.set('__sidebar__', JSON.stringify(sidebar, null, 2) + '\n');
 
 let stale = 0;

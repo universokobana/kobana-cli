@@ -38,7 +38,7 @@ Leaves the output with static text only, which a screen reader or a braille disp
 - **Tables without borders** (`--output-format table`), one line per record: borders are not spelled out, and a long cell does not split the record into two lines.
 - **Simple prompts** (see below).
 
-`kobana` has no spinners or animations: progress is always a new line of text, never a redrawn line.
+`kobana` has no spinners: progress is always a new line of text, never a redrawn line. Its one animation is Kadu's (`kobana art anim` and `kobana oi`), which only runs if you ask; with `KOBANA_SCREEN_READER=1`, the art becomes a sentence and nothing moves.
 
 ## Prompts
 

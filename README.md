@@ -718,6 +718,40 @@ kobana banking +cobrar --valor 99.90 --vencimento 2026-05-01T23:59:59-03:00 \
 kobana banking +cancelar-lote --ids "123,456,789"
 ```
 
+## O Kadu no terminal
+
+A arte da Kobana no terminal, sem credenciais nem rede:
+
+| Comando | O que mostra | Colunas × linhas |
+|---------|--------------|------------------|
+| `kobana art` ou `kobana art cegonha` | A cegonha da Kobana | 96 × 32 |
+| `kobana art kadu` | O Kadu, fiel à foto | 55 × 44 |
+| `kobana art anim` | O Kadu balança, sorri e pisca, em cerca de 6 s | 48 × 37 |
+| `kobana art logo` | Logo da Kobana, na cor do texto do terminal | 64 × 6 |
+| `kobana oi` (ou `hi`, `hola`) | O Kadu dá oi: animado se a janela comportar, senão com um balão | |
+| `kobana kadu "Boleto pago!"` | O Kadu com o texto num balão ao lado | |
+
+`kobana kadu` continua sendo o produto Agente Kadu: todo comando dele funciona
+como sempre, e o balão só aparece para um texto que não é comando. Fora de um
+terminal (script, CI, agente de IA), um comando desconhecido continua sendo erro,
+e uma palavra parecida com um comando (`kobana kadu taks`) também. Entre aspas,
+vale como frase: `kobana kadu "taks atrasadas"`.
+
+Cada arte se ajusta ao que encontra:
+
+- As imagens usam cor real (24 bits) quando o terminal a anuncia em `COLORTERM`,
+  e 256 cores nos demais.
+- Numa janela menor que a arte, ela sai cortada, com um aviso. A animação não
+  cabe em janelas mais baixas: o Kadu fica parado, também com um aviso. O balão
+  mostra o Kadu de cima para baixo até onde a janela der e, numa janela estreita
+  demais para os dois, sai sozinho.
+- Sem cor (`--no-color`, `NO_COLOR`, `KOBANA_ACCESSIBLE_COLORS` ou a saída indo
+  para um arquivo ou outro comando), sai a silhueta. O logo não muda.
+- Com `KOBANA_SCREEN_READER=1`, nada se mexe: sai uma frase dizendo o que é.
+
+Para ver o logo ao abrir o terminal, ponha `kobana art logo` no fim do `~/.zshrc`
+ou do `~/.bashrc`.
+
 ## Acessibilidade
 
 O CLI segue as práticas de acessibilidade do GitHub CLI (`gh accessibility`).
@@ -731,7 +765,8 @@ no terminal atual. Detalhes em [cli.kobana.com.br › Acessibilidade](https://cl
   sublinhado na cor do texto do tema, sem matizes).
 - **Leitor de tela.** `KOBANA_SCREEN_READER=1` deixa só texto estático: sem
   símbolos decorativos, tabelas sem bordas (uma linha por registro) e perguntas
-  simples. O CLI não tem spinners nem animações.
+  simples. O CLI não tem spinners; a única animação é a do Kadu (`kobana art anim`,
+  `kobana oi`), que só roda se você pedir e nesse modo vira texto.
 - **Perguntas.** `KOBANA_ACCESSIBLE_PROMPTER=1` troca as listas interativas do
   `auth login` e do `update` por uma lista numerada respondida numa linha
   (`1, 3, 5-7` ou `todos`); `KOBANA_PROMPT_DISABLED=1` nunca pergunta.

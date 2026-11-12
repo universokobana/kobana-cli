@@ -14,7 +14,7 @@
 #   KOBANA_LANG         idioma das mensagens: pt, en ou es (padrão: o do sistema)
 #   NO_COLOR            desliga as cores (também CLICOLOR=0; CLICOLOR_FORCE força)
 #   KOBANA_ACCESSIBLE_COLORS  alto contraste: negrito e sublinhado, sem matizes
-#   KOBANA_SCREEN_READER      só texto: sem banner, emojis nem barra de progresso
+#   KOBANA_SCREEN_READER      só texto: sem banner, cegonha, emojis nem barra de progresso
 
 set -euo pipefail
 
@@ -49,7 +49,7 @@ load_messages() {
   case "$1" in
     pt)
       TERMS_URL="https://www.kobana.com.br/termos"
-      M_HELLO="Olá! Vamos instalar o..."
+      M_HELLO="Olá! Vamos instalar o CLI da..."
       M_WINDOWS="No Windows, baixe kobana-windows-amd64.exe em %s"
       M_UNSUPPORTED_OS="Sistema não suportado: %s"
       M_UNSUPPORTED_ARCH="Arquitetura não suportada: %s"
@@ -79,7 +79,7 @@ load_messages() {
       ;;
     es)
       TERMS_URL="https://www.kobana.com.br/es/terminos"
-      M_HELLO="¡Hola! Vamos a instalar el..."
+      M_HELLO="¡Hola! Vamos a instalar el CLI de..."
       M_WINDOWS="En Windows, descarga kobana-windows-amd64.exe en %s"
       M_UNSUPPORTED_OS="Sistema no soportado: %s"
       M_UNSUPPORTED_ARCH="Arquitectura no soportada: %s"
@@ -109,7 +109,7 @@ load_messages() {
       ;;
     *)
       TERMS_URL="https://www.kobana.com.br/en/terms"
-      M_HELLO="Hi! Let's install the..."
+      M_HELLO="Hi! Let's install the CLI from..."
       M_WINDOWS="On Windows, download kobana-windows-amd64.exe from %s"
       M_UNSUPPORTED_OS="Unsupported system: %s"
       M_UNSUPPORTED_ARCH="Unsupported architecture: %s"
@@ -213,13 +213,31 @@ fail() {
 banner() {
   printf '%s' "$LIME"
   cat <<'ART'
-    __ __  ____    ____    ___     _   __  ___       ______  __     ____
-   / //_/ / __ \  / __ )  /   |   / | / / /   |     / ____/ / /    /  _/
-  / ,<   / / / / / __  | / /| |  /  |/ / / /| |    / /     / /     / /
- / /| | / /_/ / / /_/ / / ___ | / /|  / / ___ |   / /___  / /___ _/ /
-/_/ |_| \____/ /_____/ /_/  |_|/_/ |_/ /_/  |_|   \____/ /_____//___/
+██     ▄███  ▄▟████▙▄  ▐██████▄▖    ▟██    ▐█▙▖    ▟█▖   ▗██▖
+██   ▗███▀  ▟███▀▀███▙ ▐████████   ▐███▙   ▐███▄   ██▌   ████▖
+██ ▗▟██▛   ▗██▘    ▝██▖▐█▙▄▄▄▄█▛  ▗██▘██▖  ▐█▛███▄ ██▌  ▟█▌▐█▙
+██▄████▙   ▝██▖    ▗██▘▐█▛▀▀▀▀██▖ ▟█▙▄▟██  ▐█▌ ▜██▙██▌ ▗██▄▄██▌
+████▀▝███▄  ▜███▄▄███▛ ▐████████▌▐███████▙ ▐█▌  ▝▜███▌ ████████▖
+██▛    ▀███  ▀▜████▛▀  ▐██████▛▀ ██▘    ██▌▐█▌    ▝██▘▐█▛    ▐█▙
 ART
   printf '%s' "$RESET"
+}
+
+# The stork delivers the CLI. The new binary draws it, so the script stays small
+# and the art lives in one place; a release older than `kobana art` draws nothing.
+# 96 columns is the stork's width: this is a surprise nobody asked for, so unlike
+# `kobana art cegonha` it does not show up cropped in a smaller window.
+stork() {
+  if [ -z "$RESET" ] || [ -n "$SCREEN_READER" ] || truthy "${KOBANA_ACCESSIBLE_COLORS:-}"; then
+    return 0
+  fi
+  # "<rows> <columns>". Not `tput cols`: with stdout and stderr both redirected,
+  # as they must be in $(...), it answers 80 whatever the window
+  local size
+  size="$(stty size 2>/dev/null </dev/tty)" || return 0
+  [ "${size#* }" -ge 96 ] 2>/dev/null || return 0
+  blank
+  "$1" art cegonha 2>/dev/null || true
 }
 
 # --- plataforma --------------------------------------------------------------
@@ -361,6 +379,8 @@ main() {
       printf '     %sexport PATH="%s:$PATH"%s\n' "$BOLD" "$BIN_DIR" "$RESET"
       ;;
   esac
+
+  stork "$INSTALL_DIR/bin/kobana"
 
   blank
   say "📄" "$M_TERMS"

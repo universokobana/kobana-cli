@@ -38,6 +38,12 @@ jaq-std = "3"
 jaq-json = "2"
 # The color rules clap uses (anstream), and Windows console ANSI support
 anstyle-query = "1"
+# `kobana art`, `oi` and `kadu <TEXTO>`: the window size, the width of a text
+# and how near a word is to a command. All already come in through comfy-table
+# and clap.
+crossterm = { version = "0.29", default-features = false }
+unicode-width = "0.2"
+strsim = "0.11"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
@@ -47,3 +53,4 @@ keyring = { version = "3", features = ["apple-native"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 keyring = { version = "3", features = ["windows-native"] }
+crossterm = { version = "0.29", default-features = false, features = ["windows"] }

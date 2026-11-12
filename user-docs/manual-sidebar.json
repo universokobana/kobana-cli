@@ -239,7 +239,9 @@
     "schema",
     "completions",
     "update",
-    "accessibility"
+    "accessibility",
+    "art",
+    "oi"
   ],
   "labels": {
     "pt-BR": {

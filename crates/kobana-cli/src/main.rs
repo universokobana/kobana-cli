@@ -1,3 +1,4 @@
+mod art;
 mod auth;
 mod auth_commands;
 mod clap_i18n;
@@ -17,6 +18,8 @@ mod schema;
 mod ui;
 mod update;
 mod validate;
+
+use std::io::IsTerminal;
 
 use kobana::error::KobanaError;
 use kobana::trf;
@@ -77,9 +80,13 @@ async fn run() -> Result<(), KobanaError> {
 
     // Phase 2: Build clap command and parse args
     let root_cmd = commands::build_root_command(&products);
-    let matches = root_cmd
-        .try_get_matches()
-        .unwrap_or_else(|e| clap_i18n::exit_with(e));
+    let matches = match root_cmd.try_get_matches() {
+        Ok(matches) => matches,
+        Err(e) => match art::speech_in(&e, std::env::args_os(), std::io::stdout().is_terminal()) {
+            Some(text) => return art::handle_speech(&text),
+            None => clap_i18n::exit_with(e),
+        },
+    };
     ui::set_no_color_flag(matches.get_flag("no-color"));
 
     // `--jq` is checked before anything runs (no request, no token refresh):
@@ -95,7 +102,7 @@ async fn run() -> Result<(), KobanaError> {
             )));
         }
         // Commands that print no JSON: refused, not silently ignored
-        if let Some(name @ ("accessibility" | "completions" | "help")) = matches.subcommand_name() {
+        if let Some(name @ ("accessibility" | "art" | "completions" | "help" | "oi")) = matches.subcommand_name() {
             return Err(KobanaError::Validation(trf!(
                 pt: "`kobana {name}` não imprime JSON; --jq não se aplica",
                 en: "`kobana {name}` prints no JSON; --jq does not apply",
@@ -106,15 +113,23 @@ async fn run() -> Result<(), KobanaError> {
 
     // Warn on stderr when a newer version is out, checking the network at most
     // once a day (best effort, swallows errors). `update` reports it itself and
-    // `completions` is sourced by shells at start-up, so both skip it; so does
-    // a run without a person at a terminal (see `should_auto_check`).
-    if !matches!(matches.subcommand_name(), Some("update" | "completions")) && update::should_auto_check() {
+    // `completions` is sourced by shells at start-up, and so may the art be (a
+    // greeting in `.zshrc`), so they skip it; so does a run without a person at
+    // a terminal (see `should_auto_check`).
+    if !matches!(matches.subcommand_name(), Some("update" | "completions" | "art" | "oi")) && update::should_auto_check() {
         update::auto_check().await;
     }
 
     if matches.subcommand_name() == Some("accessibility") {
         print!("{}", ui::accessibility_text());
         return Ok(());
+    }
+
+    // Kadu, the logo and the stork: no product, no credentials
+    match matches.subcommand() {
+        Some(("art", art_matches)) => return art::handle_art(art_matches).await,
+        Some(("oi", _)) => return art::handle_oi().await,
+        _ => {}
     }
 
     if let Some(("help", help_matches)) = matches.subcommand() {

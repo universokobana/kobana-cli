@@ -38,7 +38,7 @@ Deixa a saída só com texto estático, que um leitor de tela ou uma linha brail
 - **Tabelas sem bordas** (`--output-format table`), com uma linha por registro: nem as bordas são soletradas, nem uma célula longa quebra o registro em duas linhas.
 - **Perguntas simples** (veja abaixo).
 
-O `kobana` não tem spinners nem animações: o progresso é sempre uma linha de texto nova, nunca uma linha redesenhada.
+O `kobana` não tem spinners: o progresso é sempre uma linha de texto nova, nunca uma linha redesenhada. A única animação é a do Kadu (`kobana art anim` e `kobana oi`), que só roda se você pedir; com `KOBANA_SCREEN_READER=1`, as artes viram uma frase e nada se mexe.
 
 ## Perguntas
 
