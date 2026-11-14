@@ -666,6 +666,8 @@ The CLI follows the GitHub CLI's accessibility model (`gh accessibility`,
   as jq does. Keep all of it when bumping jaq.
 - The update notice (`update::should_auto_check`) runs only with stdout and
   stderr on a TTY, outside `CI`, and without `KOBANA_NO_UPDATE_NOTIFIER`.
+  `--version` (intercepted in `main::run` as clap's `DisplayVersion`) prints the
+  version and then runs the same check, so the warning follows it.
 
 ## Exit Codes
 

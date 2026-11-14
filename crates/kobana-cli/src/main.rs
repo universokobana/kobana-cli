@@ -82,10 +82,20 @@ async fn run() -> Result<(), KobanaError> {
     let root_cmd = commands::build_root_command(&products);
     let matches = match root_cmd.try_get_matches() {
         Ok(matches) => matches,
-        Err(e) => match art::speech_in(&e, std::env::args_os(), std::io::stdout().is_terminal()) {
-            Some(text) => return art::handle_speech(&text),
-            None => clap_i18n::exit_with(e),
-        },
+        Err(e) => {
+            // `--version` prints the version, then warns when a newer one is
+            // out (same once-a-day check as the notice below, so same rules:
+            // only a person at a terminal, never in CI or with the opt-out).
+            if e.kind() == clap::error::ErrorKind::DisplayVersion && update::should_auto_check() {
+                let _ = e.print();
+                update::auto_check().await;
+                std::process::exit(0);
+            }
+            match art::speech_in(&e, std::env::args_os(), std::io::stdout().is_terminal()) {
+                Some(text) => return art::handle_speech(&text),
+                None => clap_i18n::exit_with(e),
+            }
+        }
     };
     ui::set_no_color_flag(matches.get_flag("no-color"));
 

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **`kobana --version` avisa de versão nova** — depois de imprimir a versão, mostra o mesmo `Aviso: Nova versão disponível: X → Y` do aviso diário (stderr, com a consulta à rede no máximo uma vez por dia). Segue as mesmas regras: só com um terminal, fora do `CI` e sem `KOBANA_NO_UPDATE_NOTIFIER`; num pipe ou script a saída continua só a versão
+
 ## [0.15.0] - 2026-11-12
 
 ### Added
