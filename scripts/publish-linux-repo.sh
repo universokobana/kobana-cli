@@ -31,10 +31,23 @@ export GNUPGHOME="$(mktemp -d /tmp/kgpg.XXXXXX)"
 chmod 700 "$GNUPGHOME"
 PASS_FILE="$GNUPGHOME/pass"
 ( umask 077; printf '%s' "$GPG_PASSPHRASE" > "$PASS_FILE" )
-printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import 2>/dev/null
+# The secret is normally the armored key; a base64 copy of it is accepted too.
+KEY="$GPG_PRIVATE_KEY"
+case "$KEY" in
+  *"BEGIN PGP"*) ;;
+  *) KEY="$(printf '%s' "$KEY" | base64 -d 2>/dev/null || true)" ;;
+esac
+# gpg prints key ids and user ids here, never the secret material.
+if ! printf '%s\n' "$KEY" | gpg --batch --import; then
+  echo "::error::GPG_PRIVATE_KEY is not an armored PGP private key (or a base64 copy of one); export it with: gpg --armor --export-secret-keys <id>" >&2
+  exit 1
+fi
 FPR="$(gpg --list-secret-keys --with-colons | awk -F: '/^fpr:/{print $10; exit}')"
-test -n "$FPR"
+[ -n "$FPR" ] || { echo "::error::no secret key found in GPG_PRIVATE_KEY (is it the public key?)" >&2; exit 1; }
 echo "Imported signing key $FPR"
+echo ok | gpg --batch --yes --pinentry-mode loopback --passphrase-file "$PASS_FILE" \
+    --clearsign -u "$FPR" >/dev/null \
+  || { echo "::error::cannot sign with the key: is GPG_PASSPHRASE correct?" >&2; exit 1; }
 # An expiring key breaks every install on the expiry date (cli/cli#9569, #13118).
 gpg --list-keys --with-colons "$FPR" | awk -F: '/^pub:/{ if ($7 != "") print "::warning::signing key expires (epoch " $7 ")"; else print "signing key has no expiry" }'
 
