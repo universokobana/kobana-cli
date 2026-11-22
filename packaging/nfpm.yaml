@@ -10,7 +10,7 @@ platform: linux
 version: ${VERSION}
 section: utils
 priority: optional
-maintainer: Kobana <noreply@kobana.com.br>
+maintainer: Kobana <contato@kobana.com.br>
 vendor: Kobana
 homepage: https://cli.kobana.com.br
 license: MIT
