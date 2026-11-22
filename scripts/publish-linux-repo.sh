@@ -64,15 +64,25 @@ echo "found ${#DEBS[@]} deb, ${#RPMS[@]} rpm"
 # ============================================================================
 # 1. RPM — embed a GPG signature (dnf/zypper verify per-package), in place
 # ============================================================================
+# Keep rpm's own %__gpg_sign_cmd (its layout changed between 4.x and 6.x) and
+# give gpg what it needs through the throwaway keyring's gpg.conf instead.
+cat >> "$GNUPGHOME/gpg.conf" <<EOM
+batch
+yes
+pinentry-mode loopback
+passphrase-file $PASS_FILE
+no-secmem-warning
+EOM
 cat > "$HOME/.rpmmacros" <<EOM
 %_signature gpg
 %__gpg /usr/bin/gpg
 %_gpg_name $FPR
-%__gpg_sign_cmd %{__gpg} gpg --batch --yes --no-armor --pinentry-mode loopback --passphrase-file $PASS_FILE --no-secmem-warning -u "%{_gpg_name}" --digest-algo sha256 -sbo %{__signature_filename} %{__plaintext_filename}
+%_gpg_digest_algo sha256
 EOM
 for r in "${RPMS[@]}"; do
   rpm --addsign "$r"
-  rpm -qi -p "$r" 2>/dev/null | grep -qi '^Signature.*Key ID' || { echo "rpm not signed: $r" >&2; exit 1; }
+  # The header signature carries the key id on rpm 4.x and 6.x (`rpm -qi` does not).
+  [ -n "$(rpm -qp --qf '%{RSAHEADER:pgpsig}' "$r" 2>/dev/null)" ] || { echo "rpm not signed: $r" >&2; exit 1; }
   echo "signed $(basename "$r")"
 done
 
